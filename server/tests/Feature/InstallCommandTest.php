@@ -3,6 +3,7 @@
 use App\Enums\UserRole;
 use App\Models\HotelProfile;
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 
 it('creates the first admin with a random password and random PIN', function () {
     $this->artisan('sangatv:install', ['email' => 'it@hotel.example', '--hotel' => 'Napolin Hotel'])
@@ -19,5 +20,5 @@ it('creates the first admin with a random password and random PIN', function () 
 
 it('refuses to seed demo data in production', function () {
     $this->app['env'] = 'production';
-    expect(fn () => app(Database\Seeders\DatabaseSeeder::class)->run())->toThrow(RuntimeException::class, 'production');
+    expect(fn () => app(DatabaseSeeder::class)->run())->toThrow(RuntimeException::class, 'production');
 });

@@ -72,6 +72,7 @@ class BootstrapController extends Controller
             'config' => [
                 'heartbeat_seconds' => 60,
                 'slide_interval_seconds' => 6,
+                'screensaver_minutes' => $hotel->screensaver_minutes,
             ],
         ]);
     }

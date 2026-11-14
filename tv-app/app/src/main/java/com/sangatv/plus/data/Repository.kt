@@ -140,6 +140,7 @@ class Repository(
             _bootstrap.value = b
             save(BOOTSTRAP, Bootstrap.serializer(), b)
             kiosk.configure(b.apps.map { it.packageName })
+            com.sangatv.plus.device.ScreenTimeout.apply(appContext, b.config.screensaverMinutes)
 
             refreshChannelsLocked()
 

@@ -96,6 +96,8 @@ data class Weather(val temperature: Double, val code: Int, val description: Stri
 data class ClientConfig(
     @SerialName("heartbeat_seconds") val heartbeatSeconds: Int = 60,
     @SerialName("slide_interval_seconds") val slideIntervalSeconds: Int = 6,
+    /** Idle minutes before the TV's own screensaver; 0 = leave the TV setting alone. */
+    @SerialName("screensaver_minutes") val screensaverMinutes: Int = 0,
 )
 
 @Serializable

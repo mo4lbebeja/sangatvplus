@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class HotelProfile extends Model
 {
+    /** Idle time before the TV screensaver (minutes). 0 = keep each TV's own setting. */
+    public const SCREENSAVER_OPTIONS = [5 => '5 menit', 10 => '10 menit', 15 => '15 menit', 30 => '30 menit', 60 => '1 jam', 120 => '2 jam', 0 => 'Ikuti pengaturan TV'];
+
     use Auditable;
 
     protected $guarded = ['id'];
@@ -22,6 +25,7 @@ class HotelProfile extends Model
             'longitude' => 'float',
             'home_music_enabled' => 'boolean',
             'home_music_volume' => 'integer',
+            'screensaver_minutes' => 'integer',
         ];
     }
 

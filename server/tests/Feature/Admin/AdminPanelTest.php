@@ -146,7 +146,7 @@ it('saves the hotel profile and hashes a new technician PIN', function () {
         ->assertHasFormErrors(['new_pin']); // too common
 
     Livewire::test(HotelProfilePage::class)
-        ->fillForm(['name' => 'Hotel Baru', 'new_pin' => '582047', 'check_in_time' => '14:00', 'check_out_time' => '12:00', 'timezone' => 'Asia/Jakarta'])
+        ->fillForm(['name' => 'Hotel Baru', 'new_pin' => '582047', 'check_in_time' => '14:00', 'check_out_time' => '12:00', 'timezone' => 'Asia/Jakarta', 'screensaver_minutes' => 30])
         ->call('save')
         ->assertHasNoFormErrors();
 

@@ -301,6 +301,10 @@ private fun DeviceStatus(vm: AppViewModel, roomNumber: String?, online: Boolean)
             AutoStart.canDrawOverlays(ctx) -> "Sebagian (penjaga layar utama mati)"
             else -> "Belum (izin tampil di atas aplikasi lain)"
         },
+        "Screensaver" to when {
+            !com.sangatv.plus.device.ScreenTimeout.canWrite(ctx) -> "Setelah ${com.sangatv.plus.device.ScreenTimeout.currentMinutes(ctx)} menit (izin ubah belum ada)"
+            else -> "Setelah ${com.sangatv.plus.device.ScreenTimeout.currentMinutes(ctx)} menit (diatur dari CMS)"
+        },
         "Mode kiosk" to when {
             kiosk.isInLockTask -> "Aktif"
             kiosk.isDeviceOwner -> "Siap (Device Owner)"

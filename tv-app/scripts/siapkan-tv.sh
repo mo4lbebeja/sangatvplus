@@ -36,6 +36,7 @@ echo "Menyiapkan $PKG di $TV ($(sh getprop ro.product.manufacturer) $(sh getprop
 echo "• Launcher utama (HOME)";           sh cmd role add-role-holder android.app.role.HOME "$PKG" 0 >/dev/null
 echo "• Tampil di atas aplikasi lain";     sh appops set "$PKG" SYSTEM_ALERT_WINDOW allow
 echo "• Instal aplikasi tidak dikenal (OTA)"; sh appops set "$PKG" REQUEST_INSTALL_PACKAGES allow
+echo "• Ubah pengaturan sistem (durasi screensaver dari CMS)"; sh appops set "$PKG" WRITE_SETTINGS allow
 echo "• Notifikasi layanan latar";        sh pm grant "$PKG" android.permission.POST_NOTIFICATIONS >/dev/null 2>&1 || true
 echo "• Tidak dibatasi baterai";          sh dumpsys deviceidle whitelist +"$PKG" >/dev/null
 

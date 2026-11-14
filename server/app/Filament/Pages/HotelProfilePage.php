@@ -56,7 +56,7 @@ class HotelProfilePage extends Page
         // wifi_password is a hidden attribute; fill it explicitly. The PIN is write-only.
         $this->form->fill([
             ...$hotel->only(['name', 'tagline', 'about', 'logo_path', 'address', 'reception_phone', 'reception_extension',
-                'wifi_ssid', 'check_in_time', 'check_out_time', 'check_out_info', 'timezone', 'latitude', 'longitude']),
+                'wifi_ssid', 'check_in_time', 'check_out_time', 'check_out_info', 'timezone', 'latitude', 'longitude', 'screensaver_minutes']),
             'wifi_password' => $hotel->wifi_password,
         ]);
     }
@@ -84,6 +84,11 @@ class HotelProfilePage extends Page
                     TextInput::make('check_in_time')->label('Jam check-in')->required()->regex('/^\d{2}:\d{2}$/')->placeholder('14:00'),
                     TextInput::make('check_out_time')->label('Jam check-out')->required()->regex('/^\d{2}:\d{2}$/')->placeholder('12:00'),
                     Textarea::make('check_out_info')->label('Info check-out')->rows(3)->maxLength(1000)->columnSpanFull(),
+                ]),
+                Section::make('Layar TV')->icon(Heroicon::OutlinedMoon)->description('Berlaku untuk semua TV kamar.')->schema([
+                    Select::make('screensaver_minutes')->label('Screensaver TV muncul setelah')->required()
+                        ->options(HotelProfile::SCREENSAVER_OPTIONS)
+                        ->helperText('Lama remote tidak disentuh sebelum screensaver bawaan TV tampil. Saat tamu menekan remote, SangaTV Plus kembali ke Beranda.'),
                 ]),
                 Section::make('Lokasi (untuk cuaca)')->icon(Heroicon::OutlinedMapPin)->columns(3)->schema([
                     Select::make('timezone')->label('Zona waktu')->required()

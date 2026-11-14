@@ -157,3 +157,9 @@ it('logs whitelisted technician actions and rejects unknown ones', function () {
 
     $this->assertDatabaseHas('audit_logs', ['event' => 'technician.launcher_restore_opened', 'actor_id' => $this->device->id]);
 });
+
+it('sends the screensaver delay chosen in the CMS to the TV', function () {
+    HotelProfile::current()->fill(['screensaver_minutes' => 60])->save();
+
+    $this->getJson('/api/v1/bootstrap')->assertOk()->assertJsonPath('config.screensaver_minutes', 60);
+});

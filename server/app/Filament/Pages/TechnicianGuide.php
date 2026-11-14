@@ -114,6 +114,7 @@ class TechnicianGuide extends Page
                     ['label' => 'Izin tampil di atas aplikasi lain (cadangan auto-start)', 'cmd' => 'adb {s} shell appops set {pkg} SYSTEM_ALERT_WINDOW allow'],
                     ['label' => 'Izin instal update (OTA)', 'cmd' => 'adb {s} shell appops set {pkg} REQUEST_INSTALL_PACKAGES allow'],
                     ['label' => 'Izin notifikasi layanan latar', 'cmd' => 'adb {s} shell pm grant {pkg} android.permission.POST_NOTIFICATIONS'],
+                    ['label' => 'Izin ubah pengaturan sistem (durasi screensaver dari CMS → Profil Hotel)', 'cmd' => 'adb {s} shell appops set {pkg} WRITE_SETTINGS allow'],
                     ['label' => 'Tidak dibatasi baterai', 'cmd' => 'adb {s} shell dumpsys deviceidle whitelist +{pkg}'],
                     ['label' => 'Nonaktifkan launcher bawaan (wajib agar tidak tampil duluan)', 'cmd' => 'adb {s} shell pm disable-user --user 0 {launcher}'],
                     ['label' => 'Nonaktifkan HotelTV bila terpasang (agar tidak berebut saat boot)', 'cmd' => 'adb {s} shell pm disable-user --user 0 com.sijalucom.hoteltv'],
@@ -160,6 +161,7 @@ class TechnicianGuide extends Page
                     ['label' => 'Versi aplikasi terpasang', 'cmd' => 'adb {s} shell "dumpsys package {pkg} | grep -m1 versionName"'],
                     ['label' => 'Status izin overlay & instal', 'cmd' => 'adb {s} shell "appops get {pkg} SYSTEM_ALERT_WINDOW; appops get {pkg} REQUEST_INSTALL_PACKAGES"'],
                     ['label' => 'RAM & penyimpanan TV', 'cmd' => 'adb {s} shell "head -2 /proc/meminfo; df -h /data"'],
+                    ['label' => 'Durasi screensaver saat ini (milidetik; 1800000 = 30 menit)', 'cmd' => 'adb {s} shell settings get system screen_off_timeout'],
                 ],
             ],
             [
