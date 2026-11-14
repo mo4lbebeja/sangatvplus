@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- See main/res/xml/network_security_config.xml for the rationale. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/internal_ca" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

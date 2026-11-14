@@ -1,0 +1,10 @@
+# SangaTV Plus — server (Laravel 13 + Filament 5, PostgreSQL)
+
+Project spec: ../doc/CLAUDEsangatv.md — read it first.
+
+- DB: PostgreSQL `db_sangatv_plus` (tests: `db_sangatv_plus_test`, configured in phpunit.xml).
+- CMS: Filament at `/admin` (Herd: http://sangatv-cms.test). Roles: admin, front_office, it (`App\Filament\Concerns\RestrictedByRole`).
+- TV API: `routes/api.php` (`/api/v1`), Sanctum tokens on `Device` only (ability `tv`). CMS users cannot mint tokens.
+- Provider credentials live only in `channel_providers.credentials` (encrypted); TVs get short-lived signed URLs (`StreamUrlSigner`).
+- Every model change is audited (`Auditable` trait → `audit_logs`).
+- Run `php artisan test --compact` and `vendor/bin/pint` before finishing.

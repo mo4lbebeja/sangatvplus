@@ -1,0 +1,83 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
+use App\Models\AppWhitelist;
+use App\Models\Device;
+use App\Models\HotelProfile;
+use App\Models\Slide;
+use App\Services\WeatherService;
+use App\Support\MediaUrl;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+
+/** Everything the launcher needs to render (and cache for offline use). */
+class BootstrapController extends Controller
+{
+    public function __invoke(Request $request, WeatherService $weather): JsonResponse
+    {
+        /** @var Device $device */
+        $device = $request->user();
+        $room = $device->room()->with('currentGuest')->first();
+        $guest = $room->currentGuest;
+        $hotel = HotelProfile::current();
+
+        return response()->json([
+            'server_time' => now()->toIso8601String(),
+            'hotel' => [
+                'name' => $hotel->name,
+                'tagline' => $hotel->tagline,
+                'about' => $hotel->about,
+                'logo_url' => MediaUrl::of($hotel->logo_path),
+                'address' => $hotel->address,
+                'reception_phone' => $hotel->reception_phone,
+                'reception_extension' => $hotel->reception_extension,
+                'wifi' => $hotel->wifi_ssid ? [
+                    'ssid' => $hotel->wifi_ssid,
+                    'password' => $hotel->wifi_password,
+                    // Standard Wi-Fi QR payload; TV renders the QR itself.
+                    'qr_payload' => sprintf('WIFI:T:WPA;S:%s;P:%s;;', self::escapeWifi($hotel->wifi_ssid), self::escapeWifi((string) $hotel->wifi_password)),
+                ] : null,
+                'check_in_time' => $hotel->check_in_time,
+                'check_out_time' => $hotel->check_out_time,
+                'check_out_info' => $hotel->check_out_info,
+                'timezone' => $hotel->timezone,
+            ],
+            'room' => ['number' => $room->number, 'floor' => $room->floor],
+            'guest' => $guest ? [
+                'display_name' => $guest->displayName(),
+                'name' => $guest->name,
+                'salutation' => $guest->salutation,
+                'language' => $guest->language,
+            ] : null,
+            'slides' => Slide::query()->visible()->orderBy('sort_order')->get()->map(fn (Slide $s) => [
+                'id' => $s->id,
+                'kicker' => $s->kicker,
+                'title' => $s->title,
+                'description' => $s->description,
+                'image_url' => MediaUrl::of($s->image_path),
+            ]),
+            'apps' => AppWhitelist::query()->where('is_active', true)->orderBy('sort_order')->get()->map(fn (AppWhitelist $a) => [
+                'package_name' => $a->package_name,
+                'label' => $a->label,
+                'icon_url' => MediaUrl::of($a->icon_path),
+            ]),
+            'home_music' => $hotel->home_music_enabled && $hotel->home_music_path ? [
+                'url' => MediaUrl::of($hotel->home_music_path),
+                'volume' => $hotel->home_music_volume,
+            ] : null,
+            'technician_pin' => $hotel->technician_pin,
+            'weather' => $weather->current($hotel),
+            'config' => [
+                'heartbeat_seconds' => 60,
+                'slide_interval_seconds' => 6,
+            ],
+        ]);
+    }
+
+    private static function escapeWifi(string $v): string
+    {
+        return preg_replace('/([\\\;,:"])/', '\\\\$1', $v);
+    }
+}

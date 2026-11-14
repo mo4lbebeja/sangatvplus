@@ -1,0 +1,15 @@
+/* Self-hosted so the CMS (and the PWA) work without internet access. OFL fonts. */
+@font-face {
+    font-family: 'Plus Jakarta Sans';
+    src: url('/fonts/PlusJakartaSans-Variable.ttf') format('truetype');
+    font-weight: 200 800;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Michroma';
+    src: url('/fonts/Michroma-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}

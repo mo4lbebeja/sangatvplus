@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- English: structure ready; translate remaining strings as needed. -->
+<resources>
+    <string name="menu_home">Home</string>
+    <string name="menu_tv">TV</string>
+    <string name="menu_info">Hotel Info</string>
+    <string name="menu_room_service">Room Service</string>
+    <string name="menu_facilities">Facilities</string>
+    <string name="menu_apps">Apps</string>
+    <string name="room_label">Room %1$s</string>
+    <string name="welcome_guest">Welcome, %1$s</string>
+    <string name="welcome_default">Welcome</string>
+    <string name="channel_list">Channels</string>
+    <string name="cat_all">All</string>
+</resources>

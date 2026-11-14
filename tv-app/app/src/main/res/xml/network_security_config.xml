@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  RELEASE.
+  * Cleartext stays allowed only because local IPTV sources (HLS over http on the
+    IPTV VLAN) commonly have no TLS. The API client itself refuses non-HTTPS URLs
+    and pins the server certificate (see ApiClient).
+  * The hotel's internal CA must be placed at app/src/release/res/raw/internal_ca.pem
+    (see README). The release build fails without it.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

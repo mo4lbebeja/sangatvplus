@@ -1,0 +1,16 @@
+*.iml
+.gradle
+.kotlin
+/local.properties
+/.idea
+.DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+
+# Release signing & pinning secrets — never commit
+/keystore/
+keystore.properties
+/app/src/release/res/raw/internal_ca.pem
