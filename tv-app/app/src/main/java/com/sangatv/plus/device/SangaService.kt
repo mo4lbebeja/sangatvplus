@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
@@ -32,6 +33,24 @@ class SangaService : Service() {
         }
         (application as SangaApp).repository.start()
         bootGuard()
+        registerReceiver(wakeReceiver, IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_DREAMING_STOPPED) // Android TV screensaver / ambient mode ended
+        })
+    }
+
+    /**
+     * TV woken from standby (remote power button) or screensaver ended: Android would resume
+     * whatever was last on screen (stock launcher, Live TV, Netflix …). Always land on our Home.
+     */
+    private val wakeReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context, intent: Intent) {
+            // Small delay: some TVs (MediaTek) push their own app right after the screen turns on.
+            handler.postDelayed({ AutoStart.openMain(this@SangaService, debounceMs = 0, goHome = true) }, 700)
+            handler.postDelayed({
+                if (!AutoStart.isAppForeground) AutoStart.openMain(this@SangaService, debounceMs = 0, goHome = true)
+            }, 3500)
+        }
     }
 
     private val handler = android.os.Handler(android.os.Looper.getMainLooper())
@@ -53,6 +72,7 @@ class SangaService : Service() {
     }
 
     override fun onDestroy() {
+        runCatching { unregisterReceiver(wakeReceiver) }
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()
     }

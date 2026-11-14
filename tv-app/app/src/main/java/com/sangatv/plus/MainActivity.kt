@@ -105,7 +105,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (intent.hasCategory(Intent.CATEGORY_HOME) && vm.screen.value != Screen.Technician) vm.goHome()
+        val toHome = intent.hasCategory(Intent.CATEGORY_HOME) || intent.getBooleanExtra(AutoStart.EXTRA_GO_HOME, false)
+        if (toHome && vm.screen.value != Screen.Technician) vm.goHome()
     }
 }
 

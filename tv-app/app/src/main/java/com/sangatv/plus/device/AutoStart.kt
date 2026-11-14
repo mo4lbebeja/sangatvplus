@@ -46,15 +46,17 @@ object AutoStart {
 
     private const val BOOT_GUARD_MS = 4 * 60_000L
 
-    fun openMain(context: Context, debounceMs: Long = 3000) {
+    const val EXTRA_GO_HOME = "sangatv.go_home"
+
+    fun openMain(context: Context, debounceMs: Long = 3000, goHome: Boolean = false) {
         val now = System.currentTimeMillis()
         if (maintenance || now - lastOpen < debounceMs) return
         lastOpen = now
         runCatching {
             context.startActivity(
-                Intent(context, MainActivity::class.java).addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP,
-                ),
+                Intent(context, MainActivity::class.java)
+                    .putExtra(EXTRA_GO_HOME, goHome)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP),
             )
         }
     }
