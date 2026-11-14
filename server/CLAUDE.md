@@ -8,3 +8,4 @@ Project spec: ../doc/CLAUDEsangatv.md — read it first.
 - Provider credentials live only in `channel_providers.credentials` (encrypted); TVs get short-lived signed URLs (`StreamUrlSigner`).
 - Every model change is audited (`Auditable` trait → `audit_logs`).
 - Run `php artisan test --compact` and `vendor/bin/pint` before finishing.
+- Production: see DEPLOYMENT.md (`./deploy.sh`). Never run `db:seed` in production; first admin via `php artisan sangatv:install`.
