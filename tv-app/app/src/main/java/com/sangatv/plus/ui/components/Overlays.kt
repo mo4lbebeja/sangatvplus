@@ -160,3 +160,19 @@ fun SleepScreen(standby: Boolean) {
         }
     }
 }
+
+/** Photo background for menu screens (a Home slide chosen in the CMS) under a dark scrim, so content stays readable. */
+@Composable
+fun PhotoBackdrop(url: String?) {
+    if (url == null) return
+    coil3.compose.AsyncImage(url, null, contentScale = androidx.compose.ui.layout.ContentScale.Crop, modifier = Modifier.fillMaxSize())
+    Box(
+        Modifier.fillMaxSize().background(
+            androidx.compose.ui.graphics.Brush.verticalGradient(
+                0f to Sanga.Deepest.copy(alpha = 0.72f),
+                0.45f to Sanga.Deepest.copy(alpha = 0.80f),
+                1f to Sanga.Deepest.copy(alpha = 0.92f),
+            ),
+        ),
+    )
+}

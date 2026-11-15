@@ -31,7 +31,7 @@ class Slide extends Model
         });
     }
 
-    /** Background image URL for the TV "Aplikasi" screen, or null for the plain theme background. */
+    /** Background image URL for the TV menu screens (Aplikasi, Info Hotel …), or null for the plain theme background. */
     public static function appsBackgroundUrl(): ?string
     {
         return MediaUrl::of(static::query()->where('is_apps_background', true)->whereNotNull('image_path')->value('image_path'));

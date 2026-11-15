@@ -60,8 +60,8 @@ class SlideResource extends Resource
             DateTimePicker::make('ends_at')->label('Tampil sampai')->after('starts_at'),
             TextInput::make('sort_order')->label('Urutan')->numeric()->default(0),
             Toggle::make('is_active')->label('Aktif')->default(true)->inline(false),
-            Toggle::make('is_apps_background')->label('Jadikan latar halaman Aplikasi di TV')->inline(false)->columnSpanFull()
-                ->helperText('Gambar slide ini dipakai sebagai latar menu Aplikasi (dengan lapisan gelap agar ikon tetap jelas). Hanya satu slide; mengaktifkan di sini mematikan yang lain.'),
+            Toggle::make('is_apps_background')->label('Jadikan latar halaman menu TV (Aplikasi, Info Hotel, Room Service, Fasilitas)')->inline(false)->columnSpanFull()
+                ->helperText('Gambar slide ini dipakai sebagai latar halaman Aplikasi dan Info Hotel (termasuk Room Service, Fasilitas, Galeri, Wi-Fi), dengan lapisan gelap agar isi tetap jelas. Hanya satu slide; mengaktifkan di sini mematikan yang lain.'),
         ]);
     }
 
@@ -76,8 +76,8 @@ class SlideResource extends Resource
                 TextColumn::make('starts_at')->label('Mulai')->dateTime('d M Y')->placeholder('Selalu')->icon(Heroicon::OutlinedCalendar)->color('gray'),
                 TextColumn::make('ends_at')->label('Sampai')->dateTime('d M Y')->placeholder('—'),
                 ToggleColumn::make('is_active')->label('Aktif'),
-                ToggleColumn::make('is_apps_background')->label('Latar Aplikasi')
-                    ->tooltip('Jadikan latar halaman Aplikasi di TV (hanya satu slide)'),
+                ToggleColumn::make('is_apps_background')->label('Latar Menu')
+                    ->tooltip('Latar halaman Aplikasi & Info Hotel di TV (hanya satu slide)'),
             ])
             ->defaultSort('sort_order')
             ->reorderable('sort_order')

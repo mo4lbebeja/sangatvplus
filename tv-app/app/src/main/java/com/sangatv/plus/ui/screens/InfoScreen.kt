@@ -81,11 +81,13 @@ fun InfoScreen(data: Bootstrap?, facilities: List<FacilityDto>, gallery: List<Ga
     val startFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { startFocus.requestFocus() } }
 
-    Box(Modifier.fillMaxSize()) {
-    Row(Modifier.fillMaxSize().background(Sanga.Background)) {
-        // Left menu
+    val backdrop = data?.appsBackgroundUrl
+    Box(Modifier.fillMaxSize().background(Sanga.Background)) {
+    com.sangatv.plus.ui.components.PhotoBackdrop(backdrop)
+    Row(Modifier.fillMaxSize()) {
+        // Left menu (slightly see-through over the photo background)
         Column(
-            Modifier.width(480.px).fillMaxHeight().background(Sanga.Panel)
+            Modifier.width(480.px).fillMaxHeight().background(if (backdrop != null) Sanga.Panel.copy(alpha = 0.78f) else Sanga.Panel)
                 .padding(start = 72.px, top = 64.px, end = 40.px, bottom = 48.px),
             verticalArrangement = Arrangement.spacedBy(12.px),
         ) {

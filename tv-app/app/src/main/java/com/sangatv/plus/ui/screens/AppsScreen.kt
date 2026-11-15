@@ -61,18 +61,7 @@ fun AppsScreen(allApps: List<AppDto>, showHdmi: Boolean = true, backgroundUrl: S
 
     // Optional photo background (a Home slide chosen in the CMS) under a dark scrim, so tiles stay readable.
     Box(Modifier.fillMaxSize().background(Sanga.Background)) {
-        if (backgroundUrl != null) {
-            AsyncImage(backgroundUrl, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-            Box(
-                Modifier.fillMaxSize().background(
-                    androidx.compose.ui.graphics.Brush.verticalGradient(
-                        0f to Sanga.Deepest.copy(alpha = 0.72f),
-                        0.45f to Sanga.Deepest.copy(alpha = 0.80f),
-                        1f to Sanga.Deepest.copy(alpha = 0.92f),
-                    ),
-                ),
-            )
-        }
+        com.sangatv.plus.ui.components.PhotoBackdrop(backgroundUrl)
     Column(
         Modifier.fillMaxSize().padding(start = 96.px, top = 72.px, end = 96.px, bottom = 56.px),
         verticalArrangement = Arrangement.spacedBy(40.px),
