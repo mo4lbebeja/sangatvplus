@@ -476,5 +476,11 @@ html { font-size: 14px; }
 .fi-fo-file-upload .filepond--panel-root { border-radius: 0.6rem; }
 
 /* ---------- Galeri ---------- */
-.sg-gallery-thumb { width: 100% !important; height: 130px !important; object-fit: cover; border-radius: 0.6rem; }
+/* The photo fills the card's image box (overrides the dense-table 1.9rem image cap). */
+.sg-gallery-col, .sg-gallery-col > * { display: block !important; width: 100% !important; padding: 0 !important; max-width: none !important; }
+.sg-gallery-col * { max-height: none !important; }
+.sg-gallery-col img.sg-gallery-thumb {
+    display: block; width: 100% !important; height: auto !important; aspect-ratio: 16 / 10;
+    object-fit: cover; border-radius: 0.7rem; background: var(--sg-stripe);
+}
 .fi-ta-content-grid .fi-ta-record { border-radius: var(--sg-radius); }

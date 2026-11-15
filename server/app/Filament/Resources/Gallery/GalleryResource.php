@@ -88,7 +88,8 @@ class GalleryResource extends Resource
                 Stack::make([
                     ImageColumn::make('thumb_path')->label('')->disk('public')
                         ->getStateUsing(fn (GalleryPhoto $r) => $r->thumb_path ?: $r->image_path)
-                        ->imageHeight(130)->extraImgAttributes(['class' => 'sg-gallery-thumb', 'loading' => 'lazy']),
+                        ->extraAttributes(['class' => 'sg-gallery-col'])
+                        ->extraImgAttributes(['class' => 'sg-gallery-thumb', 'loading' => 'lazy']),
                     TextColumn::make('title')->weight('semibold')->placeholder('Tanpa judul')->limit(30),
                     TextColumn::make('album')->badge()->color('gray')->icon(Heroicon::OutlinedFolder)->placeholder('—'),
                 ])->space(2),
