@@ -117,6 +117,7 @@ fun ChannelScreen(
     val announcements by repo.announcements.collectAsState()
     // Ticker bar at the bottom of the screen: lift the info bar above it.
     val bottomGap = if (announcements.isNotEmpty()) 110.px else 48.px
+    val tickerInset = if (announcements.isNotEmpty()) 62.px else 0.px
     val guide = remember(epg, zone) { Guide(epg, zone) }
     val nowMs by produceState(System.currentTimeMillis()) {
         while (true) { delay(20_000); value = System.currentTimeMillis() }
@@ -286,6 +287,7 @@ fun ChannelScreen(
             ChannelPanel(
                 data = data, all = all, current = current, zone = zone, guide = guide, nowMs = nowMs, favorites = favorites,
                 onPick = { tune(it); panel = Panel.None },
+                bottomInset = tickerInset,
             )
         }
 
@@ -317,6 +319,7 @@ fun ChannelScreen(
                     onPrevious = { previous?.let { tune(it) }; panel = Panel.None },
                     onToast = { toast = it },
                     onClose = { panel = Panel.None },
+                    bottomInset = tickerInset,
                 )
             }
         }
@@ -377,6 +380,7 @@ private fun ChannelPanel(
     nowMs: Long,
     favorites: List<Long>,
     onPick: (ChannelDto) -> Unit,
+    bottomInset: androidx.compose.ui.unit.Dp = 0.px,
 ) {
     val now by rememberNow(zone)
     val used = remember(all) { all.mapNotNull { it.categorySlug }.toSet() }
@@ -421,7 +425,7 @@ private fun ChannelPanel(
             .width(760.px)
             .fillMaxHeight()
             .background(Sanga.Background.copy(alpha = 0.94f))
-            .padding(start = 72.px, top = 56.px, end = 48.px, bottom = 40.px)
+            .padding(start = 72.px, top = 56.px, end = 48.px, bottom = 40.px + bottomInset)
             .onPreviewKeyEvent { e ->
                 if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                 when (e.key) {

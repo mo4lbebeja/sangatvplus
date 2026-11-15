@@ -78,6 +78,7 @@ internal fun OptionsPanel(
     onPrevious: () -> Unit,
     onToast: (String) -> Unit,
     onClose: () -> Unit,
+    bottomInset: androidx.compose.ui.unit.Dp = 0.px,
 ) {
     val context = LocalContext.current
     val audio by controller.audioTracks.collectAsState()
@@ -124,7 +125,7 @@ internal fun OptionsPanel(
             .width(680.px)
             .fillMaxHeight()
             .background(Sanga.Background.copy(alpha = 0.95f))
-            .padding(start = 48.px, top = 56.px, end = 64.px, bottom = 40.px)
+            .padding(start = 48.px, top = 56.px, end = 64.px, bottom = 40.px + bottomInset)
             .onPreviewKeyEvent { e -> if (e.type == KeyEventType.KeyDown && e.key == Key.DirectionLeft) { onClose(); true } else false },
         verticalArrangement = Arrangement.spacedBy(18.px),
     ) {
