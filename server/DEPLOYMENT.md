@@ -55,6 +55,14 @@ Satu alamat, satu server, **database terpisah per hotel**. Staf mengetik **Kode 
 - **Panel vendor Sijalucom: `/sijalucom`** (akun terpisah di database pusat, wajib 2FA). Hotel baru, perpanjang sewa,
   lepas/pulihkan layanan TV, nonaktifkan CMS & API, TV online, versi aplikasi, backup terakhir, dan **Masuk** = membuka
   CMS hotel sebagai stafnya untuk dukungan (tercatat `vendor.masuk_sebagai` di riwayat hotel; bilah ungu → *Selesai*).
+- **Sijalucom Console** (`/sijalucom`): Dasbor bisnis (MRR/ARR, pendapatan 12 bulan, piutang, sewa habis, kesehatan TV),
+  Hotel Klien (wizard: paket, kuota TV, siklus 1/3/6/12 bulan, aktivasi lunas/tagihan/uji coba), Paket & Harga
+  (harga dasar + per TV tambahan), Tagihan (cetak/PDF, kirim email, tandai lunas → sewa diperpanjang), Laporan Bisnis
+  (+ CSV), Pengaturan (kop, rekening, PPN, jatuh tempo), Tim (peran Pemilik/Keuangan/Dukungan), Log Aktivitas.
+- Sewa per bulan dihitung dari tanggal aktivasi: 16 Nov + 1 bulan = s/d 15 Des (akhir hari WIB). Perpanjangan
+  melanjutkan dari tanggal akhir sebelumnya. Kuota TV ditegakkan saat pendaftaran TV.
+- `sangatv:tagihan` 07.30 WIB: tagihan perpanjangan otomatis H-14 (Pengaturan) untuk hotel bertagihan otomatis,
+  dikirim ke email penagihan hotel; ringkasan + tagihan lewat tempo ke Sijalucom.
 - Akun vendor: `php artisan sangatv:vendor email@x --nama="Nama"` · reset sandi + 2FA: `--reset` · matikan: `--nonaktif`.
 - CLI hotel: `php artisan sangatv:hotel daftar | buat <kode> --nama= --email= | status <kode> --status=suspended | migrasi`.
 - Masa sewa berakhir di akhir hari (WIB) tanggal yang dipilih. **Pengingat sewa** 08.00 WIB ke Sijalucom (Telegram +
