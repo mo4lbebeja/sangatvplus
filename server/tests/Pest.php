@@ -18,6 +18,9 @@ pest()->extend(TestCase::class)->use(RefreshDatabase::class)
  // ->use(RefreshDatabase::class)
     ->in('Feature');
 
+// Multi-hotel tests use real per-hotel databases (created and dropped by the tests themselves): no RefreshDatabase.
+pest()->extend(TestCase::class)->in('Tenancy');
+
 /*
 |--------------------------------------------------------------------------
 | Expectations

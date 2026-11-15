@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\InitializeHotelForApi;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // Plain web routes behind `auth` (e.g. vendor document download) use the CMS login.
         $middleware->redirectGuestsTo(fn () => route('filament.admin.auth.login'));
         $middleware->append(SecurityHeaders::class);
+        // Multi-hotel: choose the hotel database before Sanctum / PMS authentication.
+        $middleware->api(prepend: [InitializeHotelForApi::class]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

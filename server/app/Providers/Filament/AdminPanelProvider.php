@@ -2,7 +2,9 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\Login;
 use App\Filament\Pages\Dashboard;
+use App\Http\Middleware\InitializeHotel;
 use App\Http\Middleware\RequireTwoFactorForAdmins;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\FontProviders\LocalFontProvider;
@@ -32,7 +34,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->login()
+            ->login(Login::class)
             ->profile(isSimple: false)
             // Two-factor login with an authenticator app (Google Authenticator, Authy …). Admins are forced to
             // set it up by RequireTwoFactorForAdmins; other roles may turn it on in their profile.
@@ -78,6 +80,7 @@ class AdminPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                InitializeHotel::class, // multi-hotel: hotel from "Kode Hotel" (before auth)
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,

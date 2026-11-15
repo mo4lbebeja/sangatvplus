@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\Auditable;
+use App\Tenancy\HotelManager;
 use Illuminate\Database\Eloquent\Model;
 
 class HotelProfile extends Model
@@ -85,6 +86,14 @@ class HotelProfile extends Model
     /** "active" | "expiring" | "released" (released manually or the service period has ended). */
     public function serviceStatus(): string
     {
+        // Multi-hotel: the rental period lives in the central hotel record (set by Sijalucom); the hotel's own
+        // "Lepaskan semua TV" (service_released_at here) still releases its TVs.
+        if ($hotel = app(HotelManager::class)->current()) {
+            $central = $hotel->serviceStatus(self::SERVICE_WARN_DAYS);
+
+            return $this->service_released_at !== null || $central === 'released' ? 'released' : $central;
+        }
+
         return match (true) {
             $this->service_released_at !== null => 'released',
             $this->service_expires_at !== null && $this->service_expires_at->isPast() => 'released',
@@ -96,7 +105,9 @@ class HotelProfile extends Model
     /** Payload sent to TVs in bootstrap and every heartbeat. */
     public function servicePayload(): array
     {
-        return ['status' => $this->serviceStatus(), 'expires_at' => $this->service_expires_at?->toIso8601String()];
+        $expires = app(HotelManager::class)->current()?->service_expires_at ?? $this->service_expires_at;
+
+        return ['status' => $this->serviceStatus(), 'expires_at' => $expires?->toIso8601String()];
     }
 
     /** XMLTV sources, one per line. */

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\Notifier;
+use App\Tenancy\HotelManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Process;
@@ -15,7 +16,7 @@ use Throwable;
  */
 class BackupCommand extends Command
 {
-    protected $signature = 'sangatv:backup {--media : Sertakan arsip foto/media (otomatis tiap Minggu)}';
+    protected $signature = 'sangatv:backup {--media : Sertakan arsip foto/media (otomatis tiap Minggu)} {--pusat : Backup database pusat (daftar hotel), bukan database hotel}';
 
     protected $description = 'Backup database (terenkripsi) ke server + Telegram';
 
@@ -29,16 +30,21 @@ class BackupCommand extends Command
             return self::FAILURE;
         }
 
-        $dir = storage_path('app/private/backups');
+        // Multi-hotel: one folder per hotel (and "pusat" for the central database); single-hotel: the folder itself.
+        $hotel = app(HotelManager::class)->current();
+        $this->scope = $this->option('pusat') ? 'pusat' : ($hotel?->slug ?? '');
+        $dir = storage_path('app/private/backups'.($this->scope !== '' ? '/'.$this->scope : ''));
         File::ensureDirectoryExists($dir, 0700);
         $stamp = now()->format('Ymd-His');
         $made = [];
 
         try {
             $made[] = $this->encrypt($this->dumpDatabase("{$dir}/db-{$stamp}.sql.gz"), $password);
-            if ($this->option('media') || now()->isSunday()) {
+            if (! $this->option('pusat') && ($this->option('media') || now()->isSunday())) {
                 $media = "{$dir}/media-{$stamp}.tar.gz";
-                $this->shell(['tar', '-czf', $media, '-C', storage_path('app'), 'public']);
+                // This hotel's public files only (first hotel = the whole public folder minus other hotels).
+                $root = config('filesystems.disks.public.root');
+                $this->shell(['tar', '-czf', $media, '--exclude=./hotels', '-C', $root, '.']);
                 $made[] = $this->encrypt($media, $password);
             }
         } catch (Throwable $e) {
@@ -79,7 +85,7 @@ class BackupCommand extends Command
 
     private function dumpDatabase(string $target): string
     {
-        $c = config('database.connections.'.config('database.default'));
+        $c = config('database.connections.'.($this->option('pusat') ? config('tenancy.central_connection') : config('database.default')));
         $raw = substr($target, 0, -3);
         $driver = $c['driver'];
         if (in_array($driver, ['mysql', 'mariadb'], true)) {
@@ -105,7 +111,7 @@ class BackupCommand extends Command
     /** @return true|string|null true = uploaded, string = error, null = not configured */
     private function toCloud(string $file): true|string|null
     {
-        $remote = config('sangatv.backup.rclone_remote');
+        $remote = $this->remote();
         if (blank($remote)) {
             return null;
         }
@@ -114,9 +120,19 @@ class BackupCommand extends Command
         return $res->successful() ? true : 'rclone: '.trim(substr($res->errorOutput(), -300));
     }
 
-    private function pruneCloud(): void
+    private string $scope = '';
+
+    /** Cloud folder: <remote>/<hotel slug | pusat>. */
+    private function remote(): ?string
     {
         $remote = config('sangatv.backup.rclone_remote');
+
+        return blank($remote) ? null : rtrim($remote, '/').($this->scope !== '' ? '/'.$this->scope : '');
+    }
+
+    private function pruneCloud(): void
+    {
+        $remote = $this->remote();
         if (filled($remote)) {
             Process::timeout(300)->run(['rclone', 'delete', $remote, '--min-age', config('sangatv.backup.rclone_keep_days').'d', '--config', config('sangatv.backup.rclone_config')]);
         }

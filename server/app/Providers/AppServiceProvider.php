@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\InitializeHotel;
 use App\Models\Announcement;
 use App\Models\AppRelease;
 use App\Models\AppWhitelist;
@@ -24,6 +25,7 @@ use App\Models\ProvisioningCode;
 use App\Models\Room;
 use App\Models\Slide;
 use App\Models\User;
+use App\Tenancy\HotelManager;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
@@ -37,16 +39,20 @@ use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(HotelManager::class);
         //
     }
 
     public function boot(): void
     {
+        // Multi-hotel: Livewire calls from CMS pages re-open the same hotel database as the page itself.
+        Livewire::addPersistentMiddleware([InitializeHotel::class]);
         Model::shouldBeStrict(! $this->app->isProduction());
 
         // Timestamps are stored in UTC; the CMS shows them in the hotel's timezone (WIB/WITA/WIT).

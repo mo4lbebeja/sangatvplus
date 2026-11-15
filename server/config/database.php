@@ -32,6 +32,25 @@ return [
 
     'connections' => [
 
+        // Multi-hotel: central database (hotel list, routing indexes, sessions, cache, jobs). Same server and
+        // credentials as the main connection; DB_CENTRAL_DATABASE empty = the main database (single-hotel / tests).
+        'central' => array_merge(
+            [
+                'driver' => env('DB_CONNECTION', 'pgsql') === 'mariadb' ? 'mariadb' : env('DB_CONNECTION', 'pgsql'),
+                'url' => env('DB_URL'),
+                'host' => env('DB_HOST', '127.0.0.1'),
+                'port' => env('DB_PORT', env('DB_CONNECTION') === 'pgsql' ? '5432' : '3306'),
+                'database' => env('DB_CENTRAL_DATABASE', env('DB_DATABASE', 'laravel')),
+                'username' => env('DB_USERNAME', 'root'),
+                'password' => env('DB_PASSWORD', ''),
+                'prefix' => '',
+                'prefix_indexes' => true,
+            ],
+            env('DB_CONNECTION', 'pgsql') === 'pgsql'
+                ? ['charset' => 'utf8', 'search_path' => 'public', 'sslmode' => env('DB_SSLMODE', 'prefer')]
+                : ['charset' => 'utf8mb4', 'collation' => 'utf8mb4_unicode_ci', 'unix_socket' => env('DB_SOCKET', ''), 'strict' => true, 'engine' => null],
+        ),
+
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),

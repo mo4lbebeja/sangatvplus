@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Central\PmsKeyIndex;
 use App\Models\Concerns\Auditable;
+use App\Tenancy\HotelManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
@@ -26,6 +28,21 @@ class PmsIntegration extends Model
             'is_active' => 'boolean',
             'last_used_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // Multi-hotel: the PMS key header arrives before the hotel database is open → central index.
+        static::saved(function (PmsIntegration $i) {
+            if ($hotel = app(HotelManager::class)->current()) {
+                PmsKeyIndex::query()->updateOrCreate(['key_id' => $i->key_id], ['hotel_id' => $hotel->id]);
+            }
+        });
+        static::deleted(function (PmsIntegration $i) {
+            if (app(HotelManager::class)->current()) {
+                PmsKeyIndex::query()->whereKey($i->key_id)->delete();
+            }
+        });
     }
 
     public function events(): HasMany

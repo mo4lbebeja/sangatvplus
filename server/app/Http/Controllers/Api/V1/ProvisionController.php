@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Device;
 use App\Models\ProvisioningCode;
 use App\Support\Audit;
+use App\Tenancy\HotelManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -65,6 +66,8 @@ class ProvisionController extends Controller
 
         return response()->json([
             'token' => $token,
+            // Multi-hotel: the TV sends this back as X-SangaTV-Hotel on every call (null = single-hotel install).
+            'hotel' => app(HotelManager::class)->current()?->slug,
             'device' => ['id' => $device->id, 'room' => $code->room->number],
         ], 201);
     }

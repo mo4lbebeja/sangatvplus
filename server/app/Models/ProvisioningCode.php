@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Models\Central\HotelCode;
+use App\Tenancy\HotelManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
@@ -49,6 +51,11 @@ class ProvisioningCode extends Model
             'expires_at' => now()->addMinutes($ttlMinutes),
             'created_by' => $by?->id,
         ]);
+
+        // Multi-hotel: the TV types only the code, so the central index records which hotel issued it.
+        if ($hotel = app(HotelManager::class)->current()) {
+            HotelCode::query()->updateOrCreate(['code_hash' => $model->code_hash], ['hotel_id' => $hotel->id, 'expires_at' => $model->expires_at]);
+        }
 
         return [$model, Str::substr($plain, 0, 4).'-'.Str::substr($plain, 4)];
     }
