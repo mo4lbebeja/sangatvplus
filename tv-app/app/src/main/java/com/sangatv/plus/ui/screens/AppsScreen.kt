@@ -78,14 +78,14 @@ fun AppsScreen(allApps: List<AppDto>, showHdmi: Boolean = true) {
                             .onFailure { Toast.makeText(context, R.string.input_unavailable, Toast.LENGTH_SHORT).show() }
                     }) { focused ->
                         Row(
-                            Modifier.width(300.px).height(110.px)
-                                .card(RoundedCornerShape(20.px), borderColor = if (focused) Sanga.Accent else Sanga.Border, borderWidth = if (focused) 4.px else 1.px)
-                                .padding(horizontal = 28.px),
+                            Modifier.width(230.px).height(80.px)
+                                .card(RoundedCornerShape(14.px), borderColor = if (focused) Sanga.Accent else Sanga.Border, borderWidth = if (focused) 3.px else 1.px)
+                                .padding(horizontal = 22.px),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(18.px),
+                            horizontalArrangement = Arrangement.spacedBy(14.px),
                         ) {
-                            com.sangatv.plus.ui.components.SIcon(com.sangatv.plus.ui.components.SIcons.Hdmi, if (focused) Sanga.Accent else Sanga.Text2, 44.px)
-                            Text(input.label, style = body(26, 700, if (focused) Sanga.Accent else Sanga.Text), maxLines = 1)
+                            com.sangatv.plus.ui.components.SIcon(com.sangatv.plus.ui.components.SIcons.Hdmi, if (focused) Sanga.Accent else Sanga.Text2, 34.px)
+                            Text(input.label, style = body(22, 700, if (focused) Sanga.Accent else Sanga.Text), maxLines = 1)
                         }
                     }
                 }
@@ -97,9 +97,11 @@ fun AppsScreen(allApps: List<AppDto>, showHdmi: Boolean = true) {
             return@Column
         }
         LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            horizontalArrangement = Arrangement.spacedBy(32.px),
-            verticalArrangement = Arrangement.spacedBy(32.px),
+            columns = GridCells.Fixed(6),
+            horizontalArrangement = Arrangement.spacedBy(24.px),
+            verticalArrangement = Arrangement.spacedBy(26.px),
+            // Room for the focus scale and the announcement ticker at the bottom.
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 8.px, bottom = 80.px),
         ) {
             itemsIndexed(apps, key = { _, a -> a.packageName }) { i, app ->
                 val intent = remember(app.packageName) { launchIntent(app.packageName) }
@@ -118,20 +120,20 @@ fun AppsScreen(allApps: List<AppDto>, showHdmi: Boolean = true) {
                 ) { focused ->
                     Column(
                         Modifier.alpha(if (intent == null) 0.45f else 1f),
-                        verticalArrangement = Arrangement.spacedBy(14.px),
+                        verticalArrangement = Arrangement.spacedBy(10.px),
                     ) {
                         Box(
                             Modifier.fillMaxWidth().aspectRatio(16f / 9f)
-                                .card(RoundedCornerShape(20.px), borderColor = if (focused) Sanga.Accent else Sanga.Border, borderWidth = if (focused) 4.px else 1.px),
+                                .card(RoundedCornerShape(14.px), borderColor = if (focused) Sanga.Accent else Sanga.Border, borderWidth = if (focused) 3.px else 1.px),
                             contentAlignment = Alignment.Center,
                         ) {
                             when {
-                                app.iconUrl != null -> AsyncImage(app.iconUrl, app.label, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize().padding(24.px))
-                                banner != null -> Image(banner, app.label, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize().padding(16.px))
-                                else -> Text(app.label.take(1), style = body(64, 800, Sanga.Text3))
+                                app.iconUrl != null -> AsyncImage(app.iconUrl, app.label, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize().padding(14.px))
+                                banner != null -> Image(banner, app.label, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize().padding(8.px))
+                                else -> Text(app.label.take(1), style = body(44, 800, Sanga.Text3))
                             }
                         }
-                        Text(app.label, style = body(24, 600, if (focused) Sanga.Accent else Sanga.Text), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(app.label, style = body(20, 600, if (focused) Sanga.Accent else Sanga.Text), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
