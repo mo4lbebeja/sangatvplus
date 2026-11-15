@@ -135,6 +135,62 @@ class HotelProfilePage extends Page
             ]);
     }
 
+    public function getSubheading(): ?string
+    {
+        $h = HotelProfile::current();
+        $until = $h->service_expires_at?->setTimezone($h->timezone ?: 'Asia/Jakarta')->translatedFormat('d F Y');
+
+        return match ($h->serviceStatus()) {
+            'released' => 'Layanan dilepas: TV sudah kembali ke layar utama bawaan.',
+            'expiring' => "Layanan berlaku sampai {$until}.",
+            default => $until ? "Layanan berlaku sampai {$until}." : 'Layanan aktif.',
+        };
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('exportData')
+                ->label('Ekspor data')
+                ->icon(Heroicon::OutlinedArrowDownTray)
+                ->color('gray')
+                ->url(fn () => route('hotel.export'))
+                ->tooltip('Kamar, tamu, channel, fasilitas, konten, TV, statistik (ZIP berisi CSV). Rahasia tidak ikut.'),
+            Action::make('releaseTvs')
+                ->label('Lepaskan semua TV')
+                ->icon(Heroicon::OutlinedPower)
+                ->color('danger')
+                ->visible(fn () => HotelProfile::current()->serviceStatus() !== 'released')
+                ->modalHeading('Lepaskan semua TV dari SangaTV Plus?')
+                ->modalDescription('Dalam ±1 menit setiap TV yang menyala berhenti menjadi layar utama, memulihkan pengaturannya, lalu kembali ke layar utama bawaan TV dan menawarkan penghapusan aplikasi. TV yang sedang mati menyusul saat dinyalakan. Bisa dibatalkan selama aplikasi belum dihapus dari TV.')
+                ->modalIcon(Heroicon::OutlinedPower)
+                ->schema([
+                    TextInput::make('confirm')->label('Ketik LEPASKAN untuk konfirmasi')->required()->in(['LEPASKAN'])
+                        ->validationMessages(['in' => 'Ketik LEPASKAN (huruf besar).']),
+                ])
+                ->modalSubmitActionLabel('Lepaskan semua TV')
+                ->action(function () {
+                    $h = HotelProfile::current();
+                    $h->forceFill(['service_released_at' => now()])->save();
+                    Audit::log('service.released', $h);
+                    Notification::make()->title('Semua TV akan dilepas dalam ±1 menit')->warning()->send();
+                }),
+            Action::make('restoreService')
+                ->label('Batalkan pelepasan')
+                ->icon(Heroicon::OutlinedArrowUturnLeft)
+                ->color('gray')
+                ->visible(fn () => HotelProfile::current()->service_released_at !== null)
+                ->requiresConfirmation()
+                ->modalDescription('TV yang masih memiliki aplikasi SangaTV Plus akan kembali memakai layar SangaTV Plus dalam ±1 menit.')
+                ->action(function () {
+                    $h = HotelProfile::current();
+                    $h->forceFill(['service_released_at' => null])->save();
+                    Audit::log('service.restored', $h);
+                    Notification::make()->title('Pelepasan dibatalkan')->body($h->serviceStatus() === 'released' ? 'Catatan: masa layanan sudah berakhir, TV tetap dilepas sampai diperpanjang.' : 'TV kembali ke SangaTV Plus dalam ±1 menit.')->success()->send();
+                }),
+        ];
+    }
+
     public function content(Schema $schema): Schema
     {
         return $schema->components([

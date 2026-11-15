@@ -60,9 +60,31 @@ fun HomeMusicPlayer(music: HomeMusic?) {
     }
 }
 
+/** Music files cached on the TV (50 MB) so Home music keeps playing during an internet outage. */
+@OptIn(UnstableApi::class)
+private object MusicCache {
+    @Volatile private var cache: androidx.media3.datasource.cache.SimpleCache? = null
+
+    fun get(context: Context): androidx.media3.datasource.cache.SimpleCache = cache ?: synchronized(this) {
+        cache ?: androidx.media3.datasource.cache.SimpleCache(
+            context.cacheDir.resolve("music"),
+            androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor(50L * 1024 * 1024),
+            androidx.media3.database.StandaloneDatabaseProvider(context),
+        ).also { cache = it }
+    }
+}
+
 @OptIn(UnstableApi::class)
 private fun buildPlayer(context: Context, url: String): ExoPlayer =
     ExoPlayer.Builder(context.applicationContext)
+        .setMediaSourceFactory(
+            androidx.media3.exoplayer.source.DefaultMediaSourceFactory(
+                androidx.media3.datasource.cache.CacheDataSource.Factory()
+                    .setCache(MusicCache.get(context.applicationContext))
+                    .setUpstreamDataSourceFactory(androidx.media3.datasource.DefaultDataSource.Factory(context.applicationContext))
+                    .setFlags(androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR),
+            ),
+        )
         .setAudioAttributes(
             AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(),
             /* handleAudioFocus = */ true,

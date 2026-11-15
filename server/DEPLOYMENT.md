@@ -45,3 +45,16 @@ Rilis final (`assembleRelease`) butuh: keystore, `sangatv.releaseApiBaseUrl=http
 - **Update aplikasi TV (OTA)**: build APK → CMS → Update Aplikasi → *Unggah rilis* (aktifkan) → *Minta semua TV update sekarang*.
   TV yang menyala mengunduh dalam ±1 menit (tanpa tombol ini: cek otomatis tiap 6 jam). TV tanpa Device Owner menampilkan
   dialog "Update?" yang perlu dikonfirmasi; TV Device Owner memasang diam-diam.
+
+## Masa layanan & Mode lepas (akhir kontrak)
+- Atur masa berlaku (oleh Sijalucom, tidak bisa diubah pengguna hotel di CMS):
+  `php artisan sangatv:layanan --sampai=2027-12-31` · tanpa batas: `--sampai=tanpa-batas`
+- 14 hari sebelum berakhir, semua halaman CMS menampilkan banner peringatan.
+- Saat berakhir (atau `--lepas`, atau CMS → Profil Hotel → *Lepaskan semua TV*), setiap TV dalam ±1 menit masuk
+  **Mode lepas**: berhenti jadi layar utama, memulihkan pengaturan TV, menampilkan peluncur netral (semua aplikasi, HDMI,
+  Pengaturan, *Hapus SangaTV Plus*). CMS → TV Terdaftar kolom **Mode** menunjukkan "Dilepas" per TV.
+- Batalkan: `--aktifkan` atau tombol *Batalkan pelepasan* → TV kembali ke layar hotel otomatis.
+- TV yang **30 hari** tidak bisa menghubungi server (server dimatikan) juga lepas sendiri, dan pulih otomatis bila server kembali.
+- TV yang dicabut aksesnya (TV Terdaftar → *Cabut akses*) tidak lagi terjebak di layar pendaftaran; teknisi bisa
+  *Daftarkan TV* ulang dari layar netralnya.
+- **Ekspor data hotel** (ZIP berisi CSV, tanpa rahasia): CMS → Profil Hotel → *Ekspor data*.

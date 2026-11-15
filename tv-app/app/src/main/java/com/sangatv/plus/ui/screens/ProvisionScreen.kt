@@ -45,7 +45,7 @@ import com.sangatv.plus.ui.theme.display
 import com.sangatv.plus.ui.theme.px
 
 @Composable
-fun ProvisionScreen(state: ProvisionState, deviceUid: String, server: String, onSubmit: (String) -> Unit) {
+fun ProvisionScreen(state: ProvisionState, deviceUid: String, server: String, onSubmit: (String) -> Unit, onSkip: (() -> Unit)? = null) {
     var code by remember { mutableStateOf("") }
     var fieldFocused by remember { mutableStateOf(false) }
     val field = remember { FocusRequester() }
@@ -96,6 +96,17 @@ fun ProvisionScreen(state: ProvisionState, deviceUid: String, server: String, on
                         .background(if (focused) Sanga.Accent else Sanga.Accent.copy(alpha = 0.75f), RoundedCornerShape(20.px))
                         .padding(vertical = 22.px),
                 )
+            }
+
+            // Never trap a TV on this screen: the TV stays usable before registration.
+            if (onSkip != null) {
+                Focusable(onClick = onSkip, scaleOnFocus = false) { focused ->
+                    Text(
+                        stringResource(R.string.use_without),
+                        style = body(20, 600, if (focused) Sanga.Accent else Sanga.Text3),
+                        modifier = Modifier.padding(vertical = 6.px, horizontal = 12.px),
+                    )
+                }
             }
 
             Text(

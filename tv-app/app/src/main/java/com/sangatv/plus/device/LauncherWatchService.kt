@@ -12,7 +12,7 @@ class LauncherWatchService : AccessibilityService() {
     private val launchers = AutoStart.STOCK_LAUNCHERS.toSet() + "com.android.launcher3"
 
     override fun onServiceConnected() {
-        AutoStart.openMain(this)
+        AutoStart.openMain(this) // no-op while released (Mode lepas)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {

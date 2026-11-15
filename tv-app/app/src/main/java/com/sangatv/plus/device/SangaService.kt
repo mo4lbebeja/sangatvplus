@@ -61,6 +61,7 @@ class SangaService : Service() {
             }
             if (intent.action == Intent.ACTION_SCREEN_ON) {
                 SleepTimer.restore(this@SangaService)
+                if (ServiceState.isReleased) return // Mode lepas: leave the TV alone
                 TvDefaults.freshSession = true
                 TvDefaults.applyVolume(this@SangaService, repo.bootstrap.value?.config?.startVolume)
             }

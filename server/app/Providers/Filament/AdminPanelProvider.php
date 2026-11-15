@@ -58,6 +58,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('filament.pwa-head'))
             ->renderHook(PanelsRenderHook::BODY_END, fn () => view('filament.pwa-body'))
+            ->renderHook(PanelsRenderHook::CONTENT_START, fn () => view('filament.service-banner'))
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([Dashboard::class])

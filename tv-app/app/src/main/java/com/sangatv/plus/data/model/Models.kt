@@ -35,6 +35,7 @@ data class Bootstrap(
     @SerialName("apps_background_url") val appsBackgroundUrl: String? = null,
     @SerialName("home_music") val homeMusic: HomeMusic? = null,
     @SerialName("technician_pin") val technicianPin: PinHash? = null,
+    val service: ServiceDto? = null,
     /** Hash of the hotel's adult-channel PIN; null = adult channels are not sent at all. */
     @SerialName("adult_pin") val adultPin: PinHash? = null,
     /** Current guest's favourite channel ids (cleared by the server at check-out). */
@@ -190,6 +191,8 @@ data class HeartbeatRequest(
     @SerialName("stock_launcher_active") val stockLauncherActive: Boolean,
     /** false while the TV is in standby (screen off) — shown red in the CMS. */
     @SerialName("screen_on") val screenOn: Boolean,
+    /** TV is in Mode lepas (shown as "Dilepas" in CMS → TV Terdaftar). No default: always sent, so "false" clears it. */
+    @SerialName("service_released") val serviceReleased: Boolean,
 )
 
 @Serializable
@@ -199,7 +202,12 @@ data class HeartbeatResponse(
     val commands: List<CommandDto> = emptyList(),
     /** null = older server (keep what we have). */
     val announcements: List<AnnouncementDto>? = null,
+    val service: ServiceDto? = null,
 )
+
+/** Hotel subscription state; "released" puts the TV in Mode lepas (back to its own launcher). */
+@Serializable
+data class ServiceDto(val status: String = "active", @SerialName("expires_at") val expiresAt: String? = null)
 
 @Serializable
 data class AnnouncementDto(

@@ -70,6 +70,7 @@ class BootstrapController extends Controller
                 'url' => MediaUrl::of($hotel->home_music_path),
                 'volume' => $hotel->home_music_volume,
             ] : null,
+            'service' => $hotel->servicePayload(),
             'technician_pin' => $hotel->technician_pin,
             'adult_pin' => $hotel->adult_pin,
             'favorites' => array_values(array_map('intval', (array) ($guest?->favorite_channel_ids ?? []))),

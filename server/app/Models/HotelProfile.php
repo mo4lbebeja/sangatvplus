@@ -31,6 +31,8 @@ class HotelProfile extends Model
             'show_hdmi_inputs' => 'boolean',
             'adult_pin' => 'array',
             'epg_synced_at' => 'datetime',
+            'service_expires_at' => 'datetime',
+            'service_released_at' => 'datetime',
         ];
     }
 
@@ -75,6 +77,26 @@ class HotelProfile extends Model
     public function verifyTechnicianPin(string $pin): bool
     {
         return self::pinMatches($this->technician_pin, $pin);
+    }
+
+    /** Days before the end date when the CMS starts warning. */
+    public const SERVICE_WARN_DAYS = 14;
+
+    /** "active" | "expiring" | "released" (released manually or the service period has ended). */
+    public function serviceStatus(): string
+    {
+        return match (true) {
+            $this->service_released_at !== null => 'released',
+            $this->service_expires_at !== null && $this->service_expires_at->isPast() => 'released',
+            $this->service_expires_at !== null && $this->service_expires_at->lte(now()->addDays(self::SERVICE_WARN_DAYS)) => 'expiring',
+            default => 'active',
+        };
+    }
+
+    /** Payload sent to TVs in bootstrap and every heartbeat. */
+    public function servicePayload(): array
+    {
+        return ['status' => $this->serviceStatus(), 'expires_at' => $this->service_expires_at?->toIso8601String()];
     }
 
     /** XMLTV sources, one per line. */

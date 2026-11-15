@@ -30,7 +30,7 @@ class KioskManager(private val context: Context) {
 
     /** Packages allowed to run while locked (own app + whitelist + optional extras like Settings). */
     fun configure(allowedPackages: Collection<String>, extra: Collection<String> = emptyList()) {
-        if (!isDeviceOwner) return
+        if (!isDeviceOwner || ServiceState.isReleased) return
         val pkgs = (listOf(context.packageName) + allowedPackages + extra).distinct().toTypedArray()
         dpm.setLockTaskPackages(admin, pkgs)
         dpm.setLockTaskFeatures(
@@ -46,7 +46,7 @@ class KioskManager(private val context: Context) {
     }
 
     fun enterKiosk(activity: Activity) {
-        if (!isDeviceOwner || isInLockTask) return
+        if (!isDeviceOwner || isInLockTask || ServiceState.isReleased) return
         runCatching { activity.startLockTask() }.onFailure { Log.w(TAG, "startLockTask failed", it) }
     }
 
@@ -56,7 +56,7 @@ class KioskManager(private val context: Context) {
 
     /** After provisioning: ADB/developer options off and guest-proof restrictions on. */
     fun harden() {
-        if (!isDeviceOwner) return
+        if (!isDeviceOwner || ServiceState.isReleased) return
         RESTRICTIONS.forEach { runCatching { dpm.addUserRestriction(admin, it) } }
         runCatching { dpm.setGlobalSetting(admin, Settings.Global.ADB_ENABLED, "0") }
     }
@@ -96,6 +96,25 @@ class KioskManager(private val context: Context) {
         return AutoStart.STOCK_LAUNCHERS
             .filter { pkg -> runCatching { context.packageManager.getApplicationInfo(pkg, android.content.pm.PackageManager.MATCH_UNINSTALLED_PACKAGES) }.isSuccess }
             .associateWith { pkg -> runCatching { dpm.setApplicationHidden(admin, pkg, hidden) }.getOrDefault(false) }
+    }
+
+    /**
+     * Mode lepas: give the TV back. HOME no longer forced to SangaTV Plus, Lock Task off, stock launchers
+     * visible again, guest restrictions removed. The app stays Device Owner until [prepareUninstall].
+     */
+    fun releaseAll() {
+        if (!isDeviceOwner) return
+        runCatching { dpm.clearPackagePersistentPreferredActivities(admin, context.packageName) }
+        runCatching { dpm.setLockTaskPackages(admin, emptyArray()) }
+        setStockLaunchersHidden(false)
+        relax()
+    }
+
+    /** Before uninstalling a Device Owner app it must give up Device Owner (irreversible without a reset). */
+    fun prepareUninstall() {
+        if (!isDeviceOwner) return
+        releaseAll()
+        runCatching { dpm.clearDeviceOwnerApp(context.packageName) }.onFailure { Log.w(TAG, "clearDeviceOwnerApp failed", it) }
     }
 
     fun reboot() {

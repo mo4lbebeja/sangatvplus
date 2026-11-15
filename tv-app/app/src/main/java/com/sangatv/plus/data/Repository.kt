@@ -25,6 +25,7 @@ import com.sangatv.plus.data.remote.ApiClient
 import com.sangatv.plus.device.AutoStart
 import com.sangatv.plus.device.KioskManager
 import com.sangatv.plus.device.OtaUpdater
+import com.sangatv.plus.device.ServiceState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -123,6 +124,7 @@ class Repository(
         )
         secure.token = res.token
         _provisioned.value = true
+        if (ServiceState.reason == ServiceState.Reason.Revoked) ServiceState.restore(appContext)
         kiosk.harden()
         refreshAll()
         start()
@@ -138,8 +140,13 @@ class Repository(
         )
     }
 
-    /** Token revoked or rejected: forget it and show the provisioning screen. */
+    /**
+     * Token revoked or rejected: forget it. A TV that was registered before is treated as removed from
+     * the hotel system and goes to Mode lepas (neutral launcher) instead of trapping guests on the
+     * registration screen; the technician can still register it again from there.
+     */
     private fun deprovision() {
+        if (secure.token != null) ServiceState.release(appContext, ServiceState.Reason.Revoked)
         secure.token = null
         _provisioned.value = false
         loopJob?.cancel()
@@ -165,6 +172,8 @@ class Repository(
             _bootstrap.value = b
             save(BOOTSTRAP, Bootstrap.serializer(), b)
             _favorites.value = b.favorites
+            ServiceState.markContact(appContext)
+            ServiceState.onServerStatus(appContext, b.service?.status)
             onAnnouncements(b.announcements)
             kiosk.configure(b.apps.map { it.packageName } + com.sangatv.plus.device.TvDefaults.hdmiHandlerPackages(appContext))
             com.sangatv.plus.device.ScreenTimeout.apply(appContext, b.config.screensaverMinutes)
@@ -201,7 +210,8 @@ class Repository(
 
     /** Programme guide: refetched with the content and at least every hour. */
     private suspend fun refreshEpgLocked() {
-        runCatching { api.epg(24) }
+        // 48 h: the guide keeps working through a long internet outage.
+        runCatching { api.epg(48) }
             .onSuccess { e ->
                 _epg.value = e
                 save(EPG, EpgResponse.serializer(), e)
@@ -276,6 +286,7 @@ class Repository(
         loopJob = scope.launch {
             refreshAll()
             while (isActive && secure.token != null) {
+                ServiceState.checkOffline(appContext)
                 beat()
                 flushViews()
                 maybeRefreshEpg()
@@ -311,10 +322,13 @@ class Repository(
                     canInstallUpdates = AutoStart.canInstallUpdates(appContext),
                     stockLauncherActive = AutoStart.isStockLauncherActive(appContext),
                     screenOn = appContext.getSystemService(android.os.PowerManager::class.java)?.isInteractive ?: true,
+                    serviceReleased = ServiceState.isReleased,
                 ),
             )
             _online.value = true
-            res.announcements?.let { onAnnouncements(it) }
+            ServiceState.markContact(appContext)
+            ServiceState.onServerStatus(appContext, res.service?.status)
+            res.announcements?.let { if (!ServiceState.isReleased) onAnnouncements(it) }
             if (lastContentVersion != null && lastContentVersion != res.contentVersion) refreshAll()
             lastContentVersion = res.contentVersion
             res.commands.forEach { execute(it) }

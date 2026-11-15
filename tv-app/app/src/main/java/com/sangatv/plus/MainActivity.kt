@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.foundation.focusable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -48,6 +49,8 @@ import com.sangatv.plus.ui.screens.ChannelScreen
 import com.sangatv.plus.ui.screens.HomeScreen
 import com.sangatv.plus.ui.screens.InfoScreen
 import com.sangatv.plus.ui.screens.ProvisionScreen
+import com.sangatv.plus.ui.screens.NeutralMode
+import com.sangatv.plus.ui.screens.ReleasedScreen
 import com.sangatv.plus.ui.screens.TechnicianScreen
 import com.sangatv.plus.ui.theme.Sanga
 import com.sangatv.plus.ui.theme.px
@@ -90,7 +93,8 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         val kiosk = (application as SangaApp).kiosk
         kiosk.configure(vm.bootstrap.value?.apps.orEmpty().map { it.packageName })
-        if (vm.screen.value != Screen.Technician) kiosk.enterKiosk(this)
+        if (com.sangatv.plus.device.ServiceState.isReleased) kiosk.exitKiosk(this)
+        else if (vm.screen.value != Screen.Technician) kiosk.enterKiosk(this)
         (application as SangaApp).repository.start()
     }
 
@@ -147,7 +151,10 @@ private fun Root(vm: AppViewModel) {
     val dismissed by vm.dismissed.collectAsStateWithLifecycle()
     val forceChannel by vm.repo.forceChannel.collectAsStateWithLifecycle()
     val sleepEnds by SleepTimer.endsAt.collectAsStateWithLifecycle()
+    val released by com.sangatv.plus.device.ServiceState.released.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    var neutral by remember { mutableStateOf(false) } // unregistered TV: guest chose "use without"
+    var reRegister by remember { mutableStateOf(false) } // revoked TV: technician registers again
 
     // Announcement "pindahkan ke channel": open the TV screen; ChannelScreen tunes and consumes it.
     LaunchedEffect(forceChannel, provisioned) {
@@ -180,6 +187,7 @@ private fun Root(vm: AppViewModel) {
         Modifier.fillMaxSize().background(Sanga.Deepest).onPreviewKeyEvent { e ->
             if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
             val volume = e.key == Key.VolumeUp || e.key == Key.VolumeDown || e.key == Key.VolumeMute
+            if (released) return@onPreviewKeyEvent false
             when {
                 sleepSecs >= 0 && !volume -> { SleepTimer.cancel(); true }
                 modal != null && !volume -> {
@@ -192,8 +200,26 @@ private fun Root(vm: AppViewModel) {
             }
         },
     ) {
+        // Mode lepas: neutral launcher, SangaTV Plus no longer takes over the TV.
+        if (released && !reRegister) {
+            val reason = com.sangatv.plus.device.ServiceState.reason
+            ReleasedScreen(
+                mode = when (reason) {
+                    com.sangatv.plus.device.ServiceState.Reason.Revoked -> NeutralMode.Revoked
+                    com.sangatv.plus.device.ServiceState.Reason.Offline -> NeutralMode.Offline
+                    else -> NeutralMode.Released
+                },
+                onRegister = if (reason == com.sangatv.plus.device.ServiceState.Reason.Revoked) ({ reRegister = true }) else null,
+            )
+            return@Box
+        }
         if (!provisioned) {
-            ProvisionScreen(provisionState, vm.repo.deviceUid, vm.repo.apiHost, vm::provision)
+            if (neutral) {
+                ReleasedScreen(NeutralMode.Unregistered, onRegister = { neutral = false })
+            } else {
+                BackHandler(enabled = reRegister) { reRegister = false }
+                ProvisionScreen(provisionState, vm.repo.deviceUid, vm.repo.apiHost, vm::provision, onSkip = { neutral = true })
+            }
             return@Box
         }
         when (val s = screen) {

@@ -85,6 +85,12 @@ class DeviceResource extends Resource
                         'standby' => 'Terhubung, layar mati'.($r->screen_changed_at ? ' sejak '.$r->screen_changed_at->diffForHumans() : ''),
                         default => $r->last_seen_at ? 'Tidak ada sinyal sejak '.$r->last_seen_at->diffForHumans() : 'Belum pernah terhubung',
                     }),
+                TextColumn::make('service_released')->label('Mode')->badge()
+                    ->state(fn (Device $r) => $r->service_released ? 'released' : 'hotel')
+                    ->formatStateUsing(fn (string $state) => $state === 'released' ? 'Dilepas' : 'Layar hotel')
+                    ->color(fn (string $state) => $state === 'released' ? 'warning' : 'gray')
+                    ->tooltip(fn (Device $r) => $r->service_released ? 'TV sudah kembali ke layar utama bawaan (layanan dilepas / tidak terhubung)' : 'SangaTV Plus menjadi layar utama')
+                    ->toggleable(),
                 IconColumn::make('autostart')->label('Mulai otomatis')
                     ->state(fn (Device $r) => $r->autoStartState() ?? 'unknown')
                     ->icon(fn (string $state) => match ($state) {

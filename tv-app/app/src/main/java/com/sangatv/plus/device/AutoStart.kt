@@ -50,7 +50,8 @@ object AutoStart {
 
     fun openMain(context: Context, debounceMs: Long = 3000, goHome: Boolean = false) {
         val now = System.currentTimeMillis()
-        if (maintenance || now - lastOpen < debounceMs) return
+        // Mode lepas: never pull SangaTV Plus to the front again.
+        if (maintenance || ServiceState.isReleased || now - lastOpen < debounceMs) return
         lastOpen = now
         runCatching {
             context.startActivity(

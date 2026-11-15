@@ -24,6 +24,7 @@ class Device extends Model
     {
         return [
             'status' => DeviceStatus::class,
+            'service_released' => 'boolean',
             'kiosk_enabled' => 'boolean',
             'device_owner' => 'boolean',
             'is_default_home' => 'boolean',

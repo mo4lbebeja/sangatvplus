@@ -34,6 +34,7 @@ class SangaApp : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
         super.onCreate()
+        com.sangatv.plus.device.ServiceState.init(this)
         secure = SecureStore(this)
         client = ApiClient { secure.token }
         kiosk = KioskManager(this)

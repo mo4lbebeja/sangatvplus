@@ -98,4 +98,17 @@
     <string name="facilities_sub">Jam operasional dan lokasi fasilitas di %1$s.</string>
     <string name="dining_sub">Restoran dan layanan pesan antar ke kamar.</string>
     <string name="gallery_sub">Suasana %1$s dalam foto.</string>
+    <string name="released_title">Layanan SangaTV Plus telah berakhir</string>
+    <string name="released_desc">TV ini sudah kembali seperti TV biasa. Silakan pilih aplikasi atau input di bawah.</string>
+    <string name="revoked_title">TV ini tidak lagi terdaftar</string>
+    <string name="revoked_desc">TV dikeluarkan dari sistem hotel. TV bisa dipakai seperti biasa, atau didaftarkan ulang oleh teknisi.</string>
+    <string name="offline_release_title">SangaTV Plus tidak terhubung ke server</string>
+    <string name="offline_release_desc">Server hotel tidak dapat dihubungi selama %1$d hari, jadi TV kembali seperti TV biasa. Tampilan hotel akan kembali otomatis begitu server terhubung lagi.</string>
+    <string name="unregistered_title">Gunakan TV</string>
+    <string name="unregistered_desc">TV ini belum didaftarkan ke SangaTV Plus. Aplikasi dan input TV tetap bisa dipakai.</string>
+    <string name="open_tv_home">Layar utama TV</string>
+    <string name="tv_settings">Pengaturan TV</string>
+    <string name="register_tv">Daftarkan TV</string>
+    <string name="uninstall_app">Hapus SangaTV Plus</string>
+    <string name="use_without">Gunakan TV tanpa SangaTV Plus</string>
 </resources>

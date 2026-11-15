@@ -98,4 +98,17 @@
     <string name="facilities_sub">Opening hours and locations of facilities at %1$s.</string>
     <string name="dining_sub">Restaurant and in-room dining.</string>
     <string name="gallery_sub">%1$s in pictures.</string>
+    <string name="released_title">SangaTV Plus service has ended</string>
+    <string name="released_desc">This TV now works like a normal TV again. Choose an app or input below.</string>
+    <string name="revoked_title">This TV is no longer registered</string>
+    <string name="revoked_desc">The TV was removed from the hotel system. Use it as a normal TV, or a technician can register it again.</string>
+    <string name="offline_release_title">SangaTV Plus cannot reach its server</string>
+    <string name="offline_release_desc">The hotel server has been unreachable for %1$d days, so the TV works like a normal TV. The hotel screen returns automatically once the server is reachable.</string>
+    <string name="unregistered_title">Use the TV</string>
+    <string name="unregistered_desc">This TV is not registered with SangaTV Plus yet. Apps and inputs can still be used.</string>
+    <string name="open_tv_home">TV home screen</string>
+    <string name="tv_settings">TV settings</string>
+    <string name="register_tv">Register TV</string>
+    <string name="uninstall_app">Remove SangaTV Plus</string>
+    <string name="use_without">Use the TV without SangaTV Plus</string>
 </resources>

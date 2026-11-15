@@ -35,6 +35,7 @@ class HeartbeatController extends Controller
             'can_install_updates' => ['nullable', 'boolean'],
             'stock_launcher_active' => ['nullable', 'boolean'],
             'screen_on' => ['nullable', 'boolean'],
+            'service_released' => ['nullable', 'boolean'],
         ]);
 
         if (array_key_exists('screen_on', $data) && $data['screen_on'] !== null && $data['screen_on'] !== $device->screen_on) {
@@ -54,6 +55,8 @@ class HeartbeatController extends Controller
         return response()->json([
             'server_time' => now()->toIso8601String(),
             'content_version' => $this->contentVersion($device),
+            // Release (service ended) must reach every TV quickly, so it rides on the heartbeat.
+            'service' => HotelProfile::current()->servicePayload(),
             'announcements' => ($room = $device->room()->first()) ? Announcement::payloadFor($room) : [],
             'commands' => $commands->map(fn (DeviceCommand $c) => [
                 'id' => $c->id,

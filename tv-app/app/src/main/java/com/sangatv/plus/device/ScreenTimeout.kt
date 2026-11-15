@@ -16,7 +16,7 @@ object ScreenTimeout {
         runCatching { Settings.System.getInt(context.contentResolver, Settings.System.SCREEN_OFF_TIMEOUT) / 60_000 }.getOrDefault(-1)
 
     fun apply(context: Context, minutes: Int) {
-        if (minutes <= 0 || !canWrite(context)) return
+        if (minutes <= 0 || !canWrite(context) || ServiceState.isReleased) return
         val ms = minutes * 60_000
         val cr = context.contentResolver
         if (runCatching { Settings.System.getInt(cr, Settings.System.SCREEN_OFF_TIMEOUT) }.getOrNull() == ms) return
