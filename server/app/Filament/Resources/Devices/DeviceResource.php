@@ -67,7 +67,8 @@ class DeviceResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('room.number')->label('Kamar')->sortable()->searchable()->icon(Heroicon::OutlinedHomeModern)->iconColor('primary')->weight('bold'),
-                TextColumn::make('model')->label('Model')->searchable()->toggleable()->icon(Heroicon::OutlinedTv)->description(fn (Device $record) => $record->android_version ? 'Android '.$record->android_version : null),
+                TextColumn::make('model')->label('Model')->searchable()->toggleable()->icon(Heroicon::OutlinedTv),
+                TextColumn::make('android_version')->label('Android')->placeholder('—')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('device_uid')->label('ID perangkat')->limit(14)->copyable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('status')->badge(),
                 IconColumn::make('online')->label('Online')->boolean()->trueIcon(Heroicon::OutlinedSignal)->falseIcon(Heroicon::OutlinedSignalSlash)->state(fn (Device $r) => $r->isOnline()),

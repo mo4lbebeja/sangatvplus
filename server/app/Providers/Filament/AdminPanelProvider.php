@@ -53,7 +53,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Konten'),
                 NavigationGroup::make('Siaran'),
                 NavigationGroup::make('Perangkat'),
-                NavigationGroup::make('Integrasi PMS'),
+                NavigationGroup::make('Integrasi PMS')->collapsed(),
                 NavigationGroup::make('Sistem')->collapsed(),
             ])
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('filament.pwa-head'))

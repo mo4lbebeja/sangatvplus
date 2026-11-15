@@ -76,7 +76,8 @@ class GuestResource extends Resource
             ->columns([
                 TextColumn::make('room.number')->label('Kamar')->sortable()->searchable()->icon(Heroicon::OutlinedHomeModern)->iconColor('primary')->weight('bold'),
                 TextColumn::make('salutation')->label('Sapaan'),
-                TextColumn::make('name')->label('Nama')->searchable()->weight('semibold')->description(fn (Guest $record) => $record->language === 'en' ? 'English' : 'Indonesia'),
+                TextColumn::make('name')->label('Nama')->searchable()->weight('semibold'),
+                TextColumn::make('language')->label('Bahasa')->formatStateUsing(fn (string $state) => $state === 'en' ? 'English' : 'Indonesia')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('status')->badge(),
                 TextColumn::make('checked_in_at')->label('Check-in')->dateTime('d M Y H:i')->sortable()->icon(Heroicon::OutlinedCalendarDays)->color('gray'),
                 TextColumn::make('checked_out_at')->label('Check-out')->dateTime('d M Y H:i')->placeholder('—'),

@@ -66,7 +66,7 @@ class FacilityResource extends Resource
     {
         return $table
             ->columns([
-                ImageColumn::make('image_path')->label('')->disk('public')->imageHeight(40),
+                ImageColumn::make('image_path')->label('')->disk('public')->imageHeight(30),
                 TextColumn::make('name')->label('Nama')->searchable()->weight('semibold'),
                 TextColumn::make('category')->label('Kategori')->badge(),
                 TextColumn::make('location')->label('Lokasi')->icon(Heroicon::OutlinedMapPin)->color('gray'),

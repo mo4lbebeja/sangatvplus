@@ -113,7 +113,8 @@ class ChannelResource extends Resource
             ->columns([
                 TextColumn::make('number')->label('No')->sortable()->searchable()->weight('bold')->color('primary')->formatStateUsing(fn ($state) => str_pad((string) $state, 3, '0', STR_PAD_LEFT)),
                 ImageColumn::make('logo_path')->label('')->disk('public')->height(28),
-                TextColumn::make('name')->label('Nama')->searchable()->weight('semibold')->description(fn (Channel $record) => $record->provider?->name),
+                TextColumn::make('name')->label('Nama')->searchable()->weight('semibold'),
+                TextColumn::make('provider.name')->label('Penyedia')->placeholder('—')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('category.name')->label('Kategori')->badge()->color('gray')->icon(Heroicon::OutlinedTag),
                 TextColumn::make('source_type')->label('Sumber')->badge()
                     ->color(fn (SourceType $state) => $state->isProvider() ? 'warning' : 'info'),

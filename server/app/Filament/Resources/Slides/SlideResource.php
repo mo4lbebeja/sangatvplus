@@ -21,7 +21,6 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Table;
-use Illuminate\Support\Str;
 use UnitEnum;
 
 class SlideResource extends Resource
@@ -68,9 +67,10 @@ class SlideResource extends Resource
     {
         return $table
             ->columns([
-                ImageColumn::make('image_path')->label('')->disk('public')->imageHeight(48),
+                ImageColumn::make('image_path')->label('')->disk('public')->imageHeight(30),
                 TextColumn::make('kicker')->label('Kicker')->toggleable(),
-                TextColumn::make('title')->label('Judul')->searchable()->weight('semibold')->description(fn (Slide $record) => $record->description ? Str::limit($record->description, 60) : null),
+                TextColumn::make('title')->label('Judul')->searchable()->weight('semibold'),
+                TextColumn::make('description')->label('Deskripsi')->limit(50)->placeholder('—')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('starts_at')->label('Mulai')->dateTime('d M Y')->placeholder('Selalu')->icon(Heroicon::OutlinedCalendar)->color('gray'),
                 TextColumn::make('ends_at')->label('Sampai')->dateTime('d M Y')->placeholder('—'),
                 ToggleColumn::make('is_active')->label('Aktif'),
