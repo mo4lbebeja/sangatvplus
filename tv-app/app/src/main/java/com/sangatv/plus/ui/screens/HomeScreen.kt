@@ -135,16 +135,17 @@ fun HomeScreen(data: Bootstrap?, online: Boolean, onOpen: (Screen) -> Unit) {
         AnimatedContent(
             targetState = slide,
             transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(300)) },
-            modifier = Modifier.offset(96.px, 330.px).width(1000.px),
+            // Anchored just above the slide dots; the kicker is the big line, the title a smaller one.
+            modifier = Modifier.align(Alignment.BottomStart).padding(start = 96.px, bottom = 240.px).width(1100.px),
             label = "slide-text",
         ) { s ->
             if (s != null) {
-                Column(verticalArrangement = Arrangement.spacedBy(26.px)) {
-                    s.kicker?.let { Text(it.uppercase(), style = display(40, 0.1f, Sanga.Text2)) }
-                    Text(s.title.uppercase(), style = display(58, 0.06f).copy(lineHeight = display(58).fontSize * 1.25f), maxLines = 3)
-                    Box(Modifier.padding(top = 8.px).width(340.px).height(2.px).background(Sanga.Accent))
+                Column(verticalArrangement = Arrangement.spacedBy(14.px)) {
+                    s.kicker?.let { Text(it.uppercase(), style = display(56, 0.06f).copy(lineHeight = display(56).fontSize * 1.2f), maxLines = 2) }
+                    Text(s.title.uppercase(), style = display(28, 0.1f, Sanga.Text2).copy(lineHeight = display(28).fontSize * 1.35f), maxLines = 2)
+                    Box(Modifier.padding(vertical = 6.px).width(300.px).height(2.px).background(Sanga.Accent))
                     s.description?.let {
-                        Text(it, style = body(26, 400, Sanga.Text2).copy(lineHeight = body(26).fontSize * 1.5f), modifier = Modifier.widthIn(max = 760.px))
+                        Text(it, style = body(24, 400, Sanga.Text2).copy(lineHeight = body(24).fontSize * 1.5f), maxLines = 3, modifier = Modifier.widthIn(max = 820.px))
                     }
                 }
             }
@@ -298,14 +299,14 @@ private fun BottomBar(data: Bootstrap?, now: java.time.ZonedDateTime, onOpen: (S
                         modifier = Modifier.background(Sanga.NavyActive, RoundedCornerShape(6.px)).padding(horizontal = 14.px, vertical = 6.px),
                     )
                 }
+                // Two lines: "Selamat datang" / "Bapak Nafisha".
                 val guest = data?.guest
-                Text(
-                    if (guest != null) stringResource(R.string.welcome_guest, guest.displayName) else stringResource(R.string.welcome_default),
-                    style = body(24, 500, Sanga.BarText),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
+                Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(2.px)) {
+                    Text(stringResource(R.string.welcome_default), style = body(16, 500, Sanga.BarMuted), maxLines = 1)
+                    if (guest != null) {
+                        Text(guest.displayName, style = body(24, 700, Sanga.BarText), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
             }
         }
     }
