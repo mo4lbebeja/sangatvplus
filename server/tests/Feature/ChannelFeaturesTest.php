@@ -5,6 +5,7 @@ use App\Filament\Pages\ChannelStatsPage;
 use App\Filament\Pages\HotelProfilePage;
 use App\Filament\Resources\Announcements\Pages\ManageAnnouncements;
 use App\Filament\Resources\Channels\Pages\ManageChannels;
+use App\Filament\Resources\Slides\Pages\ManageSlides;
 use App\Mail\ChannelUptimeReport;
 use App\Models\Announcement;
 use App\Models\Channel;
@@ -15,6 +16,7 @@ use App\Models\EpgProgramme;
 use App\Models\Guest;
 use App\Models\HotelProfile;
 use App\Models\Room;
+use App\Models\Slide;
 use App\Models\User;
 use App\Services\ChannelStats;
 use App\Services\EpgImporter;
@@ -224,4 +226,23 @@ it('runs EPG sync from the channel page and renders the stats page', function ()
 
     ChannelView::query()->create(['channel_id' => $c->id, 'started_at' => now()->subHour(), 'seconds' => 3600]);
     Livewire::test(ChannelStatsPage::class)->assertSee('Metro TV')->set('days', 30)->assertSee('1,0 jam');
+});
+
+it('uses one slide as the Apps-screen background', function () {
+    $this->actingAs(User::factory()->create(['role' => UserRole::Admin]));
+    $a = Slide::query()->create(['title' => 'A', 'image_path' => 'https://cdn.example/a.jpg', 'is_apps_background' => true]);
+    $b = Slide::query()->create(['title' => 'B', 'image_path' => 'https://cdn.example/b.jpg']);
+
+    expect(Slide::appsBackgroundUrl())->toBe('https://cdn.example/a.jpg');
+
+    // Toggle in the CMS table: B becomes the background, A is switched off.
+    Livewire::test(ManageSlides::class)
+        ->call('updateTableColumnState', 'is_apps_background', (string) $b->id, true);
+    expect($b->fresh()->is_apps_background)->toBeTrue()->and($a->fresh()->is_apps_background)->toBeFalse();
+
+    tvFor(Room::factory()->create());
+    $this->getJson('/api/v1/bootstrap')->assertOk()->assertJsonPath('apps_background_url', 'https://cdn.example/b.jpg');
+
+    $b->update(['is_apps_background' => false]);
+    expect(Slide::appsBackgroundUrl())->toBeNull();
 });

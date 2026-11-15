@@ -31,6 +31,8 @@ data class Bootstrap(
     val guest: GuestInfo? = null,
     val slides: List<SlideDto> = emptyList(),
     val apps: List<AppDto> = emptyList(),
+    /** Slide image chosen in the CMS as the "Aplikasi" screen background; null = plain theme. */
+    @SerialName("apps_background_url") val appsBackgroundUrl: String? = null,
     @SerialName("home_music") val homeMusic: HomeMusic? = null,
     @SerialName("technician_pin") val technicianPin: PinHash? = null,
     /** Hash of the hotel's adult-channel PIN; null = adult channels are not sent at all. */

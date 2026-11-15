@@ -48,7 +48,7 @@ import com.sangatv.plus.ui.theme.px
 
 /** Only apps whitelisted in the CMS are shown (and allowed in kiosk mode). */
 @Composable
-fun AppsScreen(allApps: List<AppDto>, showHdmi: Boolean = true) {
+fun AppsScreen(allApps: List<AppDto>, showHdmi: Boolean = true, backgroundUrl: String? = null) {
     val context = LocalContext.current
     val pm = context.packageManager
     val first = remember { FocusRequester() }
@@ -59,8 +59,22 @@ fun AppsScreen(allApps: List<AppDto>, showHdmi: Boolean = true) {
     val apps = remember(allApps) { allApps.filter { launchIntent(it.packageName) != null } }
     LaunchedEffect(apps.isNotEmpty()) { if (apps.isNotEmpty()) runCatching { first.requestFocus() } }
 
+    // Optional photo background (a Home slide chosen in the CMS) under a dark scrim, so tiles stay readable.
+    Box(Modifier.fillMaxSize().background(Sanga.Background)) {
+        if (backgroundUrl != null) {
+            AsyncImage(backgroundUrl, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            Box(
+                Modifier.fillMaxSize().background(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        0f to Sanga.Deepest.copy(alpha = 0.72f),
+                        0.45f to Sanga.Deepest.copy(alpha = 0.80f),
+                        1f to Sanga.Deepest.copy(alpha = 0.92f),
+                    ),
+                ),
+            )
+        }
     Column(
-        Modifier.fillMaxSize().background(Sanga.Background).padding(start = 96.px, top = 72.px, end = 96.px, bottom = 56.px),
+        Modifier.fillMaxSize().padding(start = 96.px, top = 72.px, end = 96.px, bottom = 56.px),
         verticalArrangement = Arrangement.spacedBy(40.px),
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -138,6 +152,7 @@ fun AppsScreen(allApps: List<AppDto>, showHdmi: Boolean = true) {
                 }
             }
         }
+    }
     }
 }
 

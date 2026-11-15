@@ -60,6 +60,7 @@ class BootstrapController extends Controller
                 'description' => $s->description,
                 'image_url' => MediaUrl::of($s->image_path),
             ]),
+            'apps_background_url' => Slide::appsBackgroundUrl(),
             'apps' => AppWhitelist::query()->where('is_active', true)->orderBy('sort_order')->get()->map(fn (AppWhitelist $a) => [
                 'package_name' => $a->package_name,
                 'label' => $a->label,

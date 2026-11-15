@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Support\ImageOptimizer;
+use App\Support\MediaUrl;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -21,11 +22,24 @@ class Slide extends Model
                 $slide->image_path = ImageOptimizer::cover('public', $slide->image_path, 1920, 1080);
             }
         });
+
+        // Only one slide can be the Apps-screen background: turning it on elsewhere turns the others off.
+        static::saved(function (Slide $slide) {
+            if ($slide->is_apps_background && $slide->wasChanged('is_apps_background')) {
+                static::query()->whereKeyNot($slide->getKey())->where('is_apps_background', true)->update(['is_apps_background' => false]);
+            }
+        });
+    }
+
+    /** Background image URL for the TV "Aplikasi" screen, or null for the plain theme background. */
+    public static function appsBackgroundUrl(): ?string
+    {
+        return MediaUrl::of(static::query()->where('is_apps_background', true)->whereNotNull('image_path')->value('image_path'));
     }
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean', 'starts_at' => 'datetime', 'ends_at' => 'datetime'];
+        return ['is_active' => 'boolean', 'is_apps_background' => 'boolean', 'starts_at' => 'datetime', 'ends_at' => 'datetime'];
     }
 
     public function scopeVisible(Builder $q): Builder

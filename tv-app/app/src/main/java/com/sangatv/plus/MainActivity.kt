@@ -214,7 +214,7 @@ private fun Root(vm: AppViewModel) {
             }
             Screen.Apps -> {
                 BackHandler { vm.goHome() }
-                AppsScreen(bootstrap?.apps.orEmpty(), bootstrap?.config?.showHdmiInputs ?: true)
+                AppsScreen(bootstrap?.apps.orEmpty(), bootstrap?.config?.showHdmiInputs ?: true, bootstrap?.appsBackgroundUrl)
             }
             Screen.Technician -> {
                 BackHandler { vm.goHome() }
