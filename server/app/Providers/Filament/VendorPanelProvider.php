@@ -2,17 +2,19 @@
 
 namespace App\Providers\Filament;
 
+use App\Vendor\Pages\Dashboard;
 use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
+use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -21,9 +23,8 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 /**
- * Sijalucom vendor panel (/sijalucom): every hotel renting SangaTV Plus — create hotels, rental period,
- * suspend, TVs online, app versions, backups. Separate accounts (central database), two-factor required.
- * No hotel database is opened here except briefly to read numbers.
+ * Sijalucom Console (/sijalucom): the owner's control room for every hotel renting SangaTV Plus —
+ * clients, monthly rentals, invoices, business analytics, reports, staff. Separate accounts, two-factor required.
  */
 class VendorPanelProvider extends PanelProvider
 {
@@ -35,16 +36,38 @@ class VendorPanelProvider extends PanelProvider
             ->authGuard('vendor')
             ->login()
             ->profile(isSimple: false)
-            ->multiFactorAuthentication([AppAuthentication::make()->recoverable()->brandName('SangaTV Plus Vendor')], isRequired: true)
-            ->brandName('SangaTV Plus · Sijalucom')
+            ->multiFactorAuthentication([AppAuthentication::make()->recoverable()->brandName('Sijalucom Console')], isRequired: true)
+            ->brandName('Sijalucom Console')
+            ->brandLogo(fn () => view('vendor-console.brand'))
+            ->brandLogoHeight('2.25rem')
             ->favicon(asset('icons/favicon-64.png'))
             ->font('Plus Jakarta Sans', url: asset('css/sangatv-fonts.css'), provider: LocalFontProvider::class)
-            ->colors(['primary' => Color::Indigo, 'gray' => Color::Slate, 'danger' => Color::Rose, 'warning' => Color::Amber, 'success' => Color::Emerald])
+            ->colors([
+                'primary' => Color::hex('#4F46E5'),
+                'gray' => Color::Slate,
+                'info' => Color::Sky,
+                'success' => Color::Emerald,
+                'warning' => Color::Amber,
+                'danger' => Color::Rose,
+            ])
+            ->sidebarWidth('16rem')
+            ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth(Width::Full)
             ->spa()
+            ->globalSearch(false)
+            ->databaseNotifications(false)
+            ->navigationGroups([
+                NavigationGroup::make('Klien'),
+                NavigationGroup::make('Keuangan'),
+                NavigationGroup::make('Analisa'),
+                NavigationGroup::make('Sistem')->collapsed(),
+            ])
+            ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('vendor-console.head'))
             ->discoverResources(in: app_path('Vendor/Resources'), for: 'App\Vendor\Resources')
+            ->discoverPages(in: app_path('Vendor/Pages'), for: 'App\Vendor\Pages')
             ->discoverWidgets(in: app_path('Vendor/Widgets'), for: 'App\Vendor\Widgets')
             ->pages([Dashboard::class])
+            ->widgets([])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

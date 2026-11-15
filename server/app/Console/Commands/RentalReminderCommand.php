@@ -45,7 +45,7 @@ class RentalReminderCommand extends Command
                 .($contact ? " — kontak: {$contact}" : '');
         })->implode("\n");
 
-        $notifier->sendToVendor('🗓️ Masa sewa hotel', $lines."\n\nPerpanjang di panel vendor: ".url('/sijalucom/hotels'));
+        $notifier->sendToVendor('🗓️ Masa sewa hotel', $lines."\n\nPerpanjang di panel vendor: ".url('/sijalucom/hotel'));
         $this->line($lines);
 
         return self::SUCCESS;

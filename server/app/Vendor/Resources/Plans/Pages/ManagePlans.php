@@ -1,0 +1,19 @@
+<?php
+
+namespace App\Vendor\Resources\Plans\Pages;
+
+use App\Vendor\Resources\Plans\PlanResource;
+use Filament\Actions\CreateAction;
+use Filament\Resources\Pages\ManageRecords;
+
+class ManagePlans extends ManageRecords
+{
+    protected static string $resource = PlanResource::class;
+
+    protected ?string $subheading = 'Harga sewa per bulan = harga dasar + (jumlah TV − TV termasuk) × harga per TV.';
+
+    protected function getHeaderActions(): array
+    {
+        return [CreateAction::make()->label('Paket baru')];
+    }
+}

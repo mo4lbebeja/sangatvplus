@@ -1,8 +1,13 @@
 <?php
 
+use App\Mail\InvoiceMail;
 use App\Models\AppRelease;
 use App\Models\AuditLog;
 use App\Models\Central\Hotel;
+use App\Models\Central\Invoice;
+use App\Models\Central\Plan;
+use App\Models\Central\VendorActivity;
+use App\Models\Central\VendorSetting;
 use App\Models\Central\VendorUser;
 use App\Models\Device;
 use App\Models\HotelProfile;
@@ -12,12 +17,15 @@ use App\Models\Room;
 use App\Models\User;
 use App\Services\Notifier;
 use App\Tenancy\HotelManager;
+use App\Vendor\Billing;
 use App\Vendor\Impersonation;
 use App\Vendor\Resources\Hotels\Pages\ManageHotels;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -161,9 +169,15 @@ it('tells older TVs their hotel code in the bootstrap', function () {
 
 // ------------------------------------------------------------------ vendor panel (/sijalucom)
 
-function vendorLogin(): VendorUser
+/** Rp 500.000 for the first 10 TVs, Rp 50.000 per extra TV, per month (20 TVs = Rp 1.000.000 + 500.000). */
+function testPlan(): Plan
 {
-    $v = VendorUser::query()->create(['name' => 'Sijalucom', 'email' => 'ops@sijalucom.test', 'password' => 'rahasia-panjang-1']);
+    return Plan::query()->firstOrCreate(['code' => 'pro'], ['name' => 'Pro', 'base_price' => 1_000_000, 'included_tvs' => 10, 'price_per_tv' => 50_000]);
+}
+
+function vendorLogin(string $role = 'owner'): VendorUser
+{
+    $v = VendorUser::query()->create(['name' => 'Sijalucom', 'email' => "{$role}@sijalucom.test", 'role' => $role, 'password' => 'rahasia-panjang-1']);
     $v->forceFill(['app_authentication_secret' => 'JBSWY3DPEHPK3PXP'])->save();
     test()->actingAs($v, 'vendor');
     Filament\Facades\Filament::setCurrentPanel(Filament\Facades\Filament::getPanel('vendor'));
@@ -177,8 +191,8 @@ it('keeps hotel staff out of the vendor panel and vendor staff out of hotel data
     $this->actingAs($staff)->get('/sijalucom')->assertRedirect('/sijalucom/login');
     app('auth')->forgetGuards();
     vendorLogin();
-    $this->get('/sijalucom')->assertOk()->assertSee('Hotel aktif');
-    $this->get('/sijalucom/hotels')->assertOk()->assertSee('alpha')->assertSee('bravo');
+    $this->get('/sijalucom')->assertOk()->assertSee('Pendapatan berulang');
+    $this->get('/sijalucom/hotel')->assertOk()->assertSee('alpha')->assertSee('bravo');
 });
 
 it('lets Sijalucom create a hotel with its own database, admin and the current app release', function () {
@@ -187,11 +201,14 @@ it('lets Sijalucom create a hotel with its own database, admin and the current a
     ]));
     vendorLogin();
     Livewire\Livewire::test(ManageHotels::class)
-        ->callAction('create', ['slug' => 'charlie', 'name' => 'Hotel Charlie', 'admin_email' => 'gm@charlie.test', 'service_expires_at' => '2027-12-31'])
-        ->assertHasNoActionErrors()->assertNotified('Hotel Hotel Charlie siap');
+        ->callAction('create', ['slug' => 'charlie', 'name' => 'Hotel Charlie', 'admin_email' => 'gm@charlie.test', 'plan_id' => testPlan()->id,
+            'tv_quota' => 20, 'billing_months' => 3, 'discount_percent' => 0, 'auto_invoice' => true, 'activation' => 'paid', 'months' => 3, 'method' => 'transfer'])
+        ->assertHasNoActionErrors()->assertNotified();
 
     $c = Hotel::query()->where('slug', 'charlie')->firstOrFail();
-    expect($c->database)->toBe('sangatv_test_charlie')->and($c->service_expires_at->setTimezone('Asia/Jakarta')->toDateString())->toBe('2027-12-31');
+    $end = now('Asia/Jakarta')->startOfDay()->addMonthsNoOverflow(3)->subDay()->toDateString();
+    expect($c->database)->toBe('sangatv_test_charlie')->and($c->service_expires_at->setTimezone('Asia/Jakarta')->toDateString())->toBe($end)
+        ->and($c->invoices()->sole()->only(['status', 'total', 'months']))->toBe(['status' => 'paid', 'total' => 3 * 1_500_000, 'months' => 3]);
     expect($this->tenancy->run($c, fn () => [User::query()->value('email'), AppRelease::query()->value('version_code')]))->toBe(['gm@charlie.test', 12]);
     $this->tenancy->dropDatabase($c);
 });
@@ -228,7 +245,7 @@ it('lets Sijalucom open a hotel CMS as its admin, logged in that hotel, and retu
     expect($this->tenancy->run($this->bravo, fn () => AuditLog::query()->where('event', 'vendor.masuk_sebagai')->value('properties')))->toBe(['vendor' => $v->email]);
 
     $this->tenancy->end();
-    $this->get('/admin/selesai-sijalucom')->assertRedirect('/sijalucom/hotels');
+    $this->get('/admin/selesai-sijalucom')->assertRedirect('/sijalucom/hotel');
     expect(session('hotel_id'))->toBeNull()->and(session(Impersonation::SESSION))->toBeNull();
 });
 
@@ -245,4 +262,83 @@ it('reminds Sijalucom about rentals ending soon, labelled per hotel', function (
     expect($this->tenancy->run($this->bravo, fn () => app(Notifier::class)->label()))->toBe('Hotel Bravo · bravo')
         ->and(app(Notifier::class)->label())->toBe('Sijalucom · pusat')
         ->and(app(Notifier::class)->vendorRecipients())->toContain('ops@sijalucom.test');
+});
+
+it('counts rental periods in whole months from the activation day', function () {
+    $this->travelTo(Carbon::parse('2026-11-16 10:00', 'Asia/Jakarta'));
+    $this->alpha->update(['plan_id' => testPlan()->id, 'tv_quota' => 20]);
+    [$start, $end] = Billing::nextPeriod($this->alpha->fresh(), 1);
+    expect([$start->toDateString(), $end->toDateString()])->toBe(['2026-11-16', '2026-12-15']);
+
+    $this->travelTo(Carbon::parse('2027-01-31 10:00', 'Asia/Jakarta'));
+    [$s2, $e2] = Billing::nextPeriod($this->bravo, 1);
+    expect([$s2->toDateString(), $e2->toDateString()])->toBe(['2027-01-31', '2027-02-27']); // no overflow into March
+});
+
+it('invoices a rental, extends it only when paid, then continues from the old end date', function () {
+    $this->travelTo(Carbon::parse('2026-11-16 10:00', 'Asia/Jakarta'));
+    VendorSetting::put(['tax_percent' => 11, 'due_days' => 7]);
+    $this->alpha->update(['plan_id' => testPlan()->id, 'tv_quota' => 20, 'discount_percent' => 10]);
+    $hotel = $this->alpha->fresh();
+    expect($hotel->monthlyPrice())->toBe(1_350_000);
+
+    $inv = Billing::createInvoice($hotel, 3);
+    expect($inv->number)->toBe('INV/202611/0001')
+        ->and([$inv->subtotal, $inv->discount, $inv->tax, $inv->total])->toBe([4_500_000, 450_000, 445_500, 4_495_500])
+        ->and($inv->due_at->toDateString())->toBe('2026-11-23')
+        ->and($hotel->fresh()->service_expires_at)->toBeNull(); // not applied before payment
+
+    Billing::markPaid($inv, '2026-11-18', 'transfer', 'TRX-1');
+    expect($hotel->fresh()->service_expires_at->setTimezone('Asia/Jakarta')->format('Y-m-d H:i'))->toBe('2027-02-15 23:59')
+        ->and($hotel->fresh()->activated_at)->not->toBeNull();
+
+    $next = Billing::createInvoice($hotel->fresh(), 1, applyNow: true);
+    expect($next->number)->toBe('INV/202611/0002')->and($next->period_start->toDateString())->toBe('2027-02-16')
+        ->and($hotel->fresh()->service_expires_at->setTimezone('Asia/Jakarta')->toDateString())->toBe('2027-03-15');
+    expect(fn () => Billing::markPaid($inv->fresh(), '2026-11-18', 'cash'))->toThrow(RuntimeException::class);
+    expect(VendorActivity::query()->where('hotel_id', $hotel->id)->pluck('action')->all())
+        ->toContain('invoice.created', 'invoice.paid', 'rental.extended');
+});
+
+it('creates renewal invoices automatically before a rental ends and reports overdue ones', function () {
+    config(['mail.default' => 'array', 'sangatv.telegram.bot_token' => 'T', 'sangatv.telegram.chat_id' => '1']);
+    Http::fake(['api.telegram.org/*' => fn () => Http::response(['ok' => true])]);
+    Mail::fake();
+    $this->alpha->update(['plan_id' => testPlan()->id, 'tv_quota' => 10, 'billing_email' => 'finance@alpha.test', 'service_expires_at' => now('Asia/Jakarta')->addDays(10)->toDateString()]);
+    $this->bravo->update(['plan_id' => testPlan()->id, 'service_expires_at' => now('Asia/Jakarta')->addDays(40)->toDateString()]);
+
+    $this->artisan('sangatv:tagihan')->assertSuccessful();
+    $this->artisan('sangatv:tagihan')->assertSuccessful(); // idempotent
+
+    expect(Invoice::query()->pluck('hotel_id')->all())->toBe([$this->alpha->id]);
+    Mail::assertSent(InvoiceMail::class, fn ($m) => $m->hasTo('finance@alpha.test'));
+    Http::assertSent(fn ($r) => str_contains($r['text'], 'Tagihan baru') && str_contains($r['text'], 'Hotel Alpha'));
+});
+
+it('refuses to register more TVs than the contracted quota', function () {
+    $this->bravo->update(['tv_quota' => 1]);
+    provisionTv(codeFor($this->bravo));
+    app('auth')->forgetGuards();
+    $this->postJson('/api/v1/devices/provision', ['code' => codeFor($this->bravo), 'device_uid' => 'uid-extra', 'app_version' => '1', 'app_version_code' => 1])
+        ->assertStatus(422)->assertJsonPath('message', fn ($m) => str_contains($m, 'Kuota TV'));
+});
+
+it('renders every console page and the printable invoice for the owner', function () {
+    $this->alpha->update(['plan_id' => testPlan()->id, 'tv_quota' => 12]);
+    $inv = Billing::createInvoice($this->alpha->fresh(), 1);
+    vendorLogin();
+    foreach (['/sijalucom', '/sijalucom/hotel', "/sijalucom/hotel/{$this->alpha->id}", '/sijalucom/tagihan', "/sijalucom/tagihan/{$inv->id}",
+        '/sijalucom/paket', '/sijalucom/laporan', '/sijalucom/pengaturan', '/sijalucom/tim', '/sijalucom/aktivitas'] as $url) {
+        $this->get($url)->assertOk();
+    }
+    $this->get("/sijalucom/tagihan/{$inv->id}/cetak")->assertOk()->assertSee($inv->number)->assertSee('Rp 1.100.000');
+    $this->get('/sijalucom/laporan/tagihan.csv')->assertOk()->assertDownload();
+});
+
+it('limits console areas by role', function () {
+    vendorLogin('support');
+    $this->get('/sijalucom/hotel')->assertOk();
+    $this->get('/sijalucom/tagihan')->assertForbidden();
+    $this->get('/sijalucom/pengaturan')->assertForbidden();
+    $this->get('/sijalucom/laporan/tagihan.csv')->assertForbidden();
 });

@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\HotelExportController;
 use App\Http\Controllers\PmsVendorDocController;
+use App\Http\Controllers\VendorReportController;
 use App\Http\Middleware\InitializeHotel;
+use App\Models\Central\Invoice;
 use App\Vendor\Impersonation;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/admin');
@@ -23,5 +26,16 @@ Route::get('/admin/hotel-profile/ekspor-data.zip', HotelExportController::class)
 Route::get('/admin/selesai-sijalucom', function () {
     Impersonation::stop();
 
-    return redirect('/sijalucom/hotels');
+    return redirect('/sijalucom/hotel');
 })->middleware('web')->name('vendor.impersonation.stop');
+
+// Sijalucom Console: printable invoice and finance CSV (vendor accounts with the finance role).
+Route::middleware('web')->prefix('sijalucom')->group(function () {
+    Route::get('/tagihan/{invoice}/cetak', function (Invoice $invoice) {
+        abort_unless(Auth::guard('vendor')->user()?->hasAccess('finance'), 403);
+
+        return view('vendor-console.invoice-print', ['invoice' => $invoice->load('hotel')]);
+    })->name('vendor.invoice.print');
+
+    Route::get('/laporan/tagihan.csv', VendorReportController::class)->name('vendor.report.invoices');
+});

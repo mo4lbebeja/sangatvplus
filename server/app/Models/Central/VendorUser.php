@@ -11,13 +11,25 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 /** Sijalucom staff (vendor panel). Lives in the central database, separate from every hotel's CMS accounts. */
-#[Fillable(['name', 'email', 'password', 'is_active'])]
+#[Fillable(['name', 'email', 'role', 'password', 'is_active'])]
 #[Hidden(['password', 'remember_token', 'app_authentication_secret', 'app_authentication_recovery_codes'])]
 class VendorUser extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery
 {
     protected $connection = 'central';
 
-    protected $attributes = ['is_active' => true];
+    protected $attributes = ['is_active' => true, 'role' => 'owner'];
+
+    public const ROLES = ['owner' => 'Pemilik (semua akses)', 'finance' => 'Keuangan (tagihan & laporan)', 'support' => 'Dukungan (hotel & TV)'];
+
+    /** owner: everything · finance: invoices, plans, reports · support: hotels, TVs, support logins. */
+    public function hasAccess(string $area): bool
+    {
+        return match ($area) {
+            'finance' => in_array($this->role, ['owner', 'finance'], true),
+            'support' => in_array($this->role, ['owner', 'support'], true),
+            default => $this->role === 'owner',
+        };
+    }
 
     protected function casts(): array
     {

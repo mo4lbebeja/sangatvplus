@@ -1,0 +1,45 @@
+/* Sijalucom Console — refinements on top of Filament (no build step needed). */
+:root { --vc-radius: 0.9rem; }
+.fi-body { background: #F6F7FB; }
+.dark .fi-body { background: #0B1020; }
+.fi-sidebar { background: #fff; border-inline-end: 1px solid rgba(15, 23, 42, .06); }
+.dark .fi-sidebar { background: #0F152A; border-color: rgba(255, 255, 255, .06); }
+.fi-topbar > nav, .fi-topbar { box-shadow: none !important; border-bottom: 1px solid rgba(15, 23, 42, .06); }
+.dark .fi-topbar > nav, .dark .fi-topbar { border-color: rgba(255, 255, 255, .06); }
+.fi-sidebar-item-btn { border-radius: .65rem; }
+.fi-sidebar-item.fi-active .fi-sidebar-item-btn { background: linear-gradient(90deg, rgba(79, 70, 229, .12), rgba(79, 70, 229, .02)); }
+.fi-sidebar-group-label { font-size: .68rem; letter-spacing: .09em; text-transform: uppercase; }
+.fi-section, .fi-ta-ctn, .fi-wi-stats-overview-stat, .fi-wi-chart .fi-section { border-radius: var(--vc-radius) !important; }
+.fi-section, .fi-ta-ctn, .fi-wi-stats-overview-stat { box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 8px 24px -12px rgba(15, 23, 42, .12) !important; }
+.fi-wi-stats-overview-stat { position: relative; overflow: hidden; }
+.fi-wi-stats-overview-stat::before { content: ""; position: absolute; inset: 0 auto auto 0; width: 100%; height: 3px; background: linear-gradient(90deg, #4F46E5, #06B6D4); opacity: .85; }
+.fi-wi-stats-overview-stat-value { letter-spacing: -.02em; }
+.fi-header-heading { letter-spacing: -.025em; }
+.fi-ta-header-cell-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+
+/* Console components */
+.vc-hero { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-radius: var(--vc-radius);
+    background: radial-gradient(120% 140% at 0% 0%, #4F46E5 0%, #3730A3 45%, #0E7490 100%); color: #fff; box-shadow: 0 18px 40px -20px rgba(79, 70, 229, .7); }
+.vc-hero h2 { font-size: 1.35rem; font-weight: 800; letter-spacing: -.02em; margin: 0; }
+.vc-hero p { margin: .2rem 0 0; opacity: .85; font-size: .9rem; }
+.vc-hero .vc-kpis { display: flex; gap: 1.75rem; flex-wrap: wrap; }
+.vc-hero .vc-kpi span { display: block; font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; opacity: .75; }
+.vc-hero .vc-kpi strong { font-size: 1.25rem; font-weight: 800; }
+.vc-card { background: #fff; border-radius: var(--vc-radius); padding: 1.1rem 1.25rem; box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 8px 24px -12px rgba(15, 23, 42, .12); }
+.dark .vc-card { background: #111a33; }
+.vc-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.vc-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: #64748B; font-weight: 600; }
+.vc-value { font-size: 1.15rem; font-weight: 700; margin-top: .15rem; }
+.vc-muted { color: #64748B; font-size: .82rem; }
+.vc-progress { height: .45rem; border-radius: 999px; background: rgba(100, 116, 139, .18); overflow: hidden; margin-top: .5rem; }
+.vc-progress > i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #4F46E5, #06B6D4); }
+.vc-progress.is-warn > i { background: linear-gradient(90deg, #F59E0B, #F97316); }
+.vc-progress.is-danger > i { background: linear-gradient(90deg, #F43F5E, #E11D48); }
+.vc-table { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.vc-table th { text-align: left; font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; color: #64748B; padding: .55rem .6rem; border-bottom: 1px solid rgba(100, 116, 139, .2); }
+.vc-table td { padding: .55rem .6rem; border-bottom: 1px solid rgba(100, 116, 139, .1); }
+.vc-dot { display: inline-block; width: .55rem; height: .55rem; border-radius: 50%; margin-right: .4rem; background: #94A3B8; }
+.vc-dot.on { background: #10B981; box-shadow: 0 0 0 3px rgba(16, 185, 129, .18); }
+.vc-dot.standby { background: #F59E0B; }
+.vc-dot.off { background: #CBD5E1; }
+.vc-avatar { display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: .7rem; font-weight: 800; font-size: .8rem; color: #fff; background: linear-gradient(135deg, #6366F1, #06B6D4); }

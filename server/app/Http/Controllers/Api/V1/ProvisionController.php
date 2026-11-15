@@ -41,6 +41,15 @@ class ProvisionController extends Controller
             return response()->json(['message' => 'Kode pendaftaran tidak valid atau kedaluwarsa.'], 422);
         }
 
+        // Rental contract: no more active TVs than the hotel's TV quota (a re-registered TV keeps its place).
+        $quota = app(HotelManager::class)->current()?->tv_quota;
+        if ($quota !== null && ! Device::query()->where('device_uid', $data['device_uid'])->where('status', DeviceStatus::Active)->exists()
+            && Device::query()->where('status', DeviceStatus::Active)->count() >= $quota) {
+            Audit::log('device.provision_failed', null, ['device_uid' => $data['device_uid'], 'reason' => 'quota', 'quota' => $quota]);
+
+            return response()->json(['message' => "Kuota TV hotel ini ({$quota} TV) sudah penuh. Hubungi Sijalucom untuk menambah kuota."], 422);
+        }
+
         [$device, $token] = DB::transaction(function () use ($code, $data) {
             $device = Device::query()->firstOrNew(['device_uid' => $data['device_uid']]);
             $device->fill([

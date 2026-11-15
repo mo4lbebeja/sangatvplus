@@ -22,3 +22,5 @@ Schedule::command('sangatv:backup --pusat')->dailyAt('02:20')->timezone('Asia/Ja
     ->when(fn () => config('tenancy.enabled'));
 Schedule::command('sangatv:pengingat-sewa')->dailyAt('08:00')->timezone('Asia/Jakarta')
     ->when(fn () => config('tenancy.enabled'));
+Schedule::command('sangatv:tagihan')->dailyAt('07:30')->timezone('Asia/Jakarta')
+    ->when(fn () => config('tenancy.enabled'));
