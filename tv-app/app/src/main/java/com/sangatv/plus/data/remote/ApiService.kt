@@ -69,7 +69,7 @@ interface ApiService {
     suspend fun technicianEvent(@Body body: TechnicianEvent)
 
     @GET("api/v1/app/update")
-    suspend fun checkUpdate(@Query("version_code") versionCode: Long): UpdateResponse
+    suspend fun checkUpdate(@Query("version_code") versionCode: Long, @Query("package") packageName: String): UpdateResponse
 
     @Streaming
     @GET

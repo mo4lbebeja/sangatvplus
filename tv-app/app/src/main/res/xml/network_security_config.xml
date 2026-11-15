@@ -4,8 +4,9 @@
   * Cleartext stays allowed only because local IPTV sources (HLS over http on the
     IPTV VLAN) commonly have no TLS. The API client itself refuses non-HTTPS URLs
     and pins the server certificate (see ApiClient).
-  * The hotel's internal CA must be placed at app/src/release/res/raw/internal_ca.pem
-    (see README). The release build fails without it.
+  * Server: Let's Encrypt (system trust) + pins on the ISRG roots (gradle.properties).
+  * Only if a hotel serves HTTPS streams with its own internal CA: add
+    app/src/release/res/raw/internal_ca.pem and a release/res/xml override that trusts it.
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="true">

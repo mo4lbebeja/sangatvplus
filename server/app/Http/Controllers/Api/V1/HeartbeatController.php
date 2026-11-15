@@ -36,6 +36,7 @@ class HeartbeatController extends Controller
             'stock_launcher_active' => ['nullable', 'boolean'],
             'screen_on' => ['nullable', 'boolean'],
             'service_released' => ['nullable', 'boolean'],
+            'app_package' => ['nullable', 'string', 'max:100'],
         ]);
 
         if (array_key_exists('screen_on', $data) && $data['screen_on'] !== null && $data['screen_on'] !== $device->screen_on) {

@@ -3,6 +3,8 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
+use App\Http\Middleware\RequireTwoFactorForAdmins;
+use Filament\Auth\MultiFactor\App\AppAuthentication;
 use Filament\FontProviders\LocalFontProvider;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -19,6 +21,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -30,6 +33,13 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->profile(isSimple: false)
+            // Two-factor login with an authenticator app (Google Authenticator, Authy …). Admins are forced to
+            // set it up by RequireTwoFactorForAdmins; other roles may turn it on in their profile.
+            ->multiFactorAuthentication(
+                [AppAuthentication::make()->recoverable()->brandName('SangaTV Plus')],
+                isRequired: fn () => Auth::user()?->isAdmin() ?? false,
+            )
             ->brandName('SangaTV Plus')
             ->brandLogo(fn () => view('filament.brand'))
             ->brandLogoHeight('2.25rem')
@@ -77,6 +87,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                RequireTwoFactorForAdmins::class,
             ]);
     }
 }

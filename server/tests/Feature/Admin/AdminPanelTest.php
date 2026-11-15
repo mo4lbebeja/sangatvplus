@@ -215,3 +215,12 @@ it('pushes a check-update command to every active TV from the OTA page', functio
     expect($a->commands()->where('type', CommandType::CheckUpdate)->count())->toBe(1)
         ->and($b->commands()->count())->toBe(0);
 });
+
+it('forces admins without two-factor login to set it up first', function () {
+    $this->actingAs(User::factory()->withoutTwoFactor()->create(['role' => UserRole::Admin]));
+    $this->get('/admin/rooms')->assertRedirect('/admin/profile');
+    $this->get('/admin/profile')->assertOk()->assertSee('Autentikasi');
+
+    $this->actingAs(User::factory()->withoutTwoFactor()->create(['role' => UserRole::FrontOffice]));
+    $this->get('/admin/guests')->assertOk(); // optional for other roles
+});

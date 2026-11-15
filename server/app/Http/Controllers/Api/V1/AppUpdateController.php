@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\AppRelease;
+use App\Models\Device;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -17,9 +18,18 @@ class AppUpdateController extends Controller
      */
     public function check(Request $request): JsonResponse
     {
+        /** @var Device $device */
+        $device = $request->user();
         $current = (int) $request->integer('version_code');
+        // Releases only go to the same app package (staging never receives a release build and vice versa).
+        $package = (string) ($request->query('package') ?: $device->app_package ?: AppRelease::DEFAULT_PACKAGE);
+
+        if ($device->hold_updates) {
+            return response()->json(['update' => null, 'held' => true]);
+        }
 
         $release = AppRelease::query()
+            ->where('package_name', $package)
             ->where('is_active', true)
             ->where('version_code', '>', $current)
             ->orderByDesc('version_code')

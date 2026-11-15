@@ -33,7 +33,14 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'role' => UserRole::Admin,
             'is_active' => true,
+            // Two-factor login already set up (admins are forced to have it); see withoutTwoFactor().
+            'app_authentication_secret' => 'JBSWY3DPEHPK3PXP',
         ];
+    }
+
+    public function withoutTwoFactor(): static
+    {
+        return $this->state(fn () => ['app_authentication_secret' => null]);
     }
 
     /**

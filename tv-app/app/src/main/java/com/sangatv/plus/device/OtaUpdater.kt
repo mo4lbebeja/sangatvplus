@@ -26,7 +26,7 @@ import java.security.MessageDigest
 class OtaUpdater(private val context: Context, private val api: ApiService) {
 
     suspend fun checkAndInstall(): String = withContext(Dispatchers.IO) {
-        val update = api.checkUpdate(BuildConfig.VERSION_CODE.toLong()).update ?: return@withContext "Sudah versi terbaru"
+        val update = api.checkUpdate(BuildConfig.VERSION_CODE.toLong(), BuildConfig.APPLICATION_ID).update ?: return@withContext "Sudah versi terbaru"
         val apk = File(context.cacheDir, "update.apk")
         try {
             download(update, apk)

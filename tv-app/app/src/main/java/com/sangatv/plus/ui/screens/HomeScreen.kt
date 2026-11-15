@@ -294,7 +294,8 @@ private fun BottomBar(data: Bootstrap?, now: java.time.ZonedDateTime, onOpen: (S
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.px)) {
                 data?.room?.let {
                     Text(
-                        stringResource(R.string.room_label, it.number),
+                        // Rooms show "Kamar 101"; public areas (no digit, e.g. LOBBY, RESTO) show just their name.
+                        if (it.number.any(Char::isDigit)) stringResource(R.string.room_label, it.number) else it.number,
                         style = body(17, 700, Sanga.Text),
                         modifier = Modifier.background(Sanga.NavyActive, RoundedCornerShape(6.px)).padding(horizontal = 14.px, vertical = 6.px),
                     )

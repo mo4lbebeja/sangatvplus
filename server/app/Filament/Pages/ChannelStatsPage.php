@@ -7,6 +7,7 @@ use App\Mail\ChannelUptimeReport;
 use App\Models\HotelProfile;
 use App\Models\User;
 use App\Services\ChannelStats;
+use App\Services\Notifier;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -61,6 +62,24 @@ class ChannelStatsPage extends Page
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('testAlert')
+                ->label('Kirim notifikasi uji')
+                ->icon(Heroicon::OutlinedBellAlert)
+                ->color('gray')
+                ->modalHeading('Uji peringatan otomatis')
+                ->modalDescription(function () {
+                    $n = app(Notifier::class);
+
+                    return 'Telegram: '.($n->telegramConfigured() ? 'terhubung' : 'belum diatur (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID)')
+                        .' · Email: '.($n->emailConfigured() ? implode(', ', $n->emailRecipients()) : 'belum diatur (SMTP & email penerima)');
+                })
+                ->modalSubmitActionLabel('Kirim uji')
+                ->action(function (Notifier $notifier) {
+                    $r = $notifier->send('Uji peringatan', 'Notifikasi SangaTV Plus berfungsi. Peringatan channel gagal & TV tidak terhubung akan dikirim ke sini.');
+                    $sent = array_keys(array_filter($r));
+                    Notification::make()->title($sent ? 'Terkirim ke '.implode(' & ', $sent) : 'Belum ada saluran yang terhubung')
+                        ->{$sent ? 'success' : 'warning'}()->send();
+                }),
             Action::make('sendReport')
                 ->label('Kirim laporan ke email')
                 ->icon(Heroicon::OutlinedEnvelope)

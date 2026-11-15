@@ -323,6 +323,7 @@ class Repository(
                     stockLauncherActive = AutoStart.isStockLauncherActive(appContext),
                     screenOn = appContext.getSystemService(android.os.PowerManager::class.java)?.isInteractive ?: true,
                     serviceReleased = ServiceState.isReleased,
+                    appPackage = BuildConfig.APPLICATION_ID,
                 ),
             )
             _online.value = true

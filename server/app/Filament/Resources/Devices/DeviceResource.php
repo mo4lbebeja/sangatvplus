@@ -23,6 +23,7 @@ use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
@@ -90,6 +91,9 @@ class DeviceResource extends Resource
                     ->formatStateUsing(fn (string $state) => $state === 'released' ? 'Dilepas' : 'Layar hotel')
                     ->color(fn (string $state) => $state === 'released' ? 'warning' : 'gray')
                     ->tooltip(fn (Device $r) => $r->service_released ? 'TV sudah kembali ke layar utama bawaan (layanan dilepas / tidak terhubung)' : 'SangaTV Plus menjadi layar utama')
+                    ->toggleable(),
+                ToggleColumn::make('hold_updates')->label('Tahan update')
+                    ->tooltip('Aktifkan bila tidak ada orang di dekat TV: TV tidak menerima update (dialog pasang tidak muncul) sampai dimatikan lagi.')
                     ->toggleable(),
                 IconColumn::make('autostart')->label('Mulai otomatis')
                     ->state(fn (Device $r) => $r->autoStartState() ?? 'unknown')

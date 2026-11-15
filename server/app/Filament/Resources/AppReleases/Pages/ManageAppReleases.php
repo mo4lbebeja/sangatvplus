@@ -34,7 +34,8 @@ class ManageAppReleases extends ManageRecords
                     ? "TV yang menyala akan mengunduh versi {$r->version_name} (code {$r->version_code}) dalam ±1 menit. TV tanpa Device Owner menampilkan dialog konfirmasi pasang."
                     : 'Belum ada rilis aktif.')
                 ->action(function () {
-                    $devices = Device::query()->where('status', DeviceStatus::Active)->get();
+                    // TVs on "Tahan update" are skipped (nobody there to confirm the install dialog).
+                    $devices = Device::query()->where('status', DeviceStatus::Active)->where('hold_updates', false)->get();
                     foreach ($devices as $d) {
                         $d->commands()->create(['type' => CommandType::CheckUpdate, 'status' => CommandStatus::Pending]);
                     }

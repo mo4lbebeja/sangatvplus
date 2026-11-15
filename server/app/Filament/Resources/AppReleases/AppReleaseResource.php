@@ -10,6 +10,7 @@ use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -51,7 +52,10 @@ class AppReleaseResource extends Resource
                 ->acceptedFileTypes(['application/vnd.android.package-archive', 'application/octet-stream', 'application/zip'])
                 ->maxSize(200 * 1024)
                 ->required()->disabledOn('edit'),
-            TextInput::make('version_code')->label('versionCode')->required()->integer()->minValue(1)->unique(ignoreRecord: true)->disabledOn('edit'),
+            Select::make('package_name')->label('Paket aplikasi')->options(AppRelease::PACKAGES)->default(AppRelease::DEFAULT_PACKAGE)->required()->disabledOn('edit')
+                ->helperText('TV hanya menerima rilis untuk paket yang terpasang di TV itu.'),
+            TextInput::make('version_code')->label('versionCode')->required()->integer()->minValue(1)->disabledOn('edit')
+                ->unique(ignoreRecord: true, modifyRuleUsing: fn ($rule, $get) => $rule->where('package_name', $get('package_name'))),
             TextInput::make('version_name')->label('versionName')->required()->maxLength(32),
             Textarea::make('notes')->label('Catatan rilis')->rows(3),
             Toggle::make('is_active')->label('Aktifkan (TV akan mengunduh)')->default(false),
@@ -70,6 +74,8 @@ class AppReleaseResource extends Resource
     {
         return $table
             ->columns([
+                TextColumn::make('package_name')->label('Paket')->badge()->color(fn (string $state) => $state === 'com.sangatv.plus' ? 'success' : 'gray')
+                    ->formatStateUsing(fn (string $state) => $state === 'com.sangatv.plus' ? 'Rilis' : 'Staging'),
                 TextColumn::make('version_code')->label('Code')->sortable(),
                 TextColumn::make('version_name')->label('Versi'),
                 TextColumn::make('sha256')->label('SHA-256')->limit(16)->copyable(),

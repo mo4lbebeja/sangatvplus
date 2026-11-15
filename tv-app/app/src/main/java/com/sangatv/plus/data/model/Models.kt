@@ -193,6 +193,8 @@ data class HeartbeatRequest(
     @SerialName("screen_on") val screenOn: Boolean,
     /** TV is in Mode lepas (shown as "Dilepas" in CMS → TV Terdaftar). No default: always sent, so "false" clears it. */
     @SerialName("service_released") val serviceReleased: Boolean,
+    /** Installed package (staging/release): the server only offers OTA builds of the same package. */
+    @SerialName("app_package") val appPackage: String,
 )
 
 @Serializable

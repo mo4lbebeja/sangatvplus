@@ -58,3 +58,26 @@ Rilis final (`assembleRelease`) butuh: keystore, `sangatv.releaseApiBaseUrl=http
 - TV yang dicabut aksesnya (TV Terdaftar → *Cabut akses*) tidak lagi terjebak di layar pendaftaran; teknisi bisa
   *Daftarkan TV* ulang dari layar netralnya.
 - **Ekspor data hotel** (ZIP berisi CSV, tanpa rahasia): CMS → Profil Hotel → *Ekspor data*.
+
+## Operasional (backup, peringatan, privasi, 2FA)
+Isi di `.env` produksi lalu `sudo -u www php artisan config:cache`:
+```
+TELEGRAM_BOT_TOKEN=...        # bot dari @BotFather
+TELEGRAM_CHAT_ID=...          # chat/grup penerima
+ALERT_EMAILS=it@hotel.com     # tambahan selain Profil Hotel → Email laporan
+MAIL_MAILER=smtp + MAIL_HOST/PORT/USERNAME/PASSWORD/FROM_ADDRESS
+BACKUP_PASSWORD=...           # sudah diisi; salinan di laptop ~/.sangatv/backup-INFO.txt
+GUEST_RETENTION_DAYS=90       # data tamu check-out dianonimkan setelah N hari
+```
+- **Backup** 02.30 WIB: database (harian) + media (Minggu), AES-256, 14 terakhir di `storage/app/private/backups`,
+  salinan ke Telegram. Manual: `php artisan sangatv:backup --media`. Pulihkan: lihat `~/.sangatv/backup-INFO.txt`.
+- **Peringatan** tiap 5 menit (`sangatv:monitor`): channel gagal 3× berturut-turut, TV tanpa sinyal > 24 jam; dikirim
+  sekali saat bermasalah dan sekali saat pulih. Uji: CMS → Statistik & Uptime → *Kirim notifikasi uji*.
+  Server mati harus dipantau dari luar: daftarkan `https://sangatvplus.sijalucom.online/up` di UptimeRobot (gratis).
+- **Privasi tamu** 03.15 WIB (`sangatv:privasi-tamu`).
+- **2FA**: akun admin wajib mengaktifkan authenticator (Profil → Autentikasi multi-faktor) sebelum bisa memakai CMS.
+
+## Rilis aplikasi TV (OTA)
+`tv-app/scripts/rilis-ota.sh release "catatan" --kirim` — build, unggah (dilanjutkan bila putus), cek checksum,
+terbitkan untuk paket yang sama, dan kirim ke TV yang **tidak** "Tahan update" (CMS → TV Terdaftar).
+Kunci tanda tangan release: `~/.sangatv/sangatv-release.jks` (+ sandi di `keystore-INFO.txt`) — **wajib dibackup**.

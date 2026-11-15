@@ -13,3 +13,6 @@ Schedule::command('sangatv:check-channels')->everyTenMinutes()->withoutOverlappi
 Schedule::command('model:prune')->daily();
 Schedule::command('sangatv:sync-epg')->everySixHours()->withoutOverlapping();
 Schedule::command('sangatv:uptime-report')->weeklyOn(1, '07:00')->timezone('Asia/Jakarta');
+Schedule::command('sangatv:monitor')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('sangatv:backup')->dailyAt('02:30')->timezone('Asia/Jakarta')->withoutOverlapping();
+Schedule::command('sangatv:privasi-tamu')->dailyAt('03:15')->timezone('Asia/Jakarta');
