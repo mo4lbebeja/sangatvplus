@@ -20,6 +20,7 @@ class Guest extends Model
             'status' => GuestStatus::class,
             'checked_in_at' => 'datetime',
             'checked_out_at' => 'datetime',
+            'expected_checkout_at' => 'datetime',
         ];
     }
 

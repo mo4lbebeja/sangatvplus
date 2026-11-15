@@ -12,6 +12,8 @@ use App\Models\DeviceCommand;
 use App\Models\Facility;
 use App\Models\Guest;
 use App\Models\HotelProfile;
+use App\Models\PmsEvent;
+use App\Models\PmsIntegration;
 use App\Models\ProvisioningCode;
 use App\Models\Room;
 use App\Models\Slide;
@@ -69,10 +71,15 @@ class AppServiceProvider extends ServiceProvider
             'hotel_profile' => HotelProfile::class,
             'device_command' => DeviceCommand::class,
             'provisioning_code' => ProvisioningCode::class,
+            'pms_integration' => PmsIntegration::class,
+            'pms_event' => PmsEvent::class,
         ]);
 
         // Per-device API budget (≈2 req/s sustained is far above normal use).
         RateLimiter::for('device-api', fn (Request $r) => Limit::perMinute(120)->by('dev:'.($r->user()?->getKey() ?? $r->ip())));
+
+        // PMS integration: generous (bulk sync), per integration key.
+        RateLimiter::for('pms', fn (Request $r) => Limit::perMinute(600)->by('pms:'.($r->header('X-SangaTV-Key') ?: $r->ip())));
 
         // Provisioning is unauthenticated: keep it tight per IP.
         RateLimiter::for('provision', fn (Request $r) => Limit::perMinute(5)->by('prov:'.$r->ip()));

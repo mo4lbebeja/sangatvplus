@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 const ADMIN_PAGES = [
-    '/admin/panduan-teknisi',
+    '/admin/panduan-teknisi', '/admin/integrasi-pms', '/admin/pms-kunci-api', '/admin/pms-log',
     '/admin', '/admin/guests', '/admin/rooms', '/admin/slides', '/admin/facilities', '/admin/hotel-profile',
     '/admin/channels', '/admin/channel-categories', '/admin/channel-providers',
     '/admin/devices', '/admin/app-whitelist', '/admin/app-releases', '/admin/users', '/admin/audit-logs',
@@ -64,7 +64,7 @@ it('limits pages by role', function (UserRole $role, array $allowed) {
     }
 })->with([
     'front office' => [UserRole::FrontOffice, ['/admin', '/admin/guests', '/admin/rooms', '/admin/slides', '/admin/facilities']],
-    'it' => [UserRole::It, ['/admin', '/admin/panduan-teknisi', '/admin/rooms', '/admin/channels', '/admin/channel-categories', '/admin/channel-providers', '/admin/devices', '/admin/app-whitelist', '/admin/app-releases', '/admin/audit-logs']],
+    'it' => [UserRole::It, ['/admin', '/admin/panduan-teknisi', '/admin/integrasi-pms', '/admin/pms-kunci-api', '/admin/pms-log', '/admin/rooms', '/admin/channels', '/admin/channel-categories', '/admin/channel-providers', '/admin/devices', '/admin/app-whitelist', '/admin/app-releases', '/admin/audit-logs']],
 ]);
 
 it('blocks inactive users from the panel', function () {

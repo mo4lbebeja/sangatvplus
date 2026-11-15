@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\Pms\PmsController;
 use App\Http\Controllers\Api\V1\AppUpdateController;
 use App\Http\Controllers\Api\V1\BootstrapController;
 use App\Http\Controllers\Api\V1\ChannelController;
@@ -7,6 +8,7 @@ use App\Http\Controllers\Api\V1\FacilityController;
 use App\Http\Controllers\Api\V1\HeartbeatController;
 use App\Http\Controllers\Api\V1\ProvisionController;
 use App\Http\Controllers\Api\V1\TechnicianController;
+use App\Http\Middleware\AuthenticatePms;
 use App\Http\Middleware\EnsureActiveDevice;
 use Illuminate\Support\Facades\Route;
 
@@ -27,4 +29,17 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
         Route::get('app/update', [AppUpdateController::class, 'check'])->name('app.update');
         Route::get('app/releases/{release}/download', [AppUpdateController::class, 'download'])->name('app.download');
     });
+});
+
+// Inbound PMS/BMS integration (hotel system pushes rooms & stays). Docs: CMS → Integrasi PMS.
+Route::prefix('pms/v1')->name('api.pms.')->middleware([AuthenticatePms::class, 'throttle:pms'])->group(function () {
+    Route::get('ping', [PmsController::class, 'ping'])->name('ping');
+    Route::get('rooms', [PmsController::class, 'rooms'])->name('rooms');
+    Route::put('rooms/{number}', [PmsController::class, 'upsertRoom'])->name('rooms.upsert');
+    Route::post('checkins', [PmsController::class, 'checkIn'])->name('checkin');
+    Route::post('checkouts', [PmsController::class, 'checkOut'])->name('checkout');
+    Route::get('stays', [PmsController::class, 'inHouse'])->name('stays');
+    Route::patch('stays/{reservation}', [PmsController::class, 'updateStay'])->name('stays.update');
+    Route::post('stays/{reservation}/move', [PmsController::class, 'move'])->name('stays.move');
+    Route::post('sync', [PmsController::class, 'sync'])->name('sync');
 });

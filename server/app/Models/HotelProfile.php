@@ -26,6 +26,7 @@ class HotelProfile extends Model
             'home_music_enabled' => 'boolean',
             'home_music_volume' => 'integer',
             'screensaver_minutes' => 'integer',
+            'pms_checklist' => 'array',
         ];
     }
 

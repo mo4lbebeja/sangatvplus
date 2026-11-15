@@ -9,3 +9,4 @@ Project spec: ../doc/CLAUDEsangatv.md — read it first.
 - Every model change is audited (`Auditable` trait → `audit_logs`).
 - Run `php artisan test --compact` and `vendor/bin/pint` before finishing.
 - Production: see DEPLOYMENT.md (`./deploy.sh`). Never run `db:seed` in production; first admin via `php artisan sangatv:install`.
+- PMS/BMS inbound API: `routes/api.php` (`/api/pms/v1`, `AuthenticatePms` HMAC/bearer + IP + idempotency, every call logged in `pms_events`). Stay logic in `PmsStayService` (reservation id = `guests.external_ref`). Vendor doc source: `resources/views/pms/vendor-doc.blade.php` (shown in CMS → Integrasi PMS and downloadable).

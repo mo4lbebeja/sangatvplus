@@ -8,11 +8,14 @@ use Illuminate\Support\Facades\Auth;
 
 class Audit
 {
+    /** Request-scoped actor for non-user callers (e.g. the PMS integration). */
+    public static ?Model $actor = null;
+
     /** Actor override, e.g. the authenticated Device during API calls. */
     public static function log(string $event, ?Model $subject = null, array $properties = [], ?Model $actor = null): AuditLog
     {
         $request = app()->runningInConsole() && ! app()->runningUnitTests() ? null : request();
-        $actor ??= Auth::user();
+        $actor ??= self::$actor ?? Auth::user();
 
         return AuditLog::create([
             'actor_type' => $actor?->getMorphClass(),
