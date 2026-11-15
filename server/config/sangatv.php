@@ -18,6 +18,10 @@ return [
         // Encrypts every backup (AES-256). Keep it outside the server too: without it backups cannot be restored.
         'password' => env('BACKUP_PASSWORD'),
         'keep' => (int) env('BACKUP_KEEP', 14),
+        // Offsite copy to cloud storage with rclone (e.g. Google Drive "gdrive:SangaTV-Backup"); empty = off.
+        'rclone_remote' => env('BACKUP_RCLONE_REMOTE'),
+        'rclone_config' => env('BACKUP_RCLONE_CONFIG', storage_path('app/private/rclone.conf')),
+        'rclone_keep_days' => (int) env('BACKUP_RCLONE_KEEP_DAYS', 60),
     ],
 
     // Checked-out guests are anonymised after this many days (UU PDP: keep personal data only as long as needed).

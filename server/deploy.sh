@@ -36,6 +36,10 @@ rsync -az --delete \
 echo "==> Struktur storage (tanpa menimpa isi server)"
 rsync -a --include='*/' --include='.gitignore' --exclude='*' storage/ "$HOST:$DIR/storage/"
 
+echo "==> Periksa .env produksi (deploy dibatalkan bila rusak; situs tetap jalan dengan cache lama)"
+ssh "$HOST" "cd $DIR && php -r 'require \"vendor/autoload.php\"; Dotenv\\Dotenv::createImmutable(\".\")->load();' " \
+    || { echo "    .env TIDAK VALID — perbaiki dulu (baris tersambung / spasi tanpa tanda kutip). Deploy dihentikan."; exit 1; }
+
 echo "==> Dependensi, migrasi, aset Filament, cache, ownership"
 ssh "$HOST" "cd $DIR && composer install --no-dev --optimize-autoloader --no-interaction --quiet"
 ssh "$HOST" "chown -R www:www $DIR 2>&1 | grep -v '.user.ini' || true"

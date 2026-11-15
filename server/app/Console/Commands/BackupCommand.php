@@ -49,11 +49,23 @@ class BackupCommand extends Command
         }
 
         $offsite = [];
+        $driveErrors = [];
         foreach ($made as $file) {
             $size = round(filesize($file) / 1048576, 1);
             $ok = $notifier->telegramFile($file, "Backup SangaTV Plus {$stamp} ({$size} MB, terenkripsi)");
-            $offsite[] = basename($file)." {$size} MB".($ok ? ' → Telegram' : (filesize($file) > 49 * 1048576 ? ' (terlalu besar untuk Telegram)' : ' (Telegram belum diatur)'));
+            $line = basename($file)." {$size} MB".($ok ? ' → Telegram' : (filesize($file) > 49 * 1048576 ? ' (terlalu besar untuk Telegram)' : ' (Telegram belum diatur)'));
+            if ($drive = $this->toCloud($file)) {
+                $line .= $drive === true ? ' → Google Drive' : '';
+                if ($drive !== true) {
+                    $driveErrors[] = $drive;
+                }
+            }
+            $offsite[] = $line;
         }
+        if ($driveErrors !== []) {
+            $notifier->send('⚠️ Backup ke Google Drive gagal', implode("\n", array_unique($driveErrors)).' (backup tetap tersimpan di server & Telegram)');
+        }
+        $this->pruneCloud();
 
         // Keep the newest N of each kind.
         foreach (['db-', 'media-'] as $prefix) {
@@ -88,6 +100,26 @@ class BackupCommand extends Command
         $this->shell(['gzip', '-f', $raw]);
 
         return $target;
+    }
+
+    /** @return true|string|null true = uploaded, string = error, null = not configured */
+    private function toCloud(string $file): true|string|null
+    {
+        $remote = config('sangatv.backup.rclone_remote');
+        if (blank($remote)) {
+            return null;
+        }
+        $res = Process::timeout(900)->run(['rclone', 'copy', $file, $remote, '--config', config('sangatv.backup.rclone_config')]);
+
+        return $res->successful() ? true : 'rclone: '.trim(substr($res->errorOutput(), -300));
+    }
+
+    private function pruneCloud(): void
+    {
+        $remote = config('sangatv.backup.rclone_remote');
+        if (filled($remote)) {
+            Process::timeout(300)->run(['rclone', 'delete', $remote, '--min-age', config('sangatv.backup.rclone_keep_days').'d', '--config', config('sangatv.backup.rclone_config')]);
+        }
     }
 
     private function encrypt(string $file, string $password): string
