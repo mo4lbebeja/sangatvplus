@@ -27,7 +27,9 @@ if [[ "$MODE" == "pulihkan" ]]; then
     for l in "${STOCK_LAUNCHERS[@]}"; do installed "$l" && sh pm enable "$l" >/dev/null && echo "  aktif lagi: $l"; done
     for a in "${OTHER_AUTOSTART[@]}"; do installed "$a" && sh pm enable "$a" >/dev/null && echo "  aktif lagi: $a"; done
     for l in "${STOCK_LAUNCHERS[@]}"; do installed "$l" && { sh cmd role add-role-holder android.app.role.HOME "$l" 0 >/dev/null; break; }; done
-    echo "Selesai: launcher bawaan dipulihkan."
+    cur="$(sh settings get secure enabled_accessibility_services)"
+    sh settings put secure enabled_accessibility_services "$(echo "$cur" | tr ':' '\n' | grep -v LauncherWatchService | paste -sd: -)" >/dev/null
+    echo "Selesai: launcher bawaan dipulihkan (penjaga layar utama dimatikan)."
     exit 0
 fi
 
@@ -41,10 +43,24 @@ echo "• Sleep timer tamu (TV standby otomatis)"; sh pm grant "$PKG" android.pe
 echo "• Notifikasi layanan latar";        sh pm grant "$PKG" android.permission.POST_NOTIFICATIONS >/dev/null 2>&1 || true
 echo "• Tidak dibatasi baterai";          sh dumpsys deviceidle whitelist +"$PKG" >/dev/null
 
-echo "• Nonaktifkan launcher bawaan"
-for l in "${STOCK_LAUNCHERS[@]}"; do
-    installed "$l" && { sh pm disable-user --user 0 "$l" >/dev/null; echo "    nonaktif: $l"; }
-done
+WATCH="$PKG/com.sangatv.plus.device.LauncherWatchService"
+if installed com.google.android.apps.tv.launcherx; then
+    # Google TV ignores the HOME role and shows a "recovery" screen if its launcher is disabled.
+    # Keep it enabled; the LauncherWatch accessibility service brings SangaTV Plus back on every HOME press.
+    echo "• Google TV: launcher bawaan dibiarkan aktif, penjaga layar utama dinyalakan"
+    sh pm enable com.google.android.apps.tv.launcherx >/dev/null
+    cur="$(sh settings get secure enabled_accessibility_services)"
+    if [[ "$cur" != *LauncherWatchService* ]]; then
+        [[ -z "$cur" || "$cur" == "null" ]] && new="$WATCH" || new="$cur:$WATCH"
+        sh settings put secure enabled_accessibility_services "$new" >/dev/null
+    fi
+    sh settings put secure accessibility_enabled 1 >/dev/null
+else
+    echo "• Nonaktifkan launcher bawaan"
+    for l in "${STOCK_LAUNCHERS[@]}"; do
+        installed "$l" && { sh pm disable-user --user 0 "$l" >/dev/null; echo "    nonaktif: $l"; }
+    done
+fi
 
 if [[ "$MODE" != "--biarkan-hoteltv" ]]; then
     for a in "${OTHER_AUTOSTART[@]}"; do
@@ -57,6 +73,7 @@ echo "Hasil:"
 echo "  HOME           : $(sh cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -1)"
 echo "  Overlay        : $(sh appops get "$PKG" SYSTEM_ALERT_WINDOW | cut -d';' -f1)"
 echo "  Instal update  : $(sh appops get "$PKG" REQUEST_INSTALL_PACKAGES | cut -d';' -f1)"
+echo "  Penjaga HOME   : $(sh settings get secure enabled_accessibility_services | grep -q LauncherWatchService && echo aktif || echo '-')"
 echo "  Sleep timer    : $(sh dumpsys package "$PKG" | grep -q 'WRITE_SECURE_SETTINGS: granted=true' && echo diizinkan || echo 'tidak (layar gelap saja)')"
 echo
 echo "Uji: matikan lalu nyalakan TV, atau:  $ADB -s $TV reboot"

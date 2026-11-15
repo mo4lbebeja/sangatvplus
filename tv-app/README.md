@@ -76,3 +76,9 @@ Salah 5× → terkunci 15 menit. Semua percobaan tercatat di Audit Log, termasuk
 - **Pengumuman** dari CMS tampil di semua layar dalam ±1 menit. Tingkat *Darurat* membawa TV kembali ke SangaTV Plus
   walau tamu sedang di Netflix/YouTube, dan tidak bisa ditutup sampai pengumuman berakhir.
 - Data tontonan (channel + durasi per kamar, tanpa nama tamu) dikirim bersama heartbeat untuk CMS → Statistik & Uptime.
+
+## Google TV (mis. Sharp 2K Smart TV-A)
+Google TV mengabaikan pilihan layar utama (role HOME) dan menampilkan layar *pemulihan* bila launcher-nya dinonaktifkan.
+`siapkan-tv.sh` mendeteksi Google TV: launcher bawaan dibiarkan aktif dan **penjaga layar utama** (layanan aksesibilitas
+`LauncherWatchService`) dinyalakan, sehingga setiap tombol HOME kembali ke Beranda SangaTV Plus dalam < 1 detik.
+Penguncian penuh (tanpa launcher Google sama sekali) hanya bisa lewat **Device Owner** (TV di-reset tanpa akun Google).
