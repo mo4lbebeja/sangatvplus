@@ -484,3 +484,35 @@ html { font-size: 14px; }
     object-fit: cover; border-radius: 0.7rem; background: var(--sg-stripe);
 }
 .fi-ta-content-grid .fi-ta-record { border-radius: var(--sg-radius); }
+
+/* Gallery cards: photo fills the card; title, album and actions sit on the photo. */
+.fi-ta-record:has(.sg-gallery-col) { position: relative; padding: 0 !important; overflow: hidden; }
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-record-content-ctn,
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-record-content { padding: 0 !important; display: block; width: 100%; }
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-stack { position: relative; gap: 0 !important; }
+.fi-ta-record:has(.sg-gallery-col) .sg-gallery-col img.sg-gallery-thumb { border-radius: 0; }
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-stack::after {
+    content: ""; position: absolute; inset: 45% 0 0 0; pointer-events: none; z-index: 1;
+    background: linear-gradient(180deg, transparent, rgba(3, 18, 32, 0.85));
+}
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-stack > .fi-ta-col:nth-child(2),
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-stack > .fi-ta-col:nth-child(3) { position: absolute; left: 0.8rem; right: 0.8rem; z-index: 2; }
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-stack > .fi-ta-col:nth-child(2) { bottom: 2.15rem; }
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-stack > .fi-ta-col:nth-child(3) { bottom: 0.6rem; }
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-stack > .fi-ta-col:nth-child(2) * { color: #fff !important; padding: 0 !important; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); }
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-stack > .fi-ta-col:nth-child(3) .fi-ta-text { padding: 0 !important; }
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-stack > .fi-ta-col:nth-child(3) .fi-badge {
+    color: #fff !important; background: rgba(255, 255, 255, 0.18) !important; border: 1px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(6px); --tw-ring-color: transparent;
+}
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-stack > .fi-ta-col:nth-child(3) .fi-badge .fi-icon { color: #fff !important; }
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-actions {
+    position: absolute; top: 0.5rem; right: 0.5rem; z-index: 3; padding: 0.15rem !important; gap: 0.1rem;
+    border-radius: 0.6rem; background: rgba(3, 18, 32, 0.55); backdrop-filter: blur(6px);
+}
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-actions .fi-icon-btn { color: #fff !important; width: 1.8rem; height: 1.8rem; }
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-actions .fi-icon-btn:hover { background: rgba(255, 255, 255, 0.15); }
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-actions .fi-icon-btn.fi-color-danger { color: #fda4af !important; }
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-record-content-ctn { gap: 0 !important; }
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-stack > .fi-ta-col:first-child,
+.fi-ta-record:has(.sg-gallery-col) .fi-ta-record-content > .fi-grid-col { margin: 0 !important; padding: 0 !important; line-height: 0; }
