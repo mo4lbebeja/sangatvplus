@@ -10,6 +10,7 @@ use App\Models\ChannelProvider;
 use App\Models\Device;
 use App\Models\DeviceCommand;
 use App\Models\Facility;
+use App\Models\GalleryPhoto;
 use App\Models\Guest;
 use App\Models\HotelProfile;
 use App\Models\PmsEvent;
@@ -73,6 +74,7 @@ class AppServiceProvider extends ServiceProvider
             'provisioning_code' => ProvisioningCode::class,
             'pms_integration' => PmsIntegration::class,
             'pms_event' => PmsEvent::class,
+            'gallery_photo' => GalleryPhoto::class,
         ]);
 
         // Per-device API budget (≈2 req/s sustained is far above normal use).

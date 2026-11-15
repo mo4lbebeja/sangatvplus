@@ -139,7 +139,7 @@ private fun Root(vm: AppViewModel) {
             )
             is Screen.Info -> {
                 BackHandler { vm.goHome() }
-                InfoScreen(bootstrap, facilities?.facilities.orEmpty(), s.section, vm::goHome)
+                InfoScreen(bootstrap, facilities?.facilities.orEmpty(), facilities?.gallery.orEmpty(), s.section, vm::goHome)
             }
             Screen.Apps -> {
                 BackHandler { vm.goHome() }

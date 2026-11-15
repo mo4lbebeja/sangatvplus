@@ -9,6 +9,7 @@ use App\Models\Channel;
 use App\Models\Device;
 use App\Models\DeviceCommand;
 use App\Models\Facility;
+use App\Models\GalleryPhoto;
 use App\Models\HotelProfile;
 use App\Models\Slide;
 use App\Support\Audit;
@@ -90,6 +91,7 @@ class HeartbeatController extends Controller
             Slide::query()->max('updated_at'), Slide::query()->count(),
             Channel::query()->max('updated_at'), Channel::query()->count(),
             Facility::query()->max('updated_at'), Facility::query()->count(),
+            GalleryPhoto::query()->max('updated_at'), GalleryPhoto::query()->count(),
             AppWhitelist::query()->max('updated_at'), AppWhitelist::query()->count(),
             $device->room?->guests()->max('updated_at'),
         ];

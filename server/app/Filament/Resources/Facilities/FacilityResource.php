@@ -54,9 +54,11 @@ class FacilityResource extends Resource
             TextInput::make('location')->label('Lokasi')->prefixIcon(Heroicon::OutlinedMapPin)->placeholder('Lantai 4')->maxLength(255),
             TextInput::make('hours')->label('Jam buka')->prefixIcon(Heroicon::OutlinedClock)->placeholder('06.00 – 22.00')->maxLength(255),
             Textarea::make('description')->label('Deskripsi')->rows(3)->maxLength(500)->columnSpanFull(),
-            FileUpload::make('image_path')->label('Foto')->image()->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+            FileUpload::make('image_path')->label('Foto (disarankan)')->image()->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
                 ->disk('public')->directory('facilities')->maxSize(8 * 1024)
-                ->helperText('Hingga 8 MB, otomatis dikecilkan.')->columnSpanFull(),
+                ->imagePreviewHeight('140')
+                ->helperText('Foto mendatar (landscape) hingga 8 MB, otomatis dikecilkan. Kartu di TV menampilkan foto besar dengan nama di atasnya; tanpa foto, kartu memakai latar warna.')
+                ->columnSpanFull(),
             TextInput::make('sort_order')->label('Urutan')->numeric()->default(0),
             Toggle::make('is_active')->label('Aktif')->default(true)->inline(false),
         ]);
@@ -66,7 +68,7 @@ class FacilityResource extends Resource
     {
         return $table
             ->columns([
-                ImageColumn::make('image_path')->label('')->disk('public')->imageHeight(30),
+                ImageColumn::make('image_path')->label('Foto')->disk('public')->imageHeight(30)->defaultImageUrl(null),
                 TextColumn::make('name')->label('Nama')->searchable()->weight('semibold'),
                 TextColumn::make('category')->label('Kategori')->badge(),
                 TextColumn::make('location')->label('Lokasi')->icon(Heroicon::OutlinedMapPin)->color('gray'),

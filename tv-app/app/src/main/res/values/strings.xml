@@ -27,6 +27,9 @@
     <string name="info_about">Tentang Hotel</string>
     <string name="info_facilities">Fasilitas</string>
     <string name="info_dining">Restoran &amp; Room Service</string>
+    <string name="info_gallery">Galeri</string>
+    <string name="gallery_empty">Belum ada foto di galeri.</string>
+    <string name="gallery_hint">◀ ▶ foto lain · BACK tutup</string>
     <string name="info_wifi">Wi-Fi</string>
     <string name="info_contact">Kontak Resepsionis</string>
     <string name="info_checkout">Info Check-out</string>

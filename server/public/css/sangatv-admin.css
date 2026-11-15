@@ -474,3 +474,7 @@ html { font-size: 14px; }
 .fi-fo-file-upload .filepond--image-preview-overlay-idle { opacity: 0.45 !important; }
 .fi-fo-file-upload .filepond--image-preview-wrapper { border-radius: 0.6rem; }
 .fi-fo-file-upload .filepond--panel-root { border-radius: 0.6rem; }
+
+/* ---------- Galeri ---------- */
+.sg-gallery-thumb { width: 100% !important; height: 130px !important; object-fit: cover; border-radius: 0.6rem; }
+.fi-ta-content-grid .fi-ta-record { border-radius: var(--sg-radius); }

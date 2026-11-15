@@ -272,7 +272,7 @@ private fun BottomBar(data: Bootstrap?, now: java.time.ZonedDateTime, onOpen: (S
                 }
             }
         }
-        Focusable(onClick = { onOpen(Screen.Info(InfoSection.Wifi)) }, modifier = Modifier.width(56.px).fillMaxHeight()) { focused ->
+        Focusable(onClick = { onOpen(Screen.Info(InfoSection.Gallery)) }, modifier = Modifier.width(56.px).fillMaxHeight()) { focused ->
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 SIcon(SIcons.ChevronRight, if (focused) Sanga.Accent else Sanga.BarText, 32.px)
             }

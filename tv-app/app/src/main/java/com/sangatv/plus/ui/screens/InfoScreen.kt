@@ -1,6 +1,12 @@
 package com.sangatv.plus.ui.screens
 
 import androidx.compose.foundation.Image
+import com.sangatv.plus.data.model.GalleryDto
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
@@ -61,18 +67,21 @@ private val SECTIONS = listOf(
     InfoSection.About to R.string.info_about,
     InfoSection.Facilities to R.string.info_facilities,
     InfoSection.Dining to R.string.info_dining,
+    InfoSection.Gallery to R.string.info_gallery,
     InfoSection.Wifi to R.string.info_wifi,
     InfoSection.Contact to R.string.info_contact,
     InfoSection.Checkout to R.string.info_checkout,
 )
 
 @Composable
-fun InfoScreen(data: Bootstrap?, facilities: List<FacilityDto>, start: InfoSection, onBack: () -> Unit) {
+fun InfoScreen(data: Bootstrap?, facilities: List<FacilityDto>, gallery: List<GalleryDto>, start: InfoSection, onBack: () -> Unit) {
     var section by remember { mutableStateOf(start) }
+    var viewer by remember { mutableStateOf<Int?>(null) }
     val now by rememberNow(data?.hotel?.timezone ?: "Asia/Jakarta")
     val startFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { runCatching { startFocus.requestFocus() } }
 
+    Box(Modifier.fillMaxSize()) {
     Row(Modifier.fillMaxSize().background(Sanga.Background)) {
         // Left menu
         Column(
@@ -127,6 +136,7 @@ fun InfoScreen(data: Bootstrap?, facilities: List<FacilityDto>, start: InfoSecti
                         InfoSection.About -> TextPanel(data?.hotel?.about ?: "", listOfNotNull(data?.hotel?.address))
                         InfoSection.Facilities -> FacilityGrid(facilities.filter { it.category == "facility" })
                         InfoSection.Dining -> FacilityGrid(facilities.filter { it.category == "dining" })
+                        InfoSection.Gallery -> GalleryGrid(gallery) { viewer = it }
                         InfoSection.Wifi -> WifiBig(data)
                         InfoSection.Contact -> TextPanel(
                             data?.hotel?.receptionExtension?.let { stringResource(R.string.reception_dial, it) } ?: "",
@@ -138,12 +148,16 @@ fun InfoScreen(data: Bootstrap?, facilities: List<FacilityDto>, start: InfoSecti
                         )
                     }
                 }
-                Column(Modifier.width(440.px), verticalArrangement = Arrangement.spacedBy(24.px)) {
-                    if (section != InfoSection.Wifi) WifiCard(data)
-                    ReceptionCard(data)
+                if (section != InfoSection.Gallery) {
+                    Column(Modifier.width(440.px), verticalArrangement = Arrangement.spacedBy(24.px)) {
+                        if (section != InfoSection.Wifi) WifiCard(data)
+                        ReceptionCard(data)
+                    }
                 }
             }
         }
+    }
+    viewer?.let { start -> GalleryViewer(gallery, start) { viewer = null } }
     }
 }
 
@@ -154,6 +168,7 @@ private fun subtitle(section: InfoSection, data: Bootstrap?): String {
         InfoSection.About -> data?.hotel?.tagline ?: hotel
         InfoSection.Facilities -> "Jam operasional dan lokasi fasilitas di $hotel."
         InfoSection.Dining -> "Restoran dan layanan pesan antar ke kamar."
+        InfoSection.Gallery -> "Suasana $hotel dalam foto."
         InfoSection.Wifi -> stringResource(R.string.wifi_scan)
         InfoSection.Contact -> stringResource(R.string.reception_24h)
         InfoSection.Checkout -> "Check-in ${data?.hotel?.checkInTime ?: ""} · Check-out ${data?.hotel?.checkOutTime ?: ""}"
@@ -187,24 +202,106 @@ private fun FacilityGrid(items: List<FacilityDto>) {
     ) {
         items(items, key = { it.id }) { f ->
             Focusable(onClick = {}) { focused ->
+                val shape = RoundedCornerShape(24.px)
                 Column(
                     Modifier.fillMaxWidth()
-                        .card(RoundedCornerShape(24.px), borderColor = if (focused) Sanga.Accent else Sanga.Border, borderWidth = if (focused) 3.px else 1.px)
-                        .padding(32.px),
-                    verticalArrangement = Arrangement.spacedBy(14.px),
+                        .card(shape, borderColor = if (focused) Sanga.Accent else Sanga.Border, borderWidth = if (focused) 3.px else 1.px)
+                        .clip(shape),
                 ) {
-                    val shape = RoundedCornerShape(16.px)
-                    if (f.imageUrl != null) {
-                        AsyncImage(f.imageUrl, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxWidth().height(150.px).clip(shape))
-                    } else {
-                        Box(Modifier.fillMaxWidth().height(150.px).background(Sanga.Surface2, shape), contentAlignment = Alignment.Center) {
-                            SIcon(SIcons.Facilities, Sanga.Text3, 56.px)
+                    // Photo-first card; the name sits on the image over a soft gradient.
+                    Box(Modifier.fillMaxWidth().height(230.px)) {
+                        if (f.imageUrl != null) {
+                            AsyncImage(f.imageUrl, null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                        } else {
+                            val (from, to) = if (f.category == "dining") Color(0xFF5A3A1E) to Color(0xFF0C2B45) else Color(0xFF0E5C78) to Color(0xFF0C2B45)
+                            Box(Modifier.fillMaxSize().background(Brush.linearGradient(listOf(from, to))), contentAlignment = Alignment.Center) {
+                                SIcon(if (f.category == "dining") SIcons.RoomService else SIcons.Facilities, Color.White.copy(alpha = 0.35f), 96.px)
+                            }
                         }
+                        Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Color(0xE6061A2B))))
+                        Text(
+                            f.name, style = body(30, 800), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.align(Alignment.BottomStart).padding(horizontal = 28.px, vertical = 18.px),
+                        )
                     }
-                    Text(f.name, style = body(30, 700), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(listOfNotNull(f.location, f.hours).joinToString(" · "), style = body(21, 400, Sanga.Text3), maxLines = 2)
-                    f.description?.let { Text(it, style = body(19, 400, Sanga.Text2), maxLines = 3, overflow = TextOverflow.Ellipsis) }
+                    Column(Modifier.padding(horizontal = 28.px, vertical = 20.px), verticalArrangement = Arrangement.spacedBy(8.px)) {
+                        Text(listOfNotNull(f.location, f.hours).joinToString("  ·  ").ifEmpty { " " }, style = body(21, 600, Sanga.Accent), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        f.description?.let { Text(it, style = body(19, 400, Sanga.Text2), maxLines = 2, overflow = TextOverflow.Ellipsis) }
+                    }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GalleryGrid(photos: List<GalleryDto>, onOpen: (Int) -> Unit) {
+    if (photos.isEmpty()) {
+        Text(stringResource(R.string.gallery_empty), style = body(24, 400, Sanga.Text3))
+        return
+    }
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        horizontalArrangement = Arrangement.spacedBy(20.px),
+        verticalArrangement = Arrangement.spacedBy(20.px),
+    ) {
+        items(photos.size, key = { photos[it].id }) { i ->
+            val p = photos[i]
+            Focusable(onClick = { onOpen(i) }) { focused ->
+                val shape = RoundedCornerShape(18.px)
+                Box(
+                    Modifier.fillMaxWidth().aspectRatio(16f / 10f).clip(shape)
+                        .border(if (focused) 4.px else 1.px, if (focused) Sanga.Accent else Sanga.Border, shape)
+                        .background(Sanga.Card),
+                ) {
+                    AsyncImage(p.thumbUrl, p.title, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                    val label = p.title ?: p.album
+                    if (label != null) {
+                        Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.55f to Color.Transparent, 1f to Color(0xCC061A2B))))
+                        Text(label, style = body(20, 700), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.align(Alignment.BottomStart).padding(horizontal = 18.px, vertical = 12.px))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Full-screen photo viewer: ◀ ▶ to browse, BACK to close. */
+@Composable
+private fun GalleryViewer(photos: List<GalleryDto>, start: Int, onClose: () -> Unit) {
+    if (photos.isEmpty()) return
+    var index by remember { mutableStateOf(start.coerceIn(0, photos.lastIndex)) }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    androidx.activity.compose.BackHandler(onBack = onClose)
+    val p = photos[index]
+    Box(
+        Modifier.fillMaxSize().background(Color(0xF2020A12))
+            .focusRequester(focus)
+            .onPreviewKeyEvent { e ->
+                if (e.type != androidx.compose.ui.input.key.KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                when (e.key) {
+                    androidx.compose.ui.input.key.Key.DirectionRight -> { index = (index + 1) % photos.size; true }
+                    androidx.compose.ui.input.key.Key.DirectionLeft -> { index = (index - 1 + photos.size) % photos.size; true }
+                    else -> false
+                }
+            }
+            .focusable(),
+    ) {
+        androidx.compose.animation.Crossfade(targetState = p.imageUrl, label = "photo") { url ->
+            AsyncImage(url, p.title, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize().padding(48.px))
+        }
+        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xE6020A12))))
+            .padding(horizontal = 96.px, vertical = 40.px)) {
+            Column(Modifier.align(Alignment.BottomStart), verticalArrangement = Arrangement.spacedBy(6.px)) {
+                p.album?.let { Text(it.uppercase(), style = display(18, 0.16f, Sanga.Accent)) }
+                p.title?.let { Text(it, style = body(32, 800)) }
+                p.caption?.let { Text(it, style = body(22, 400, Sanga.Text2), modifier = Modifier.widthIn(max = 1100.px)) }
+            }
+            Column(Modifier.align(Alignment.BottomEnd), horizontalAlignment = Alignment.End) {
+                Text("${index + 1} / ${photos.size}", style = body(26, 700))
+                Text(stringResource(R.string.gallery_hint), style = body(18, 400, Sanga.Text3))
             }
         }
     }

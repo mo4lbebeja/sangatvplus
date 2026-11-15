@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-enum class InfoSection { About, Facilities, Dining, Wifi, Contact, Checkout }
+enum class InfoSection { About, Facilities, Dining, Gallery, Wifi, Contact, Checkout }
 
 sealed interface Screen {
     data object Home : Screen

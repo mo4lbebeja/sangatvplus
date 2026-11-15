@@ -135,7 +135,20 @@ data class Drm(
 )
 
 @Serializable
-data class FacilitiesResponse(val facilities: List<FacilityDto> = emptyList())
+data class FacilitiesResponse(
+    val facilities: List<FacilityDto> = emptyList(),
+    val gallery: List<GalleryDto> = emptyList(),
+)
+
+@Serializable
+data class GalleryDto(
+    val id: Long,
+    val album: String? = null,
+    val title: String? = null,
+    val caption: String? = null,
+    @SerialName("image_url") val imageUrl: String,
+    @SerialName("thumb_url") val thumbUrl: String,
+)
 
 @Serializable
 data class FacilityDto(

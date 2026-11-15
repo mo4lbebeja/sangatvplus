@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 const ADMIN_PAGES = [
-    '/admin/panduan-teknisi', '/admin/integrasi-pms', '/admin/pms-kunci-api', '/admin/pms-log',
+    '/admin/panduan-teknisi', '/admin/galeri', '/admin/integrasi-pms', '/admin/pms-kunci-api', '/admin/pms-log',
     '/admin', '/admin/guests', '/admin/rooms', '/admin/slides', '/admin/facilities', '/admin/hotel-profile',
     '/admin/channels', '/admin/channel-categories', '/admin/channel-providers',
     '/admin/devices', '/admin/app-whitelist', '/admin/app-releases', '/admin/users', '/admin/audit-logs',
@@ -63,7 +63,7 @@ it('limits pages by role', function (UserRole $role, array $allowed) {
         expect($this->get($url)->status())->toBe($expected, "{$role->value} {$url}");
     }
 })->with([
-    'front office' => [UserRole::FrontOffice, ['/admin', '/admin/guests', '/admin/rooms', '/admin/slides', '/admin/facilities']],
+    'front office' => [UserRole::FrontOffice, ['/admin', '/admin/guests', '/admin/rooms', '/admin/slides', '/admin/facilities', '/admin/galeri']],
     'it' => [UserRole::It, ['/admin', '/admin/panduan-teknisi', '/admin/integrasi-pms', '/admin/pms-kunci-api', '/admin/pms-log', '/admin/rooms', '/admin/channels', '/admin/channel-categories', '/admin/channel-providers', '/admin/devices', '/admin/app-whitelist', '/admin/app-releases', '/admin/audit-logs']],
 ]);
 

@@ -49,6 +49,23 @@ class ImageOptimizer
         }, $quality);
     }
 
+    /** Writes a separate JPEG thumbnail (longest side = $max) next to the image; returns its path. */
+    public static function thumbnail(string $disk, string $path, int $max = 480): ?string
+    {
+        $fs = Storage::disk($disk);
+        $thumb = preg_replace('/(\.[^.\/]+)?$/', '', $path, 1).'-thumb.jpg';
+        try {
+            if (! $fs->copy($path, $thumb)) {
+                return null;
+            }
+        } catch (Throwable) {
+            return null;
+        }
+        $result = self::fit($disk, $thumb, $max, 78);
+
+        return $fs->exists($result) ? $result : null;
+    }
+
     /** Imagick keeps big camera photos out of PHP's memory_limit. */
     private static function imagick(string $disk, string $path, callable $transform, int $quality): string
     {
