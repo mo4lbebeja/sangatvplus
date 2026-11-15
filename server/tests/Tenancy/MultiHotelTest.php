@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\AppRelease;
 use App\Models\Central\Hotel;
+use App\Models\Central\VendorUser;
 use App\Models\Device;
 use App\Models\HotelProfile;
 use App\Models\PmsIntegration;
@@ -8,6 +10,7 @@ use App\Models\ProvisioningCode;
 use App\Models\Room;
 use App\Models\User;
 use App\Tenancy\HotelManager;
+use App\Vendor\Resources\Hotels\Pages\ManageHotels;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -146,4 +149,61 @@ it('tells older TVs their hotel code in the bootstrap', function () {
     $a = provisionTv(codeFor($this->alpha));
     app('auth')->forgetGuards();
     $this->withToken($a['token'])->getJson('/api/v1/bootstrap')->assertJsonPath('hotel_code', 'alpha');
+});
+
+// ------------------------------------------------------------------ vendor panel (/sijalucom)
+
+function vendorLogin(): VendorUser
+{
+    $v = VendorUser::query()->create(['name' => 'Sijalucom', 'email' => 'ops@sijalucom.test', 'password' => 'rahasia-panjang-1']);
+    $v->forceFill(['app_authentication_secret' => 'JBSWY3DPEHPK3PXP'])->save();
+    test()->actingAs($v, 'vendor');
+    Filament\Facades\Filament::setCurrentPanel(Filament\Facades\Filament::getPanel('vendor'));
+
+    return $v;
+}
+
+it('keeps hotel staff out of the vendor panel and vendor staff out of hotel data', function () {
+    $this->get('/sijalucom')->assertRedirect('/sijalucom/login');
+    $staff = $this->tenancy->run($this->alpha, fn () => User::query()->first());
+    $this->actingAs($staff)->get('/sijalucom')->assertRedirect('/sijalucom/login');
+    app('auth')->forgetGuards();
+    vendorLogin();
+    $this->get('/sijalucom')->assertOk()->assertSee('Hotel aktif');
+    $this->get('/sijalucom/hotels')->assertOk()->assertSee('alpha')->assertSee('bravo');
+});
+
+it('lets Sijalucom create a hotel with its own database, admin and the current app release', function () {
+    $this->tenancy->run($this->alpha, fn () => AppRelease::query()->create([
+        'package_name' => 'com.sangatv.plus', 'version_code' => 12, 'version_name' => '0.4.0', 'apk_path' => 'releases/x.apk', 'sha256' => str_repeat('a', 64), 'is_active' => true,
+    ]));
+    vendorLogin();
+    Livewire\Livewire::test(ManageHotels::class)
+        ->callAction('create', ['slug' => 'charlie', 'name' => 'Hotel Charlie', 'admin_email' => 'gm@charlie.test', 'service_expires_at' => '2027-12-31'])
+        ->assertHasNoActionErrors()->assertNotified('Hotel Hotel Charlie siap');
+
+    $c = Hotel::query()->where('slug', 'charlie')->firstOrFail();
+    expect($c->database)->toBe('sangatv_test_charlie')->and($c->service_expires_at->toDateString())->toBe('2027-12-31');
+    expect($this->tenancy->run($c, fn () => [User::query()->value('email'), AppRelease::query()->value('version_code')]))->toBe(['gm@charlie.test', 12]);
+    $this->tenancy->dropDatabase($c);
+});
+
+it('rejects a duplicate or reserved hotel code', function () {
+    vendorLogin();
+    Livewire\Livewire::test(ManageHotels::class)
+        ->callAction('create', ['slug' => 'alpha', 'name' => 'X', 'admin_email' => 'x@x.test'])->assertHasActionErrors(['slug']);
+    Livewire\Livewire::test(ManageHotels::class)
+        ->callAction('create', ['slug' => 'sijalucom', 'name' => 'X', 'admin_email' => 'x@x.test'])->assertHasActionErrors(['slug']);
+});
+
+it('suspends a hotel and releases its TVs from the vendor panel', function () {
+    $tv = provisionTv(codeFor($this->bravo));
+    vendorLogin();
+    Livewire\Livewire::test(ManageHotels::class)
+        ->callTableAction('release', $this->bravo)
+        ->callTableAction('suspend', $this->alpha);
+
+    expect($this->bravo->fresh()->serviceStatus())->toBe('released')->and($this->alpha->fresh()->status)->toBe('suspended');
+    app('auth')->forgetGuards();
+    $this->withToken($tv['token'])->withHeader('X-SangaTV-Hotel', 'bravo')->getJson('/api/v1/bootstrap')->assertOk()->assertJsonPath('service.status', 'released');
 });

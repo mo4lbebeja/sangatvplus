@@ -6,6 +6,7 @@ use App\Http\Middleware\InitializeHotel;
 use App\Models\Announcement;
 use App\Models\AppRelease;
 use App\Models\AppWhitelist;
+use App\Models\Central\VendorUser;
 use App\Models\Channel;
 use App\Models\ChannelCategory;
 use App\Models\ChannelCheck;
@@ -78,6 +79,7 @@ class AppServiceProvider extends ServiceProvider
         // Short, stable names in polymorphic columns (audit_logs, tokens).
         Relation::enforceMorphMap([
             'user' => User::class,
+            'vendor_user' => VendorUser::class, // Sijalucom staff acting from the vendor panel
             'device' => Device::class,
             'room' => Room::class,
             'guest' => Guest::class,

@@ -3,15 +3,18 @@
 namespace App\Tenancy;
 
 use App\Enums\UserRole;
+use App\Models\AppRelease;
 use App\Models\Central\Hotel;
 use App\Models\HotelProfile;
 use App\Models\User;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Throwable;
 
 /**
  * Multi-hotel: one database per hotel (same pattern as kulakku's RestoManager).
@@ -199,6 +202,18 @@ class HotelManager
             'contact_email' => $adminEmail,
         ]);
 
+        try {
+            return $this->setUpNewHotel($hotel, $name, $adminEmail, $adminName);
+        } catch (Throwable $e) {
+            // Half-made hotel: remove it so the same code can be tried again.
+            rescue(fn () => $this->dropDatabase($hotel), report: false);
+            $hotel->delete();
+            throw $e;
+        }
+    }
+
+    private function setUpNewHotel(Hotel $hotel, string $name, string $adminEmail, ?string $adminName): array
+    {
         if (! $this->databaseExists($hotel)) {
             $this->createDatabase($hotel);
         }
@@ -207,8 +222,16 @@ class HotelManager
             throw new RuntimeException('Migrasi database hotel gagal: '.$result['output']);
         }
 
+        // The new hotel's TVs get the same app version as the others (active OTA releases of the first hotel).
+        $template = Hotel::query()->where('id', '!=', $hotel->id)->where('status', 'active')->orderBy('id')->first();
+        $releases = $template ? $this->run($template, fn () => AppRelease::query()->where('is_active', true)->get()
+            ->map(fn (AppRelease $r) => $r->only(['package_name', 'version_code', 'version_name', 'apk_path', 'sha256', 'notes', 'is_active']))->all()) : [];
+
         $password = Str::password(16, symbols: false);
-        $this->run($hotel, function () use ($name, $adminEmail, $adminName, $password) {
+        $this->run($hotel, function () use ($name, $adminEmail, $adminName, $password, $releases) {
+            foreach ($releases as $release) {
+                AppRelease::query()->updateOrCreate(Arr::only($release, ['package_name', 'version_code']), $release);
+            }
             HotelProfile::current()->update(['name' => $name]);
             User::query()->create([
                 'name' => $adminName ?: 'Admin '.$name,

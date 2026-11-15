@@ -23,5 +23,5 @@ return [
     // TVs and PMS that do not (yet) send a hotel identifier belong to this hotel (the first hotel, Napolin).
     'legacy_hotel' => env('TENANCY_LEGACY_HOTEL'),
 
-    'reserved' => ['admin', 'api', 'vendor', 'central', 'www', 'storage', 'up', 'privasi'],
+    'reserved' => ['admin', 'sijalucom', 'api', 'vendor', 'central', 'www', 'storage', 'up', 'privasi'],
 ];

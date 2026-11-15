@@ -47,6 +47,8 @@ ssh "$HOST" "chown -R www:www $DIR 2>&1 | grep -v '.user.ini' || true"
 # that PHP-FPM then cannot write ("laravel-YYYY-MM-DD.log could not be opened: Permission denied").
 ART="cd $DIR && sudo -u www php artisan"
 ssh "$HOST" "$ART migrate --force && ($ART storage:link --quiet 2>/dev/null || true)"
+# Multi-hotel: central tables (hotels, codes, sessions) + every hotel's own database.
+ssh "$HOST" "cd $DIR && grep -q '^TENANCY_ENABLED=true' .env && $ART migrate --force --database=central --path=database/migrations/central && $ART sangatv:hotel migrasi || true"
 # Livewire/Filament JS must exist as real files: aaPanel's nginx serves every *.js as a static file.
 ssh "$HOST" "$ART livewire:publish --assets --silent && $ART filament:assets --quiet && $ART optimize:clear --quiet && $ART config:cache && $ART route:cache && $ART view:cache && $ART event:cache"
 ssh "$HOST" "chown -R www:www $DIR/storage $DIR/bootstrap/cache $DIR/public 2>&1 | grep -v '.user.ini' || true"

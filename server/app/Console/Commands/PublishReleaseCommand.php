@@ -6,8 +6,10 @@ use App\Enums\CommandStatus;
 use App\Enums\CommandType;
 use App\Enums\DeviceStatus;
 use App\Models\AppRelease;
+use App\Models\Central\Hotel;
 use App\Models\Device;
 use App\Support\Audit;
+use App\Tenancy\HotelManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 
@@ -20,7 +22,7 @@ class PublishReleaseCommand extends Command
 
     protected $description = 'Terbitkan APK yang sudah diunggah sebagai rilis OTA aktif';
 
-    public function handle(): int
+    public function handle(HotelManager $tenancy): int
     {
         $path = 'releases/'.basename($this->argument('file'));
         if (! Storage::disk('local')->exists($path)) {
@@ -41,6 +43,22 @@ class PublishReleaseCommand extends Command
             return self::FAILURE;
         }
 
+        // Multi-hotel: the same APK becomes the active release in every active hotel's database.
+        if ($tenancy->enabled() && ! $tenancy->current()) {
+            foreach (Hotel::query()->where('status', 'active')->orderBy('id')->get() as $hotel) {
+                $this->line("== {$hotel->slug}");
+                $tenancy->run($hotel, fn () => $this->publish($path, $sha, $package));
+            }
+
+            return self::SUCCESS;
+        }
+        $this->publish($path, $sha, $package);
+
+        return self::SUCCESS;
+    }
+
+    private function publish(string $path, string $sha, string $package): void
+    {
         $release = AppRelease::query()->updateOrCreate(
             ['package_name' => $package, 'version_code' => (int) $this->option('code')],
             ['version_name' => (string) $this->option('versi'), 'apk_path' => $path, 'sha256' => $sha, 'notes' => $this->option('catatan'), 'is_active' => true],
@@ -58,7 +76,5 @@ class PublishReleaseCommand extends Command
             $held = Device::query()->where('status', DeviceStatus::Active)->where('hold_updates', true)->count();
             $this->info("Perintah update dikirim ke {$devices->count()} TV".($held ? " ({$held} TV ditahan, dilewati)" : ''));
         }
-
-        return self::SUCCESS;
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Central\VendorUser;
 use App\Models\User;
 
 return [
@@ -42,6 +43,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        // Sijalucom vendor panel (/sijalucom), accounts in the central database.
+        'vendor' => [
+            'driver' => 'session',
+            'provider' => 'vendor_users',
+        ],
     ],
 
     /*
@@ -65,6 +71,10 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+        'vendor_users' => [
+            'driver' => 'eloquent',
+            'model' => VendorUser::class,
         ],
 
         // 'users' => [

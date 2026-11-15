@@ -4,6 +4,7 @@ namespace App\Models\Central;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 /** A hotel renting SangaTV Plus (central database). Its data lives in its own database ($database). */
 class Hotel extends Model
@@ -11,6 +12,12 @@ class Hotel extends Model
     protected $connection = 'central';
 
     protected $guarded = ['id'];
+
+    protected static function booted(): void
+    {
+        // The CMS caches the hotel record for a minute: changes by Sijalucom (suspend, period) apply right away.
+        static::saved(fn (Hotel $hotel) => Cache::forget("central:hotel:{$hotel->id}"));
+    }
 
     protected function casts(): array
     {
