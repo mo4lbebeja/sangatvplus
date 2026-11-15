@@ -6,7 +6,6 @@ use App\Models\Central\Hotel;
 use App\Models\Central\Plan;
 use App\Vendor\Billing;
 use App\Vendor\Concerns\VendorAccess;
-use App\Vendor\HotelStats;
 use App\Vendor\Resources\Hotels\Pages\ManageHotels;
 use App\Vendor\Resources\Hotels\Pages\ViewHotel;
 use App\Vendor\Resources\Hotels\RelationManagers\ActivitiesRelationManager;
@@ -14,7 +13,6 @@ use App\Vendor\Resources\Hotels\RelationManagers\InvoicesRelationManager;
 use BackedEnum;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
-use Filament\Actions\ViewAction;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -25,6 +23,8 @@ use Filament\Infolists\Components\ViewEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -32,6 +32,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\HtmlString;
 use UnitEnum;
 
 class HotelResource extends Resource
@@ -82,23 +83,25 @@ class HotelResource extends Resource
     public static function subscriptionFields(): array
     {
         return [
-            Select::make('plan_id')->label('Paket')->options(fn () => Plan::query()->where('is_active', true)->orderBy('sort')->pluck('name', 'id'))
+            Select::make('plan_id')->label('Paket')->prefixIcon(Heroicon::OutlinedRectangleStack)
+                ->options(fn () => Plan::query()->where('is_active', true)->orderBy('sort')->get()
+                    ->mapWithKeys(fn (Plan $p) => [$p->id => "{$p->name} · ".Billing::rupiah($p->base_price).'/bln']))
                 ->live()->required(fn (Get $get) => blank($get('custom_monthly_price'))),
-            TextInput::make('tv_quota')->label('Kuota TV (kontrak)')->numeric()->minValue(1)->live(onBlur: true)
-                ->helperText('TV aktif tidak bisa melebihi kuota. Kosong = tanpa batas.'),
-            Select::make('billing_months')->label('Siklus tagihan')->options(Billing::CYCLES)->default(1)->required()->live(),
-            TextInput::make('custom_monthly_price')->label('Harga khusus / bulan')->numeric()->prefix('Rp')->minValue(0)->live(onBlur: true)
-                ->helperText('Isi bila tidak memakai harga paket.'),
-            TextInput::make('discount_percent')->label('Diskon')->numeric()->suffix('%')->minValue(0)->maxValue(100)->default(0)->live(onBlur: true),
-            Toggle::make('auto_invoice')->label('Tagihan otomatis sebelum sewa habis')->default(true)->inline(false),
-            Placeholder::make('price_preview')->label('Harga sewa')->columnSpanFull()
+            TextInput::make('tv_quota')->label('Kuota TV (kontrak)')->prefixIcon(Heroicon::OutlinedTv)->numeric()->minValue(1)->suffix('TV')->live(onBlur: true)
+                ->helperText('Kosong = tanpa batas.'),
+            Select::make('billing_months')->label('Siklus tagihan')->prefixIcon(Heroicon::OutlinedArrowPath)->options(Billing::CYCLES)->default(1)->required()->live(),
+            TextInput::make('discount_percent')->label('Diskon')->prefixIcon(Heroicon::OutlinedReceiptPercent)->numeric()->suffix('%')->minValue(0)->maxValue(100)->default(0)->live(onBlur: true),
+            TextInput::make('custom_monthly_price')->label('Harga khusus / bulan (opsional)')->prefixIcon(Heroicon::OutlinedBanknotes)->numeric()->prefix('Rp')->minValue(0)->live(onBlur: true)
+                ->helperText('Mengganti harga paket.'),
+            Toggle::make('auto_invoice')->label('Tagihan otomatis sebelum sewa habis')->default(true)->inline(false)->onIcon(Heroicon::Bolt),
+            Placeholder::make('price_preview')->hiddenLabel()->columnSpanFull()
                 ->content(function (Get $get) {
                     $plan = ($id = $get('plan_id')) ? Plan::query()->find($id) : null;
                     $gross = filled($get('custom_monthly_price')) ? (int) $get('custom_monthly_price') : ($plan?->monthlyFor((int) $get('tv_quota')) ?? 0);
                     $net = (int) round($gross * (1 - ((float) $get('discount_percent')) / 100));
                     $months = (int) ($get('billing_months') ?: 1);
 
-                    return Billing::rupiah($net).' / bulan · '.Billing::rupiah($net * $months)." per tagihan ({$months} bulan)";
+                    return new HtmlString(view('vendor-console.price-preview', ['net' => $net, 'gross' => $gross, 'months' => $months, 'plan' => $plan])->render());
                 }),
         ];
     }
@@ -106,35 +109,40 @@ class HotelResource extends Resource
     public static function contactFields(): array
     {
         return [
-            TextInput::make('city')->label('Kota')->maxLength(80),
-            TextInput::make('contact_name')->label('Nama PIC hotel')->maxLength(120),
-            TextInput::make('contact_phone')->label('Telepon / WhatsApp PIC')->tel()->maxLength(32),
-            TextInput::make('contact_email')->label('Email PIC')->email()->maxLength(160),
+            TextInput::make('city')->label('Kota')->prefixIcon(Heroicon::OutlinedMapPin)->maxLength(80),
+            TextInput::make('contact_name')->label('Nama PIC hotel')->prefixIcon(Heroicon::OutlinedUser)->maxLength(120),
+            TextInput::make('contact_phone')->label('Telepon / WhatsApp PIC')->prefixIcon(Heroicon::OutlinedPhone)->tel()->maxLength(32),
+            TextInput::make('contact_email')->label('Email PIC')->prefixIcon(Heroicon::OutlinedEnvelope)->email()->maxLength(160),
         ];
     }
 
     public static function billingFields(): array
     {
         return [
-            TextInput::make('billing_name')->label('Nama di tagihan (badan usaha)')->maxLength(160),
-            TextInput::make('billing_email')->label('Email penagihan')->email()->maxLength(160),
-            TextInput::make('npwp')->label('NPWP')->maxLength(32),
-            Textarea::make('billing_address')->label('Alamat penagihan')->rows(2)->columnSpanFull(),
+            TextInput::make('billing_name')->label('Nama di tagihan (badan usaha)')->prefixIcon(Heroicon::OutlinedBuildingLibrary)->maxLength(160),
+            TextInput::make('billing_email')->label('Email penagihan')->prefixIcon(Heroicon::OutlinedAtSymbol)->email()->maxLength(160)
+                ->helperText('Tagihan otomatis dikirim ke sini.'),
+            TextInput::make('npwp')->label('NPWP')->prefixIcon(Heroicon::OutlinedIdentification)->maxLength(32),
+            Textarea::make('billing_address')->label('Alamat penagihan')->rows(3)->columnSpanFull(),
         ];
     }
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Identitas & kontak')->icon(Heroicon::OutlinedBuildingOffice2)->columns(2)->schema([
-                TextInput::make('name')->label('Nama hotel')->required()->maxLength(120),
-                ...static::contactFields(),
+            Tabs::make()->columnSpanFull()->contained(false)->tabs([
+                Tab::make('Identitas & kontak')->icon(Heroicon::OutlinedBuildingOffice2)->columns(2)->schema([
+                    TextInput::make('name')->label('Nama hotel')->prefixIcon(Heroicon::OutlinedBuildingOffice)->required()->maxLength(120),
+                    ...static::contactFields(),
+                ]),
+                Tab::make('Langganan')->icon(Heroicon::OutlinedCreditCard)->columns(2)->schema(static::subscriptionFields())
+                    ->visible(fn () => static::allowed('finance')),
+                Tab::make('Penagihan')->icon(Heroicon::OutlinedDocumentText)->columns(2)->schema(static::billingFields())
+                    ->visible(fn () => static::allowed('finance')),
+                Tab::make('Catatan')->icon(Heroicon::OutlinedPencilSquare)->schema([
+                    Textarea::make('notes')->label('Catatan internal Sijalucom (tidak terlihat hotel)')->rows(6),
+                ]),
             ]),
-            Section::make('Langganan')->icon(Heroicon::OutlinedCreditCard)->columns(2)->schema(static::subscriptionFields())
-                ->visible(fn () => static::allowed('finance')),
-            Section::make('Penagihan')->icon(Heroicon::OutlinedDocumentText)->columns(2)->schema(static::billingFields())
-                ->visible(fn () => static::allowed('finance')),
-            Section::make('Catatan internal')->schema([Textarea::make('notes')->hiddenLabel()->rows(3)]),
         ]);
     }
 
@@ -144,21 +152,21 @@ class HotelResource extends Resource
             ViewEntry::make('header')->hiddenLabel()->view('vendor-console.hotel-header')->columnSpanFull(),
             Grid::make(['default' => 1, 'lg' => 3])->columnSpanFull()->schema([
                 Section::make('Langganan')->icon(Heroicon::OutlinedCreditCard)->columns(2)->columnSpan(1)->schema([
-                    TextEntry::make('plan.name')->label('Paket')->placeholder(fn (Hotel $h) => $h->custom_monthly_price !== null ? 'Harga khusus' : '–'),
-                    TextEntry::make('tv_quota')->label('Kuota TV')->placeholder('tanpa batas'),
-                    TextEntry::make('monthly')->label('Harga / bulan')->state(fn (Hotel $h) => Billing::rupiah($h->monthlyPrice()))
+                    TextEntry::make('plan.name')->label('Paket')->icon(Heroicon::OutlinedRectangleStack)->iconColor('primary')->placeholder(fn (Hotel $h) => $h->custom_monthly_price !== null ? 'Harga khusus' : '–'),
+                    TextEntry::make('tv_quota')->label('Kuota TV')->icon(Heroicon::OutlinedTv)->iconColor('primary')->placeholder('tanpa batas'),
+                    TextEntry::make('monthly')->label('Harga / bulan')->icon(Heroicon::OutlinedBanknotes)->iconColor('success')->weight('bold')->state(fn (Hotel $h) => Billing::rupiah($h->monthlyPrice()))
                         ->helperText(fn (Hotel $h) => $h->discount_percent > 0 ? "diskon {$h->discount_percent}%" : null),
-                    TextEntry::make('billing_months')->label('Siklus')->formatStateUsing(fn ($state) => Billing::CYCLES[$state] ?? "{$state} bulan"),
-                    TextEntry::make('activated_at')->label('Aktif sejak')->date('d M Y', Billing::TZ)->placeholder('belum diaktifkan'),
-                    TextEntry::make('auto_invoice')->label('Tagihan otomatis')->formatStateUsing(fn ($state) => $state ? 'Ya' : 'Tidak'),
+                    TextEntry::make('billing_months')->label('Siklus')->icon(Heroicon::OutlinedArrowPath)->iconColor('primary')->formatStateUsing(fn ($state) => Billing::CYCLES[$state] ?? "{$state} bulan"),
+                    TextEntry::make('activated_at')->label('Aktif sejak')->icon(Heroicon::OutlinedRocketLaunch)->iconColor('primary')->date('d M Y', Billing::TZ)->placeholder('belum diaktifkan'),
+                    TextEntry::make('auto_invoice')->label('Tagihan otomatis')->icon(Heroicon::OutlinedBolt)->iconColor('warning')->formatStateUsing(fn ($state) => $state ? 'Ya' : 'Tidak'),
                 ]),
                 Section::make('Kontak & penagihan')->icon(Heroicon::OutlinedUser)->columns(2)->columnSpan(1)->schema([
-                    TextEntry::make('contact_name')->label('PIC')->placeholder('–'),
-                    TextEntry::make('contact_phone')->label('Telepon')->placeholder('–')->copyable(),
-                    TextEntry::make('contact_email')->label('Email')->placeholder('–')->copyable(),
-                    TextEntry::make('city')->label('Kota')->placeholder('–'),
-                    TextEntry::make('billing_name')->label('Nama tagihan')->placeholder('–'),
-                    TextEntry::make('npwp')->label('NPWP')->placeholder('–'),
+                    TextEntry::make('contact_name')->label('PIC')->icon(Heroicon::OutlinedUser)->iconColor('primary')->placeholder('–'),
+                    TextEntry::make('contact_phone')->label('Telepon')->icon(Heroicon::OutlinedPhone)->iconColor('primary')->placeholder('–')->copyable(),
+                    TextEntry::make('contact_email')->label('Email')->icon(Heroicon::OutlinedEnvelope)->iconColor('primary')->placeholder('–')->copyable(),
+                    TextEntry::make('city')->label('Kota')->icon(Heroicon::OutlinedMapPin)->iconColor('primary')->placeholder('–'),
+                    TextEntry::make('billing_name')->label('Nama tagihan')->icon(Heroicon::OutlinedBuildingLibrary)->iconColor('primary')->placeholder('–'),
+                    TextEntry::make('npwp')->label('NPWP')->icon(Heroicon::OutlinedIdentification)->iconColor('primary')->placeholder('–'),
                 ]),
                 Section::make('Penggunaan 30 hari')->icon(Heroicon::OutlinedChartBar)->columnSpan(1)->schema([
                     ViewEntry::make('usage')->hiddenLabel()->view('vendor-console.hotel-usage'),
@@ -173,23 +181,32 @@ class HotelResource extends Resource
         ]);
     }
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['name', 'slug', 'city', 'contact_name'];
+    }
+
     public static function table(Table $table): Table
     {
         return $table
             ->modifyQueryUsing(fn ($query) => $query->with('plan'))
             ->columns([
                 ViewColumn::make('name')->label('Hotel')->view('vendor-console.columns.hotel')->searchable(['name', 'slug', 'city', 'contact_name'])->sortable(),
-                TextColumn::make('plan.name')->label('Paket')->badge()->color('primary')
-                    ->placeholder('–')->state(fn (Hotel $h) => $h->custom_monthly_price !== null ? 'Khusus' : $h->plan?->name),
-                TextColumn::make('monthly')->label('Sewa / bln')->state(fn (Hotel $h) => $h->monthlyPrice())
-                    ->formatStateUsing(fn ($state) => $state ? Billing::rupiah($state) : '–')->visible(fn () => static::allowed('finance')),
+                TextColumn::make('plan.name')->label('Paket')->badge()->icon(Heroicon::OutlinedRectangleStack)
+                    ->placeholder('Belum ada')->state(fn (Hotel $h) => $h->custom_monthly_price !== null ? 'Khusus' : $h->plan?->name)
+                    ->color(fn (Hotel $h) => match ($h->custom_monthly_price !== null ? 'custom' : $h->plan?->code) {
+                        'premium' => 'primary', 'standard' => 'info', 'custom' => 'warning', default => 'gray'
+                    }),
+                TextColumn::make('monthly')->label('Sewa / bulan')->icon(Heroicon::OutlinedBanknotes)->iconColor('success')->weight('semibold')
+                    ->state(fn (Hotel $h) => $h->monthlyPrice())->formatStateUsing(fn ($state) => $state ? Billing::rupiah($state) : '–')
+                    ->description(fn (Hotel $h) => 'per '.(Billing::CYCLES[$h->billing_months] ?? "{$h->billing_months} bulan"))
+                    ->visible(fn () => static::allowed('finance')),
                 ViewColumn::make('service_expires_at')->label('Masa sewa')->view('vendor-console.columns.rental')->sortable(),
-                TextColumn::make('tvs')->label('TV')
-                    ->state(fn (Hotel $h) => ($s = HotelStats::for($h))['ok'] ? "{$s['online']} online / {$s['tvs']}".($h->tv_quota ? " (kuota {$h->tv_quota})" : '') : 'galat')
-                    ->color(fn (Hotel $h) => HotelStats::for($h)['ok'] ? null : 'danger'),
+                ViewColumn::make('tvs')->label('TV')->view('vendor-console.columns.tvs'),
                 TextColumn::make('status')->label('Status')->badge()
                     ->state(fn (Hotel $h) => $h->status !== 'active' ? 'suspended' : $h->serviceStatus())
                     ->formatStateUsing(fn (string $state) => ['active' => 'Aktif', 'expiring' => 'Segera habis', 'released' => 'Mode lepas', 'suspended' => 'Ditangguhkan'][$state])
+                    ->icon(fn (string $state) => ['active' => Heroicon::OutlinedCheckCircle, 'expiring' => Heroicon::OutlinedClock, 'released' => Heroicon::OutlinedPower, 'suspended' => Heroicon::OutlinedNoSymbol][$state])
                     ->color(fn (string $state) => ['active' => 'success', 'expiring' => 'warning', 'released' => 'gray', 'suspended' => 'danger'][$state]),
             ])
             ->filters([
@@ -199,15 +216,14 @@ class HotelResource extends Resource
             ->defaultSort('name')
             ->recordUrl(fn (Hotel $h) => static::getUrl('view', ['record' => $h]))
             ->recordActions([
-                ViewAction::make(),
-                EditAction::make()->modalWidth('4xl'),
+                EditAction::make()->modalWidth('3xl')->modalIcon(Heroicon::OutlinedPencilSquare),
                 ActionGroup::make(HotelActions::all())->tooltip('Aksi lain'),
             ]);
     }
 
     public static function getRelations(): array
     {
-        return [InvoicesRelationManager::class, ActivitiesRelationManager::class];
+        return [InvoicesRelationManager::class, RelationManagers\TicketsRelationManager::class, RelationManagers\DocumentsRelationManager::class, ActivitiesRelationManager::class];
     }
 
     public static function getPages(): array

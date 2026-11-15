@@ -8,6 +8,7 @@ use App\Models\Central\VendorActivity;
 use App\Tenancy\HotelManager;
 use App\Vendor\Billing;
 use App\Vendor\Resources\Hotels\HotelResource;
+use App\Vendor\Widgets\HotelListStats;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
@@ -27,10 +28,15 @@ class ManageHotels extends ManageRecords
 
     protected ?string $subheading = 'Semua hotel penyewa SangaTV Plus: paket, masa sewa, TV, dan status.';
 
+    protected function getHeaderWidgets(): array
+    {
+        return [HotelListStats::class];
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Hotel baru')->icon(Heroicon::OutlinedPlus)
+            CreateAction::make()->label('Hotel baru')->icon(Heroicon::OutlinedPlus)->modalIcon(Heroicon::OutlinedBuildingOffice2)->modalDescription('Kode hotel, paket, penagihan, lalu aktivasi — 4 langkah.')
                 ->visible(fn () => HotelResource::allowed('owner'))
                 ->modalWidth('4xl')
                 ->steps([

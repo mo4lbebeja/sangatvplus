@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\HotelExportController;
 use App\Http\Controllers\PmsVendorDocController;
+use App\Http\Controllers\TicketAttachmentController;
 use App\Http\Controllers\VendorReportController;
 use App\Http\Middleware\InitializeHotel;
 use App\Models\Central\Invoice;
@@ -39,3 +40,7 @@ Route::middleware('web')->prefix('sijalucom')->group(function () {
 
     Route::get('/laporan/tagihan.csv', VendorReportController::class)->name('vendor.report.invoices');
 });
+
+// Support ticket attachments (Sijalucom staff or the hotel's own staff).
+Route::get('/dukungan/lampiran/{message}/{i}', TicketAttachmentController::class)
+    ->middleware('web')->whereNumber('i')->name('ticket.attachment');

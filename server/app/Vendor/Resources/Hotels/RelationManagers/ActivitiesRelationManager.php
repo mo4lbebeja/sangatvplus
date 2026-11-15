@@ -3,12 +3,15 @@
 namespace App\Vendor\Resources\Hotels\RelationManagers;
 
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
 class ActivitiesRelationManager extends RelationManager
 {
     protected static string $relationship = 'activities';
+
+    protected static string|\BackedEnum|null $icon = Heroicon::OutlinedClock;
 
     protected static ?string $title = 'Riwayat';
 

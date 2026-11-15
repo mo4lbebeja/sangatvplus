@@ -5,11 +5,14 @@ use App\Models\AppRelease;
 use App\Models\AuditLog;
 use App\Models\Central\Hotel;
 use App\Models\Central\Invoice;
+use App\Models\Central\Notice;
 use App\Models\Central\Plan;
+use App\Models\Central\Ticket;
 use App\Models\Central\VendorActivity;
 use App\Models\Central\VendorSetting;
 use App\Models\Central\VendorUser;
 use App\Models\Device;
+use App\Models\DeviceCommand;
 use App\Models\HotelProfile;
 use App\Models\PmsIntegration;
 use App\Models\ProvisioningCode;
@@ -20,6 +23,7 @@ use App\Tenancy\HotelManager;
 use App\Vendor\Billing;
 use App\Vendor\Impersonation;
 use App\Vendor\Resources\Hotels\Pages\ManageHotels;
+use App\Vendor\Support;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -341,4 +345,55 @@ it('limits console areas by role', function () {
     $this->get('/sijalucom/tagihan')->assertForbidden();
     $this->get('/sijalucom/pengaturan')->assertForbidden();
     $this->get('/sijalucom/laporan/tagihan.csv')->assertForbidden();
+});
+
+it('runs a support ticket between hotel staff and Sijalucom', function () {
+    config(['mail.default' => 'array']);
+    $staff = $this->tenancy->run($this->alpha, fn () => User::query()->first());
+    $t = Support::open($this->alpha, 'TV kamar 101 mati', 'Layar hitam sejak pagi', 'technical', 'high', $staff->name, $staff->email);
+    expect($t->number)->toStartWith('TKT-')->and($t->status)->toBe('open');
+
+    $v = vendorLogin('support');
+    $this->get('/sijalucom/tiket')->assertOk()->assertSee('TV kamar 101 mati');
+    $this->get("/sijalucom/tiket/{$t->id}")->assertOk()->assertSee('Layar hitam sejak pagi');
+    Support::replyFromVendor($t, $v, 'Kami cek dari jarak jauh', 'waiting');
+    Support::replyFromVendor($t, $v, 'catatan tim', null, true);
+    expect($t->fresh()->status)->toBe('waiting')->and($t->fresh()->last_reply_by)->toBe('vendor');
+
+    Support::replyFromHotel($t->fresh(), 'Sudah normal, terima kasih', $staff->name);
+    expect($t->fresh()->status)->toBe('open')->and(Ticket::query()->where('hotel_id', $this->bravo->id)->count())->toBe(0);
+});
+
+it('shows Sijalucom notices only in the targeted hotel CMS', function () {
+    Notice::query()->create(['title' => 'Maintenance server Minggu', 'level' => 'maintenance', 'hotel_ids' => [$this->bravo->id]]);
+    expect(Notice::activeFor($this->bravo)->pluck('title')->all())->toBe(['Maintenance server Minggu'])
+        ->and(Notice::activeFor($this->alpha))->toHaveCount(0);
+    Notice::query()->create(['title' => 'Lama', 'ends_at' => now()->subDay()]);
+    expect(Notice::activeFor($this->alpha))->toHaveCount(0);
+});
+
+it('sends a remote command to every TV of one hotel from the console', function () {
+    provisionTv(codeFor($this->alpha));
+    provisionTv(codeFor($this->bravo));
+    vendorLogin();
+    Livewire\Livewire::test(ManageHotels::class)->callTableAction('tvCommand', $this->alpha, ['type' => 'check_update'])->assertHasNoTableActionErrors();
+    expect($this->tenancy->run($this->alpha, fn () => DeviceCommand::query()->where('type', 'check_update')->count()))->toBe(1)
+        ->and($this->tenancy->run($this->bravo, fn () => DeviceCommand::query()->where('type', 'check_update')->count()))->toBe(0);
+});
+
+it('renders the new console pages', function () {
+    vendorLogin();
+    foreach (['/sijalucom/tiket', '/sijalucom/pengumuman'] as $url) {
+        $this->get($url)->assertOk();
+    }
+});
+
+it('lets hotel staff see their own tickets and Sijalucom notices in the CMS', function () {
+    $admin = $this->tenancy->run($this->bravo, fn () => User::query()->first());
+    App\Vendor\Support::open($this->bravo, 'Remote mati', 'x', 'technical', 'normal', 'A', null);
+    App\Vendor\Support::open($this->alpha, 'Rahasia alpha', 'x', 'technical', 'normal', 'B', null);
+    App\Models\Central\Notice::query()->create(['title' => 'Fitur baru: statistik tontonan', 'level' => 'success']);
+
+    $this->withSession(['hotel_id' => $this->bravo->id])->actingAs($admin)
+        ->get('/admin/bantuan')->assertOk()->assertSee('Remote mati')->assertDontSee('Rahasia alpha')->assertSee('Fitur baru: statistik tontonan');
 });

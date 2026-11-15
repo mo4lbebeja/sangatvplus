@@ -8,6 +8,7 @@ use App\Models\Central\VendorActivity;
 use App\Vendor\Billing;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -26,11 +27,16 @@ class InvoiceActions
             ->schema([
                 DatePicker::make('paid_on')->label('Tanggal bayar')->native(false)->displayFormat('d M Y')->default(now(Billing::TZ))->maxDate(now(Billing::TZ))->required(),
                 Select::make('method')->label('Metode')->options(Invoice::METHODS)->default('transfer')->required(),
-                TextInput::make('ref')->label('No. referensi / bukti transfer')->maxLength(120),
+                TextInput::make('ref')->label('No. referensi / bukti transfer')->prefixIcon(Heroicon::OutlinedHashtag)->maxLength(120),
+                FileUpload::make('proof')->label('Bukti bayar (foto/PDF)')->disk('local')->directory('payment-proofs')->visibility('private')
+                    ->acceptedFileTypes(['image/*', 'application/pdf'])->maxSize(5120),
             ])
             ->action(function (Invoice $record, array $data) {
                 try {
                     Billing::markPaid($record, $data['paid_on'], $data['method'], $data['ref'] ?? null);
+                    if (filled($data['proof'] ?? null)) {
+                        $record->update(['payment_proof' => $data['proof']]);
+                    }
                     Notification::make()->title("{$record->number} lunas")->success()->send();
                 } catch (Throwable $e) {
                     Notification::make()->title('Gagal')->body($e->getMessage())->danger()->send();
@@ -46,6 +52,13 @@ class InvoiceActions
             ->requiresConfirmation()
             ->modalDescription(fn (Invoice $record) => 'Masa sewa '.$record->hotel->name.' diperpanjang sampai '.$record->period_end->translatedFormat('d M Y').' walaupun belum dibayar.')
             ->action(fn (Invoice $record) => Billing::apply($record));
+    }
+
+    public static function proof(): Action
+    {
+        return Action::make('proof')->label('Bukti bayar')->icon(Heroicon::OutlinedPaperClip)->color('gray')
+            ->visible(fn (Invoice $record) => filled($record->payment_proof))
+            ->url(fn (Invoice $record) => route('vendor.invoice.proof', $record), shouldOpenInNewTab: true);
     }
 
     public static function print(): Action
@@ -87,6 +100,6 @@ class InvoiceActions
     /** @return array<int, Action> */
     public static function all(): array
     {
-        return [static::markPaid(), static::print(), static::send(), static::applyNow(), static::void()];
+        return [static::markPaid(), static::print(), static::send(), static::proof(), static::applyNow(), static::void()];
     }
 }

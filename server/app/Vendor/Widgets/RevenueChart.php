@@ -3,6 +3,7 @@
 namespace App\Vendor\Widgets;
 
 use App\Vendor\Billing;
+use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Carbon;
 
@@ -37,8 +38,16 @@ class RevenueChart extends ChartWidget
         ];
     }
 
-    protected function getOptions(): array
+    protected function getOptions(): RawJs
     {
-        return ['plugins' => ['legend' => ['display' => false]], 'scales' => ['y' => ['beginAtZero' => true, 'grid' => ['color' => 'rgba(100,116,139,.12)']], 'x' => ['grid' => ['display' => false]]]];
+        return RawJs::make(<<<'JS'
+            {
+                plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => 'Rp ' + Number(c.parsed.y).toLocaleString('id-ID') } } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: 'rgba(100,116,139,.12)' }, ticks: { callback: (v) => v >= 1e6 ? (v / 1e6).toLocaleString('id-ID') + ' jt' : (v >= 1e3 ? (v / 1e3) + ' rb' : v) } },
+                    x: { grid: { display: false } },
+                },
+            }
+        JS);
     }
 }

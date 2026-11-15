@@ -2,10 +2,14 @@
 
 namespace App\Vendor\Resources\Hotels;
 
+use App\Enums\CommandStatus;
+use App\Enums\CommandType;
+use App\Enums\DeviceStatus;
 use App\Enums\UserRole;
 use App\Models\Central\Hotel;
 use App\Models\Central\Invoice;
 use App\Models\Central\VendorActivity;
+use App\Models\Device;
 use App\Models\User;
 use App\Tenancy\HotelManager;
 use App\Vendor\Billing;
@@ -142,6 +146,34 @@ class HotelActions
             });
     }
 
+    /** Remote command to every active TV of the hotel (written into the hotel's own database). */
+    public static function tvCommand(): Action
+    {
+        return Action::make('tvCommand')->label('Perintah ke semua TV')->icon(Heroicon::OutlinedCommandLine)->color('gray')
+            ->visible(fn (Hotel $record) => $record->isAccessible() && static::allowed('support'))
+            ->modalIcon(Heroicon::OutlinedCommandLine)
+            ->modalDescription('Dikirim ke semua TV aktif hotel ini; TV menjalankannya dalam ±1 menit saat menyala.')
+            ->schema([
+                Radio::make('type')->label('Perintah')->required()->default(CommandType::CheckUpdate->value)->options([
+                    CommandType::CheckUpdate->value => 'Cek & pasang update aplikasi',
+                    CommandType::Refresh->value => 'Muat ulang konten (slide, channel, info)',
+                    CommandType::Reboot->value => 'Restart TV (hanya TV Device Owner)',
+                ]),
+            ])
+            ->action(function (Hotel $record, array $data) {
+                $n = app(HotelManager::class)->run($record, function () use ($data) {
+                    $devices = Device::query()->where('status', DeviceStatus::Active)->get();
+                    foreach ($devices as $d) {
+                        $d->commands()->create(['type' => $data['type'], 'status' => CommandStatus::Pending]);
+                    }
+
+                    return $devices->count();
+                });
+                VendorActivity::record('tv.command', "Perintah \"{$data['type']}\" dikirim ke {$n} TV", $record);
+                Notification::make()->title("Perintah dikirim ke {$n} TV")->success()->send();
+            });
+    }
+
     public static function refresh(): Action
     {
         return Action::make('refresh')->label('Muat ulang data TV')->icon(Heroicon::OutlinedArrowPath)->color('gray')
@@ -151,6 +183,6 @@ class HotelActions
     /** @return array<int, Action> */
     public static function all(): array
     {
-        return [static::extend(), static::impersonate(), static::release(), static::restore(), static::suspend(), static::activate(), static::refresh()];
+        return [static::extend(), static::impersonate(), static::tvCommand(), static::release(), static::restore(), static::suspend(), static::activate(), static::refresh()];
     }
 }

@@ -4,9 +4,9 @@
 @elseif ($d['devices'] === [])
     <p class="vc-muted">Belum ada TV terdaftar.</p>
 @else
-    <div style="overflow-x:auto">
+    <div style="overflow:auto;max-height:420px">
         <table class="vc-table">
-            <thead><tr><th>Kamar</th><th>Status</th><th>Model</th><th>Versi</th><th>Terakhir terhubung</th><th>Catatan</th></tr></thead>
+            <thead style="position:sticky;top:0;background:inherit"><tr><th>Kamar</th><th>Status</th><th>Model</th><th>Versi</th><th>Terakhir terhubung</th><th>Catatan</th></tr></thead>
             <tbody>
             @foreach ($d['devices'] as $tv)
                 <tr>

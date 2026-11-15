@@ -8,6 +8,7 @@ use App\Vendor\Resources\Hotels\HotelResource;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 
 class ViewHotel extends ViewRecord
@@ -30,7 +31,7 @@ class ViewHotel extends ViewRecord
             HotelActions::extend(),
             HotelActions::impersonate(),
             EditAction::make()->modalWidth('4xl')->after(fn () => VendorActivity::record('hotel.updated', 'Data hotel diubah', $this->record)),
-            ActionGroup::make([HotelActions::release(), HotelActions::restore(), HotelActions::suspend(), HotelActions::activate(), HotelActions::refresh()])
+            ActionGroup::make([HotelActions::tvCommand(), HotelActions::release(), HotelActions::restore(), HotelActions::suspend(), HotelActions::activate(), HotelActions::refresh()])
                 ->label('Lainnya')->button()->color('gray'),
         ];
     }
@@ -38,6 +39,11 @@ class ViewHotel extends ViewRecord
     public function getContentTabLabel(): ?string
     {
         return 'Ringkasan';
+    }
+
+    public function getContentTabIcon(): string|\BackedEnum|Htmlable|null
+    {
+        return Heroicon::OutlinedSquares2x2;
     }
 
     public function hasCombinedRelationManagerTabsWithContent(): bool

@@ -25,11 +25,16 @@ class ManageInvoices extends ManageRecords
     public function getTabs(): array
     {
         return [
-            'all' => Tab::make('Semua'),
-            'unpaid' => Tab::make('Belum dibayar')->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'unpaid')),
-            'overdue' => Tab::make('Lewat tempo')->modifyQueryUsing(fn (Builder $query) => $query->overdue()),
-            'paid' => Tab::make('Lunas')->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'paid')),
+            'all' => Tab::make('Semua')->icon(Heroicon::OutlinedQueueList),
+            'unpaid' => Tab::make('Belum dibayar')->icon(Heroicon::OutlinedClock)->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'unpaid')),
+            'overdue' => Tab::make('Lewat tempo')->icon(Heroicon::OutlinedExclamationTriangle)->modifyQueryUsing(fn (Builder $query) => $query->overdue()),
+            'paid' => Tab::make('Lunas')->icon(Heroicon::OutlinedCheckBadge)->modifyQueryUsing(fn (Builder $query) => $query->where('status', 'paid')),
         ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [\App\Vendor\Widgets\InvoiceListStats::class];
     }
 
     protected function getHeaderActions(): array

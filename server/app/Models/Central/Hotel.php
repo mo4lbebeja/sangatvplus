@@ -62,6 +62,16 @@ class Hotel extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    public function tickets(): HasMany
+    {
+        return $this->hasMany(Ticket::class);
+    }
+
+    public function documents(): HasMany
+    {
+        return $this->hasMany(HotelDocument::class);
+    }
+
     public function activities(): HasMany
     {
         return $this->hasMany(VendorActivity::class);

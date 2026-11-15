@@ -66,7 +66,13 @@ class InvoiceResource extends Resource
         return TextColumn::make('display_status')->label('Status')->badge()
             ->state(fn (Invoice $i) => $i->displayStatus())
             ->formatStateUsing(fn (string $state) => $state === 'overdue' ? 'Lewat tempo' : Invoice::STATUSES[$state])
+            ->icon(fn (string $state) => ['paid' => Heroicon::OutlinedCheckBadge, 'overdue' => Heroicon::OutlinedExclamationTriangle, 'unpaid' => Heroicon::OutlinedClock, 'draft' => Heroicon::OutlinedPencil, 'void' => Heroicon::OutlinedXCircle][$state])
             ->color(fn (string $state) => ['paid' => 'success', 'overdue' => 'danger', 'unpaid' => 'warning', 'draft' => 'gray', 'void' => 'gray'][$state]);
+    }
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['number'];
     }
 
     public static function table(Table $table): Table
@@ -74,14 +80,14 @@ class InvoiceResource extends Resource
         return $table
             ->modifyQueryUsing(fn (Builder $query) => $query->with('hotel'))
             ->columns([
-                TextColumn::make('number')->label('No. tagihan')->weight('bold')->searchable()->copyable()
+                TextColumn::make('number')->label('No. tagihan')->weight('bold')->icon(Heroicon::OutlinedDocumentText)->iconColor('gray')->searchable()->copyable()
                     ->description(fn (Invoice $i) => 'Terbit '.$i->issued_at->translatedFormat('d M Y')),
-                TextColumn::make('hotel.name')->label('Hotel')->searchable()->sortable(),
+                TextColumn::make('hotel.name')->label('Hotel')->icon(Heroicon::OutlinedBuildingOffice2)->iconColor('primary')->searchable()->sortable(),
                 TextColumn::make('period')->label('Periode')
                     ->state(fn (Invoice $i) => $i->period_start->translatedFormat('d M Y').' – '.$i->period_end->translatedFormat('d M Y'))
                     ->description(fn (Invoice $i) => "{$i->months} bulan"),
                 TextColumn::make('total')->label('Jumlah')->formatStateUsing(fn ($state) => Billing::rupiah($state))->sortable()->alignEnd()->weight('semibold'),
-                TextColumn::make('due_at')->label('Jatuh tempo')->date('d M Y')->sortable()
+                TextColumn::make('due_at')->label('Jatuh tempo')->date('d M Y')->icon(Heroicon::OutlinedCalendar)->sortable()
                     ->color(fn (Invoice $i) => $i->isOverdue() ? 'danger' : null),
                 static::statusBadge(),
                 TextColumn::make('paid_at')->label('Dibayar')->dateTime('d M Y', Billing::TZ)->placeholder('–')->sortable()

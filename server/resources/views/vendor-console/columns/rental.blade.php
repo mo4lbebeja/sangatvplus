@@ -9,10 +9,10 @@
     @if ($h->service_released_at)
         <span class="vc-muted">Layanan dilepas {{ $h->service_released_at->setTimezone('Asia/Jakarta')->translatedFormat('d M Y') }}</span>
     @elseif (! $end)
-        <span class="vc-muted">Tanpa batas</span>
+        <span class="vc-muted" style="display:inline-flex;gap:.35rem;align-items:center"><x-filament::icon icon="heroicon-o-shield-check" class="vc-ic" />Tanpa batas</span>
     @else
-        <div style="display:flex;justify-content:space-between;gap:.5rem;font-size:.82rem">
-            <strong>{{ $end->setTimezone('Asia/Jakarta')->translatedFormat('d M Y') }}</strong>
+        <div style="display:flex;justify-content:space-between;gap:.5rem;font-size:.82rem;align-items:center">
+            <strong style="display:inline-flex;align-items:center;gap:.35rem"><x-filament::icon icon="heroicon-o-calendar-days" class="vc-ic" />{{ $end->setTimezone('Asia/Jakarta')->translatedFormat('d M Y') }}</strong>
             <span @class(['text-danger-600' => $days <= 7, 'text-warning-600' => $days > 7 && $days <= 30, 'vc-muted' => $days > 30])>
                 {{ $days < 0 ? 'lewat '.abs($days).' hr' : ($days === 0 ? 'hari ini' : $days.' hr lagi') }}
             </span>

@@ -43,26 +43,29 @@ class VendorPanelProvider extends PanelProvider
             ->favicon(asset('icons/favicon-64.png'))
             ->font('Plus Jakarta Sans', url: asset('css/sangatv-fonts.css'), provider: LocalFontProvider::class)
             ->colors([
-                'primary' => Color::hex('#4F46E5'),
+                'primary' => Color::Indigo,
                 'gray' => Color::Slate,
                 'info' => Color::Sky,
                 'success' => Color::Emerald,
                 'warning' => Color::Amber,
                 'danger' => Color::Rose,
             ])
-            ->sidebarWidth('16rem')
+            ->sidebarWidth('15.5rem')
             ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth(Width::Full)
             ->spa()
-            ->globalSearch(false)
+            ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
             ->databaseNotifications(false)
             ->navigationGroups([
                 NavigationGroup::make('Klien'),
                 NavigationGroup::make('Keuangan'),
                 NavigationGroup::make('Analisa'),
-                NavigationGroup::make('Sistem')->collapsed(),
+                NavigationGroup::make('Sistem'),
             ])
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('vendor-console.head'))
+            ->renderHook(PanelsRenderHook::PAGE_HEADER_HEADING_BEFORE, fn () => view('vendor-console.heading-icon'))
+            ->renderHook(PanelsRenderHook::SIDEBAR_FOOTER, fn () => view('vendor-console.sidebar-footer'))
+            ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_BEFORE, fn () => view('vendor-console.topbar'))
             ->discoverResources(in: app_path('Vendor/Resources'), for: 'App\Vendor\Resources')
             ->discoverPages(in: app_path('Vendor/Pages'), for: 'App\Vendor\Pages')
             ->discoverWidgets(in: app_path('Vendor/Widgets'), for: 'App\Vendor\Widgets')

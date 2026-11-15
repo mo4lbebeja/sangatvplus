@@ -5,12 +5,15 @@ namespace App\Vendor\Resources\Hotels\RelationManagers;
 use App\Vendor\Resources\Hotels\HotelResource;
 use App\Vendor\Resources\Invoices\InvoiceResource;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 
 class InvoicesRelationManager extends RelationManager
 {
     protected static string $relationship = 'invoices';
+
+    protected static string|\BackedEnum|null $icon = Heroicon::OutlinedDocumentCurrencyDollar;
 
     protected static ?string $title = 'Tagihan';
 
