@@ -38,10 +38,14 @@ rsync -a --include='*/' --include='.gitignore' --exclude='*' storage/ "$HOST:$DI
 
 echo "==> Dependensi, migrasi, aset Filament, cache, ownership"
 ssh "$HOST" "cd $DIR && composer install --no-dev --optimize-autoloader --no-interaction --quiet"
-ssh "$HOST" "cd $DIR && php artisan migrate --force && php artisan storage:link --quiet 2>/dev/null || true"
-# Livewire/Filament JS must exist as real files: aaPanel's nginx serves every *.js as a static file.
-ssh "$HOST" "cd $DIR && php artisan livewire:publish --assets --silent && php artisan filament:assets --quiet && php artisan optimize:clear --quiet && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan event:cache"
 ssh "$HOST" "chown -R www:www $DIR 2>&1 | grep -v '.user.ini' || true"
+# Artisan runs as www (the PHP-FPM user): as root it could create a root-owned daily log/cache file
+# that PHP-FPM then cannot write ("laravel-YYYY-MM-DD.log could not be opened: Permission denied").
+ART="cd $DIR && sudo -u www php artisan"
+ssh "$HOST" "$ART migrate --force && ($ART storage:link --quiet 2>/dev/null || true)"
+# Livewire/Filament JS must exist as real files: aaPanel's nginx serves every *.js as a static file.
+ssh "$HOST" "$ART livewire:publish --assets --silent && $ART filament:assets --quiet && $ART optimize:clear --quiet && $ART config:cache && $ART route:cache && $ART view:cache && $ART event:cache"
+ssh "$HOST" "chown -R www:www $DIR/storage $DIR/bootstrap/cache $DIR/public 2>&1 | grep -v '.user.ini' || true"
 
 echo "==> Verifikasi"
 curl -s -o /dev/null -w "  health /up  : HTTP %{http_code}\n" "$URL/up"

@@ -97,6 +97,7 @@ internal class Guide(private val epg: EpgResponse?, zone: String) {
     fun time(ms: Long): String = Instant.ofEpochMilli(ms).atZone(zoneId).format(TimeFmt)
 }
 
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
 fun ChannelScreen(
     data: ChannelsResponse?,

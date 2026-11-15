@@ -166,9 +166,9 @@ private fun subtitle(section: InfoSection, data: Bootstrap?): String {
     val hotel = data?.hotel?.name ?: ""
     return when (section) {
         InfoSection.About -> data?.hotel?.tagline ?: hotel
-        InfoSection.Facilities -> "Jam operasional dan lokasi fasilitas di $hotel."
-        InfoSection.Dining -> "Restoran dan layanan pesan antar ke kamar."
-        InfoSection.Gallery -> "Suasana $hotel dalam foto."
+        InfoSection.Facilities -> stringResource(R.string.facilities_sub, hotel)
+        InfoSection.Dining -> stringResource(R.string.dining_sub)
+        InfoSection.Gallery -> stringResource(R.string.gallery_sub, hotel)
         InfoSection.Wifi -> stringResource(R.string.wifi_scan)
         InfoSection.Contact -> stringResource(R.string.reception_24h)
         InfoSection.Checkout -> "Check-in ${data?.hotel?.checkInTime ?: ""} · Check-out ${data?.hotel?.checkOutTime ?: ""}"

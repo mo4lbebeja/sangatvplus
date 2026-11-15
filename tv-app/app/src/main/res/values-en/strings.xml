@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- English: structure ready; translate remaining strings as needed. -->
+<!-- English UI (guest language "en" in the CMS). Every key in values/ must exist here (lint: MissingTranslation). -->
 <resources>
     <string name="menu_home">Home</string>
     <string name="menu_tv">TV</string>
@@ -46,4 +46,56 @@
     <string name="announcement_ok">Press OK to close</string>
     <string name="announcement_emergency">EMERGENCY ANNOUNCEMENT</string>
     <string name="announcement_label">ANNOUNCEMENT</string>
+    <string name="offline">Offline · showing last saved data</string>
+    <string name="src_local">Local</string>
+    <string name="src_provider">Provider</string>
+    <string name="src_local_long">Source: local server</string>
+    <string name="src_provider_long">Source: channel provider</string>
+    <string name="hint_select">Select</string>
+    <string name="hint_category">Category</string>
+    <string name="hint_watch">Watch</string>
+    <string name="hint_close">Close</string>
+    <string name="no_channels">No channels yet.</string>
+    <string name="channel_error">Channel unavailable. Trying backup source…</string>
+    <string name="channel_failed">This channel cannot be played right now.</string>
+    <string name="info_about">About the Hotel</string>
+    <string name="info_facilities">Facilities</string>
+    <string name="info_dining">Restaurant &amp; Room Service</string>
+    <string name="info_gallery">Gallery</string>
+    <string name="gallery_empty">No photos in the gallery yet.</string>
+    <string name="gallery_hint">◀ ▶ more photos · BACK close</string>
+    <string name="info_wifi">Wi-Fi</string>
+    <string name="info_contact">Reception</string>
+    <string name="info_checkout">Check-out Info</string>
+    <string name="wifi_guest">Guest Wi-Fi</string>
+    <string name="wifi_name">Name: %1$s</string>
+    <string name="wifi_password">Password: %1$s</string>
+    <string name="wifi_scan">Scan the QR code with your phone camera to connect.</string>
+    <string name="reception_24h">24-hour reception</string>
+    <string name="reception_dial">Dial %1$s on the room phone</string>
+    <string name="checkout_time">Check-out by %1$s</string>
+    <string name="apps_title">Apps</string>
+    <string name="inputs_title">Inputs</string>
+    <string name="input_unavailable">This input is not available on this TV.</string>
+    <string name="apps_empty">No apps available yet.</string>
+    <string name="app_not_installed">This app is not installed on this TV.</string>
+    <string name="tech_title">Technician Menu</string>
+    <string name="tech_subtitle">Enter the PIN to open device settings.</string>
+    <string name="tech_delete">Delete</string>
+    <string name="tech_pin_len">PIN must be 6 digits.</string>
+    <string name="tech_pin_wrong">Wrong PIN. Attempts left: %1$d</string>
+    <string name="tech_locked">Menu locked. Try again in %1$d minutes.</string>
+    <string name="tech_no_pin">No PIN set in the CMS.</string>
+    <string name="tech_status">Device status</string>
+    <string name="tech_footer">5 wrong PINs lock the menu for 15 minutes; every attempt is logged on the server.</string>
+    <string name="provision_title">Register this TV</string>
+    <string name="provision_subtitle">Create a code in the SangaTV Plus panel (Rooms → TV registration code), then enter it here.</string>
+    <string name="provision_code">Registration code</string>
+    <string name="provision_submit">Register</string>
+    <string name="provision_failed">Registration failed: %1$s</string>
+    <string name="launcher_watch_desc">Opens SangaTV Plus automatically when the TV\'s own home screen appears. Only reads the name of the app on screen, never its content.</string>
+    <string name="loading">Loading…</string>
+    <string name="facilities_sub">Opening hours and locations of facilities at %1$s.</string>
+    <string name="dining_sub">Restaurant and in-room dining.</string>
+    <string name="gallery_sub">%1$s in pictures.</string>
 </resources>

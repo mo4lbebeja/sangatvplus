@@ -337,6 +337,11 @@ class Repository(
                     }
                 }
                 "refresh" -> (if (refreshAll()) "done" else "failed") to null
+                // CMS → Update Aplikasi → "Minta semua TV update sekarang" (instead of waiting for the 6-hour check).
+                "check_update" -> {
+                    lastOtaCheck = System.currentTimeMillis()
+                    "done" to buildJsonObject { put("result", JsonPrimitive(ota.checkAndInstall())) }
+                }
                 "hide_stock_launcher", "show_stock_launcher" -> {
                     val res = kiosk.setStockLaunchersHidden(cmd.type == "hide_stock_launcher")
                     (if (kiosk.isDeviceOwner && res.isNotEmpty()) "done" else "failed") to buildJsonObject {

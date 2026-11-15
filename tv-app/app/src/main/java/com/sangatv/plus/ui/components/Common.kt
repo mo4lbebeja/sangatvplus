@@ -84,8 +84,13 @@ fun rememberNow(zone: String): State<ZonedDateTime> {
 
 private val ID = Locale.forLanguageTag("id-ID")
 val TimeFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("HH.mm", ID)
-val DateFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("EEEE, d MMMM", ID)
-val ShortDateFmt: DateTimeFormatter = DateTimeFormatter.ofPattern("d MMMM", ID)
+/** Day/month names follow the UI language (Indonesian, or English for "en" guests). */
+val DateFmt: DateTimeFormatter
+    @Composable @androidx.compose.runtime.ReadOnlyComposable
+    get() = DateTimeFormatter.ofPattern("EEEE, d MMMM", androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
+val ShortDateFmt: DateTimeFormatter
+    @Composable @androidx.compose.runtime.ReadOnlyComposable
+    get() = DateTimeFormatter.ofPattern("d MMMM", androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
 
 fun zoneLabel(zone: String) = when (zone) {
     "Asia/Makassar" -> "WITA"

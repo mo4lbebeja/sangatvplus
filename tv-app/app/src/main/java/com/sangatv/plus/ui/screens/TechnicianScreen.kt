@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -170,7 +171,8 @@ private fun TechActions(vm: AppViewModel, onExit: () -> Unit) {
     var msg by remember { mutableStateOf<String?>(null) }
     var hardened by remember { mutableStateOf(kiosk.isHardened) }
     var confirmReset by remember { mutableStateOf(false) }
-    val apps = vm.bootstrap.value?.apps.orEmpty().map { it.packageName }
+    val bootstrap by vm.bootstrap.collectAsState()
+    val apps = bootstrap?.apps.orEmpty().map { it.packageName }
     // RoleManager's request dialog needs startActivityForResult (it checks the calling package).
     var isHome by remember { mutableStateOf(AutoStart.isDefaultHome(ctx)) }
     val roleLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
@@ -221,8 +223,10 @@ private fun TechActions(vm: AppViewModel, onExit: () -> Unit) {
             add("Jadikan SangaTV Plus layar utama" to {
                 vm.repo.logTechnicianEvent("home_role_requested")
                 AutoStart.markIntentionalExit()
-                val rm = ctx.getSystemService(android.app.role.RoleManager::class.java)
-                val ok = rm != null && rm.isRoleAvailable(android.app.role.RoleManager.ROLE_HOME) &&
+                // RoleManager exists from Android 10; Android 9 TVs go straight to the HOME settings page.
+                val rm = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) ctx.getSystemService(android.app.role.RoleManager::class.java) else null
+                val ok = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q && rm != null &&
+                    rm.isRoleAvailable(android.app.role.RoleManager.ROLE_HOME) &&
                     runCatching { roleLauncher.launch(rm.createRequestRoleIntent(android.app.role.RoleManager.ROLE_HOME)) }.isSuccess
                 if (!ok) openSettings(ctx, Intent(Settings.ACTION_HOME_SETTINGS))?.let { msg = it }
             })

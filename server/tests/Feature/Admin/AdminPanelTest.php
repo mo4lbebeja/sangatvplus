@@ -6,6 +6,7 @@ use App\Enums\GuestStatus;
 use App\Enums\SourceType;
 use App\Enums\UserRole;
 use App\Filament\Pages\HotelProfilePage;
+use App\Filament\Resources\AppReleases\Pages\ManageAppReleases;
 use App\Filament\Resources\ChannelProviders\Pages\ManageChannelProviders;
 use App\Filament\Resources\Channels\Pages\ManageChannels;
 use App\Filament\Resources\Guests\Pages\ManageGuests;
@@ -193,4 +194,24 @@ it('prefills the technician guide with a valid TV ip only', function () {
     actingAsRole(UserRole::It);
     $this->get('/admin/panduan-teknisi?ip=192.168.101.4')->assertOk()->assertSee('192.168.101.4')->assertSee('add-role-holder android.app.role.HOME');
     $this->get('/admin/panduan-teknisi?ip='.urlencode('"><b>xss9</b>'))->assertOk()->assertDontSee('xss9', false);
+});
+
+it('sends security headers on CMS and API responses', function () {
+    foreach (['/admin/login', '/up', '/api/v1/bootstrap'] as $url) {
+        $res = $this->get($url);
+        expect($res->headers->get('X-Frame-Options'))->toBe('SAMEORIGIN', $url)
+            ->and($res->headers->get('X-Content-Type-Options'))->toBe('nosniff', $url);
+    }
+});
+
+it('pushes a check-update command to every active TV from the OTA page', function () {
+    actingAsRole(UserRole::Admin);
+    $a = Device::factory()->create();
+    $b = Device::factory()->create();
+    $b->revoke();
+
+    Livewire::test(ManageAppReleases::class)->callAction('pushUpdate')->assertNotified();
+
+    expect($a->commands()->where('type', CommandType::CheckUpdate)->count())->toBe(1)
+        ->and($b->commands()->count())->toBe(0);
 });

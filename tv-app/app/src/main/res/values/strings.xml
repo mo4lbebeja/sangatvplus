@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">SangaTV Plus</string>
+    <string name="app_name" translatable="false">SangaTV Plus</string>
     <string name="menu_home">Beranda</string>
     <string name="menu_tv">TV</string>
     <string name="menu_info">Info Hotel</string>
@@ -95,4 +95,7 @@
     <string name="announcement_ok">Tekan OK untuk menutup</string>
     <string name="announcement_emergency">PENGUMUMAN DARURAT</string>
     <string name="announcement_label">PENGUMUMAN</string>
+    <string name="facilities_sub">Jam operasional dan lokasi fasilitas di %1$s.</string>
+    <string name="dining_sub">Restoran dan layanan pesan antar ke kamar.</string>
+    <string name="gallery_sub">Suasana %1$s dalam foto.</string>
 </resources>

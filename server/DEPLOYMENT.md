@@ -42,3 +42,6 @@ Rilis final (`assembleRelease`) butuh: keystore, `sangatv.releaseApiBaseUrl=http
   (`MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`), lalu
   `php artisan config:cache`. Sampai itu, laporan tetap bisa dilihat di CMS → Statistik & Uptime.
 - **EPG** disinkron cron tiap 6 jam (`sangatv:sync-epg`). Manual: CMS → Channel → *Sinkron EPG*.
+- **Update aplikasi TV (OTA)**: build APK → CMS → Update Aplikasi → *Unggah rilis* (aktifkan) → *Minta semua TV update sekarang*.
+  TV yang menyala mengunduh dalam ±1 menit (tanpa tombol ini: cek otomatis tiap 6 jam). TV tanpa Device Owner menampilkan
+  dialog "Update?" yang perlu dikonfirmasi; TV Device Owner memasang diam-diam.

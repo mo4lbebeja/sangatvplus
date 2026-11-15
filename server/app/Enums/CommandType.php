@@ -13,6 +13,7 @@ enum CommandType: string implements HasIcon, HasLabel
     case Reboot = 'reboot';
     case HideStockLauncher = 'hide_stock_launcher';
     case ShowStockLauncher = 'show_stock_launcher';
+    case CheckUpdate = 'check_update';
 
     public function getLabel(): string
     {
@@ -22,6 +23,7 @@ enum CommandType: string implements HasIcon, HasLabel
             self::Reboot => 'Restart TV',
             self::HideStockLauncher => 'Sembunyikan launcher bawaan (Device Owner)',
             self::ShowStockLauncher => 'Munculkan launcher bawaan (Device Owner)',
+            self::CheckUpdate => 'Cek & pasang update aplikasi sekarang',
         };
     }
 
@@ -33,6 +35,7 @@ enum CommandType: string implements HasIcon, HasLabel
             self::Reboot => Heroicon::OutlinedPower,
             self::HideStockLauncher => Heroicon::OutlinedEyeSlash,
             self::ShowStockLauncher => Heroicon::OutlinedEye,
+            self::CheckUpdate => Heroicon::OutlinedArrowDownTray,
         };
     }
 

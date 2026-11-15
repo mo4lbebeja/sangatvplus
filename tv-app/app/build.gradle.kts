@@ -13,6 +13,10 @@ val certPins = providers.gradleProperty("sangatv.certPins").getOrElse("")
 fun String.asBuildConfigString() = "\"" + replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
 android {
+    lint {
+        // getString() in click handlers is fine for this app (activity is recreated on locale change).
+        warning += "LocalContextGetResourceValueCall"
+    }
     namespace = "com.sangatv.plus"
     compileSdk {
         version = release(37)
@@ -36,8 +40,8 @@ android {
         applicationId = "com.sangatv.plus"
         minSdk = 28          // Android 9 (oldest TCL Android TV in scope)
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.2.0"
+        versionCode = 5
+        versionName = "0.2.2"
         buildConfigField("String", "CERT_PINS", certPins.asBuildConfigString())
     }
 
