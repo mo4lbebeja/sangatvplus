@@ -36,7 +36,7 @@ class SangaApp : Application(), SingletonImageLoader.Factory {
         super.onCreate()
         com.sangatv.plus.device.ServiceState.init(this)
         secure = SecureStore(this)
-        client = ApiClient { secure.token }
+        client = ApiClient({ secure.token }, { secure.hotel })
         kiosk = KioskManager(this)
         repository = Repository(
             appContext = this,

@@ -46,6 +46,13 @@ class SecureStore(context: Context) {
             }.apply()
         }
 
+    /** Multi-hotel: hotel code returned at registration, sent as X-SangaTV-Hotel (not a secret). */
+    var hotel: String?
+        get() = prefs.getString(HOTEL, null)
+        set(value) {
+            prefs.edit().apply { if (value == null) remove(HOTEL) else putString(HOTEL, value) }.apply()
+        }
+
     /** Stable per-install ID sent at provisioning (ANDROID_ID is per signing key on API 26+). */
     @get:SuppressLint("HardwareIds")
     val deviceUid: String
@@ -74,6 +81,7 @@ class SecureStore(context: Context) {
         const val KEYSTORE = "AndroidKeyStore"
         const val ALIAS = "sangatv_token_key"
         const val TRANSFORM = "AES/GCM/NoPadding"
+        const val HOTEL = "hotel"
         const val TOKEN = "token"
         const val UID = "device_uid"
     }

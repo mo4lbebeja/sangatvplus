@@ -40,8 +40,8 @@ android {
         applicationId = "com.sangatv.plus"
         minSdk = 28          // Android 9 (oldest TCL Android TV in scope)
         targetSdk = 36
-        versionCode = 11
-        versionName = "0.3.3"
+        versionCode = 12
+        versionName = "0.4.0"
         buildConfigField("String", "CERT_PINS", certPins.asBuildConfigString())
     }
 

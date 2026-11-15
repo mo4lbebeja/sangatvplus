@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
  * (BuildConfig.CERT_PINS, set at build time; the Gradle build refuses a release
  * without them). Trust in the hotel's internal CA comes from network_security_config.
  */
-class ApiClient(tokenProvider: () -> String?) {
+class ApiClient(tokenProvider: () -> String?, hotelProvider: () -> String? = { null }) {
 
     val json = Json {
         ignoreUnknownKeys = true
@@ -47,6 +47,8 @@ class ApiClient(tokenProvider: () -> String?) {
         // Only attach the device token to our own API host.
         if (chain.request().url.host == baseUrl.toHttpUrl().host) {
             tokenProvider()?.let { req.header("Authorization", "Bearer $it") }
+            // Multi-hotel: which hotel this TV belongs to (absent on single-hotel servers / before registration).
+            hotelProvider()?.let { req.header("X-SangaTV-Hotel", it) }
         }
         chain.proceed(req.build())
     }

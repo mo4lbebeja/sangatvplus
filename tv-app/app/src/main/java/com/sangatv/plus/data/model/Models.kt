@@ -18,7 +18,7 @@ data class ProvisionRequest(
 )
 
 @Serializable
-data class ProvisionResponse(val token: String, val device: ProvisionedDevice)
+data class ProvisionResponse(val token: String, val device: ProvisionedDevice, val hotel: String? = null)
 
 @Serializable
 data class ProvisionedDevice(val id: Long, val room: String)
@@ -26,6 +26,8 @@ data class ProvisionedDevice(val id: Long, val room: String)
 @Serializable
 data class Bootstrap(
     @SerialName("server_time") val serverTime: String,
+    /** Multi-hotel code of this TV's hotel (null on single-hotel servers). */
+    @SerialName("hotel_code") val hotelCode: String? = null,
     val hotel: Hotel,
     val room: RoomInfo,
     val guest: GuestInfo? = null,

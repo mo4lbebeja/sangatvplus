@@ -11,6 +11,7 @@ use App\Models\HotelProfile;
 use App\Models\Slide;
 use App\Services\WeatherService;
 use App\Support\MediaUrl;
+use App\Tenancy\HotelManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -27,6 +28,8 @@ class BootstrapController extends Controller
 
         return response()->json([
             'server_time' => now()->toIso8601String(),
+            // Multi-hotel: TVs registered before multi-hotel learn their hotel code here (then send X-SangaTV-Hotel).
+            'hotel_code' => app(HotelManager::class)->current()?->slug,
             'hotel' => [
                 'name' => $hotel->name,
                 'tagline' => $hotel->tagline,

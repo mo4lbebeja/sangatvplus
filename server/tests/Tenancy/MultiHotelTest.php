@@ -141,3 +141,9 @@ it('runs scheduled jobs once per active hotel', function () {
     $this->artisan('sangatv:semua-hotel', ['perintah' => 'sangatv:privasi-tamu'])
         ->expectsOutputToContain('== alpha')->doesntExpectOutputToContain('== bravo')->assertSuccessful();
 });
+
+it('tells older TVs their hotel code in the bootstrap', function () {
+    $a = provisionTv(codeFor($this->alpha));
+    app('auth')->forgetGuards();
+    $this->withToken($a['token'])->getJson('/api/v1/bootstrap')->assertJsonPath('hotel_code', 'alpha');
+});

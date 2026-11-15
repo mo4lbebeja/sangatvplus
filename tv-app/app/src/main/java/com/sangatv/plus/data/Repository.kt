@@ -123,6 +123,7 @@ class Repository(
             ),
         )
         secure.token = res.token
+        secure.hotel = res.hotel
         _provisioned.value = true
         if (ServiceState.reason == ServiceState.Reason.Revoked) ServiceState.restore(appContext)
         kiosk.harden()
@@ -154,6 +155,7 @@ class Repository(
 
     fun resetRegistration() {
         deprovision()
+        secure.hotel = null
         cache.clear()
         _bootstrap.value = null
         _channels.value = null
@@ -172,6 +174,7 @@ class Repository(
             _bootstrap.value = b
             save(BOOTSTRAP, Bootstrap.serializer(), b)
             _favorites.value = b.favorites
+            if (b.hotelCode != null && secure.hotel == null) secure.hotel = b.hotelCode // TVs registered before multi-hotel
             ServiceState.markContact(appContext)
             ServiceState.onServerStatus(appContext, b.service?.status)
             onAnnouncements(b.announcements)
