@@ -239,9 +239,17 @@ class Repository(
                     }
                 }
                 "reboot" -> {
-                    api.ack(cmd.id, AckRequest("done"))
-                    kiosk.reboot()
-                    return
+                    if (!kiosk.isDeviceOwner) {
+                        "failed" to buildJsonObject {
+                            put("error", JsonPrimitive("Restart jarak jauh hanya untuk TV Device Owner"))
+                            put("device_owner", JsonPrimitive(false))
+                        }
+                    } else {
+                        // Ack first: once the reboot starts there is no chance to report.
+                        api.ack(cmd.id, AckRequest("done", buildJsonObject { put("rebooting", JsonPrimitive(true)) }))
+                        kiosk.reboot()
+                        return
+                    }
                 }
                 else -> "failed" to buildJsonObject { put("error", JsonPrimitive("unknown command")) }
             }

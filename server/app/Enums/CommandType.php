@@ -35,4 +35,10 @@ enum CommandType: string implements HasIcon, HasLabel
             self::ShowStockLauncher => Heroicon::OutlinedEye,
         };
     }
+
+    /** Commands Android only allows for Device Owner TVs. */
+    public function requiresDeviceOwner(): bool
+    {
+        return in_array($this, [self::Reboot, self::HideStockLauncher, self::ShowStockLauncher], true);
+    }
 }

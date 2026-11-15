@@ -105,11 +105,20 @@ class DeviceResource extends Resource
                     ->icon(Heroicon::OutlinedCommandLine)
                     ->iconButton()->tooltip('Kirim perintah')->color('primary')
                     ->visible(fn (Device $r) => $r->status === DeviceStatus::Active && static::canEdit($r))
-                    ->schema([
-                        Select::make('type')->label('Perintah')->options(CommandType::class)->required(),
+                    ->schema(fn (Device $record) => [
+                        Select::make('type')->label('Perintah')->required()
+                            ->options(collect(CommandType::cases())
+                                ->reject(fn (CommandType $t) => $t->requiresDeviceOwner() && ! $record->device_owner)
+                                ->mapWithKeys(fn (CommandType $t) => [$t->value => $t->getLabel()]))
+                            ->helperText($record->device_owner ? null : 'Restart TV & sembunyikan launcher hanya tersedia untuk TV Device Owner (aturan Android). TV ini bukan Device Owner.'),
                     ])
                     ->action(function (Device $record, array $data) {
                         $type = $data['type'] instanceof CommandType ? $data['type'] : CommandType::from($data['type']);
+                        if ($type->requiresDeviceOwner() && ! $record->device_owner) {
+                            Notification::make()->title('Perintah tidak bisa dikirim')->body('"'.$type->getLabel().'" hanya untuk TV Device Owner.')->danger()->send();
+
+                            return;
+                        }
                         $payload = $type === CommandType::ClearAppData
                             ? ['packages' => AppWhitelist::query()->where('clear_on_checkout', true)->pluck('package_name')->all(), 'reason' => 'manual']
                             : null;
@@ -119,6 +128,16 @@ class DeviceResource extends Resource
                         Audit::log('device.command_queued', $record, ['type' => $type->value, 'command_id' => $cmd->id]);
                         Notification::make()->title('Perintah diantrikan')->body('TV akan menjalankannya saat heartbeat berikutnya (≤1 menit).')->success()->send();
                     }),
+                Action::make('history')
+                    ->label('Riwayat perintah')
+                    ->icon(Heroicon::OutlinedClipboardDocumentList)
+                    ->iconButton()->tooltip('Riwayat perintah')->color('gray')
+                    ->modalHeading(fn (Device $r) => 'Riwayat perintah — kamar '.($r->room?->number ?? '?'))
+                    ->modalContent(fn (Device $r) => view('filament.devices.command-history', [
+                        'commands' => $r->commands()->latest('id')->limit(15)->get(),
+                    ]))
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup'),
                 Action::make('revoke')
                     ->label('Cabut akses')
                     ->icon(Heroicon::OutlinedNoSymbol)

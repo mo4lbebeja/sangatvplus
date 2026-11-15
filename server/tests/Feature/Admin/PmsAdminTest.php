@@ -1,12 +1,17 @@
 <?php
 
+use App\Enums\CommandStatus;
+use App\Enums\CommandType;
 use App\Enums\UserRole;
 use App\Filament\Pages\PmsIntegrationPage;
+use App\Filament\Resources\Devices\Pages\ManageDevices;
 use App\Filament\Resources\PmsIntegrations\Pages\ManagePmsIntegrations;
 use App\Filament\Resources\PmsIntegrations\PmsIntegrationResource;
+use App\Models\Device;
 use App\Models\HotelProfile;
 use App\Models\PmsIntegration;
 use App\Models\User;
+use Filament\Actions\Testing\TestAction;
 use Livewire\Livewire;
 
 function asRole(UserRole $role): User
@@ -76,4 +81,28 @@ it('downloads the vendor document with the production base URL', function () {
 
 it('redirects guests to the CMS login for the vendor document', function () {
     $this->get('/admin/integrasi-pms/dokumen-vendor.md')->assertRedirect(route('filament.admin.auth.login'));
+});
+
+it('only offers restart to Device Owner TVs and shows command history', function () {
+    asRole(UserRole::It);
+    $plain = Device::factory()->create(['device_owner' => false]);
+    $owner = Device::factory()->create(['device_owner' => true]);
+
+    Livewire::test(ManageDevices::class)
+        ->callAction(TestAction::make('command')->table($plain), ['type' => 'reboot'])
+        ->assertHasActionErrors(['type']); // not even offered for non-Device-Owner TVs
+    expect($plain->commands()->count())->toBe(0);
+
+    Livewire::test(ManageDevices::class)
+        ->callAction(TestAction::make('command')->table($owner), ['type' => 'reboot'])
+        ->assertNotified('Perintah diantrikan');
+    expect($owner->commands()->first()->type)->toBe(CommandType::Reboot);
+
+    $plain->commands()->create(['type' => CommandType::Refresh, 'status' => CommandStatus::Failed, 'result' => ['error' => 'Uji gagal']]);
+    Livewire::test(ManageDevices::class)
+        ->mountAction(TestAction::make('history')->table($plain))
+        ->assertActionMounted(TestAction::make('history')->table($plain));
+
+    $html = view('filament.devices.command-history', ['commands' => $plain->commands()->latest('id')->get()])->render();
+    expect($html)->toContain('Uji gagal')->toContain('Gagal');
 });

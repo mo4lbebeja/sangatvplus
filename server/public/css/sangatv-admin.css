@@ -451,3 +451,12 @@ html { font-size: 14px; }
 .sg-prose pre { margin: 0.6rem 0; padding: 0.8rem 1rem; border-radius: 0.6rem; background: #061a2b; border: 1px solid #143450; overflow-x: auto; }
 .sg-prose pre code { padding: 0; background: none; color: #bfeaf1; font-size: 0.8rem; line-height: 1.55; }
 .sg-prose blockquote { margin: 0.7rem 0; padding: 0.6rem 0.9rem; border-left: 3px solid var(--sg-gold); background: var(--sg-gold-soft); border-radius: 0 0.5rem 0.5rem 0; }
+
+/* ---------- Riwayat perintah TV ---------- */
+.sg-cmd-history { display: grid; gap: 0.5rem; }
+.sg-cmd-row { display: flex; gap: 0.75rem; align-items: flex-start; justify-content: space-between; padding: 0.6rem 0.75rem; border: 1px solid var(--sg-border); border-radius: 0.6rem; background: var(--sg-stripe); }
+.sg-cmd-main b { display: block; font-size: 0.9rem; }
+.sg-cmd-main small { color: var(--sg-muted); font-size: 0.75rem; }
+.sg-cmd-err { margin-top: 0.3rem; font-size: 0.8rem; color: #be123c; }
+.dark .sg-cmd-err { color: #fda4af; }
+.sg-cmd-info { margin-top: 0.3rem; font-size: 0.8rem; color: var(--sg-muted); }
