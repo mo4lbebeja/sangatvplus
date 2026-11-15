@@ -32,8 +32,12 @@ class HeartbeatController extends Controller
             'can_draw_overlays' => ['nullable', 'boolean'],
             'can_install_updates' => ['nullable', 'boolean'],
             'stock_launcher_active' => ['nullable', 'boolean'],
+            'screen_on' => ['nullable', 'boolean'],
         ]);
 
+        if (array_key_exists('screen_on', $data) && $data['screen_on'] !== null && $data['screen_on'] !== $device->screen_on) {
+            $device->screen_changed_at = now();
+        }
         $device->fill(array_filter($data, fn ($v) => $v !== null));
         $device->last_seen_at = now();
         $device->last_ip = $request->ip();

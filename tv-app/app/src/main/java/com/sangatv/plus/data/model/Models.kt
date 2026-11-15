@@ -158,6 +158,8 @@ data class HeartbeatRequest(
     @SerialName("can_draw_overlays") val canDrawOverlays: Boolean,
     @SerialName("can_install_updates") val canInstallUpdates: Boolean,
     @SerialName("stock_launcher_active") val stockLauncherActive: Boolean,
+    /** false while the TV is in standby (screen off) — shown red in the CMS. */
+    @SerialName("screen_on") val screenOn: Boolean,
 )
 
 @Serializable

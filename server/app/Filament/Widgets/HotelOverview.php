@@ -30,7 +30,8 @@ class HotelOverview extends StatsOverviewWidget
         $rooms = Room::query()->where('is_active', true)->count();
         $occupied = Guest::query()->where('status', GuestStatus::InHouse)->distinct('room_id')->count('room_id');
         $active = Device::query()->where('status', DeviceStatus::Active)->count();
-        $online = Device::query()->where('status', DeviceStatus::Active)->where('last_seen_at', '>', now()->subMinutes(3))->count();
+        $online = Device::query()->where('status', DeviceStatus::Active)->where('last_seen_at', '>', Device::onlineThreshold())
+            ->where(fn ($q) => $q->whereNull('screen_on')->orWhere('screen_on', true))->count();
         $roomsWithTv = Device::query()->where('status', DeviceStatus::Active)->distinct('room_id')->count('room_id');
         $pct = $rooms > 0 ? round($occupied / $rooms * 100) : 0;
 
@@ -45,9 +46,9 @@ class HotelOverview extends StatsOverviewWidget
                 ->descriptionIcon(Heroicon::OutlinedKey)
                 ->chart($checkins)
                 ->color('primary'),
-            Stat::make('TV online', "{$online} / {$active}")
+            Stat::make('TV menyala', "{$online} / {$active}")
                 ->icon(Heroicon::OutlinedTv)
-                ->description($active - $online > 0 ? ($active - $online).' TV tidak merespons' : 'Semua TV merespons')
+                ->description($active - $online > 0 ? ($active - $online).' TV mati / standby' : 'Semua TV menyala')
                 ->descriptionIcon($active - $online > 0 ? Heroicon::OutlinedExclamationTriangle : Heroicon::OutlinedCheckCircle)
                 ->color($active - $online > 0 ? 'warning' : 'success'),
             Stat::make('Belum ada TV', (string) max(0, $rooms - $roomsWithTv))

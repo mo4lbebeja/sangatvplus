@@ -194,6 +194,12 @@ class Repository(
         }
     }
 
+    /** Report immediately (e.g. right after the screen turns off/on) instead of waiting for the next tick. */
+    fun beatNow() {
+        if (secure.token == null) return
+        scope.launch { beat() }
+    }
+
     private suspend fun beat() {
         try {
             val res = api.heartbeat(
@@ -206,6 +212,7 @@ class Repository(
                     canDrawOverlays = AutoStart.canDrawOverlays(appContext),
                     canInstallUpdates = AutoStart.canInstallUpdates(appContext),
                     stockLauncherActive = AutoStart.isStockLauncherActive(appContext),
+                    screenOn = appContext.getSystemService(android.os.PowerManager::class.java)?.isInteractive ?: true,
                 ),
             )
             _online.value = true

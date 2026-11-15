@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 
 class Device extends Model
@@ -29,6 +30,8 @@ class Device extends Model
             'can_draw_overlays' => 'boolean',
             'can_install_updates' => 'boolean',
             'stock_launcher_active' => 'boolean',
+            'screen_on' => 'boolean',
+            'screen_changed_at' => 'datetime',
             'provisioned_at' => 'datetime',
             'last_seen_at' => 'datetime',
         ];
@@ -64,9 +67,29 @@ class Device extends Model
         return 'no';
     }
 
+    /**
+     * 'on'      → connected and screen on (green)
+     * 'standby' → connected but screen off (red)
+     * 'off'     → no heartbeat for > 3 min: powered off, unplugged or network down (red)
+     */
+    public function powerState(): string
+    {
+        if (! $this->isOnline()) {
+            return 'off';
+        }
+
+        return $this->screen_on === false ? 'standby' : 'on';
+    }
+
+    /** Query scope helpers for "screen on and connected". */
+    public static function onlineThreshold(): Carbon
+    {
+        return now()->subMinutes(3);
+    }
+
     public function isOnline(): bool
     {
-        return $this->last_seen_at !== null && $this->last_seen_at->gt(now()->subMinutes(3));
+        return $this->last_seen_at !== null && $this->last_seen_at->gt(self::onlineThreshold());
     }
 
     /** Revoke: invalidate all tokens immediately. */

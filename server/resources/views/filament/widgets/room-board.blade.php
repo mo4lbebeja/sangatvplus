@@ -8,8 +8,8 @@
             <div class="sg-legend">
                 <span><i class="sg-dot" style="background: linear-gradient(135deg,#7fe0ec,#38c6d9)"></i> Terisi</span>
                 <span><i class="sg-dot" style="background: var(--sg-border)"></i> Kosong</span>
-                <span><i class="sg-dot" style="background:#22c55e"></i> TV online</span>
-                <span><i class="sg-dot" style="background:#f08a7e"></i> TV tidak merespons</span>
+                <span><i class="sg-dot" style="background:#22c55e"></i> TV menyala</span>
+                <span><i class="sg-dot" style="background:#f08a7e"></i> TV mati / standby</span>
                 <span><i class="sg-dot" style="box-shadow: inset 0 0 0 1.5px currentColor; opacity:.5"></i> Belum ada TV</span>
             </div>
         </div>
@@ -21,7 +21,7 @@
                         @foreach ($rooms as $room)
                             <a href="/admin/rooms?tableSearch={{ urlencode($room['number']) }}" wire:navigate
                                class="sg-room {{ $room['guest'] ? 'is-occupied' : '' }} {{ $room['active'] ? '' : 'is-inactive' }}"
-                               title="Kamar {{ $room['number'] }}{{ $room['guest'] ? ' · '.$room['guest'] : ' · kosong' }} · TV {{ ['on' => 'online', 'off' => 'tidak merespons', 'none' => 'belum terdaftar'][$room['tv']] }}">
+                               title="Kamar {{ $room['number'] }}{{ $room['guest'] ? ' · '.$room['guest'] : ' · kosong' }} · TV {{ ['on' => 'menyala', 'off' => 'mati / standby', 'none' => 'belum terdaftar'][$room['tv']] }}">
                                 <span class="sg-tv {{ $room['tv'] }}"></span>
                                 {{ $room['number'] }}
                                 @if ($room['guest'])

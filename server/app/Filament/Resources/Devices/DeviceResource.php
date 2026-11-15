@@ -71,7 +71,20 @@ class DeviceResource extends Resource
                 TextColumn::make('android_version')->label('Android')->placeholder('—')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('device_uid')->label('ID perangkat')->limit(14)->copyable()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('status')->badge(),
-                IconColumn::make('online')->label('Online')->boolean()->trueIcon(Heroicon::OutlinedSignal)->falseIcon(Heroicon::OutlinedSignalSlash)->state(fn (Device $r) => $r->isOnline()),
+                TextColumn::make('power')->label('Status')->badge()
+                    ->state(fn (Device $r) => $r->powerState())
+                    ->formatStateUsing(fn (string $state) => ['on' => 'Menyala', 'standby' => 'Standby', 'off' => 'Mati'][$state])
+                    ->color(fn (string $state) => $state === 'on' ? 'success' : 'danger')
+                    ->icon(fn (string $state) => match ($state) {
+                        'on' => Heroicon::OutlinedSignal,
+                        'standby' => Heroicon::OutlinedMoon,
+                        default => Heroicon::OutlinedSignalSlash,
+                    })
+                    ->tooltip(fn (Device $r) => match ($r->powerState()) {
+                        'on' => 'Layar menyala'.($r->screen_changed_at ? ' sejak '.$r->screen_changed_at->diffForHumans() : ''),
+                        'standby' => 'Terhubung, layar mati'.($r->screen_changed_at ? ' sejak '.$r->screen_changed_at->diffForHumans() : ''),
+                        default => $r->last_seen_at ? 'Tidak ada sinyal sejak '.$r->last_seen_at->diffForHumans() : 'Belum pernah terhubung',
+                    }),
                 IconColumn::make('autostart')->label('Mulai otomatis')
                     ->state(fn (Device $r) => $r->autoStartState() ?? 'unknown')
                     ->icon(fn (string $state) => match ($state) {
@@ -98,7 +111,19 @@ class DeviceResource extends Resource
             ->defaultSort('last_seen_at', 'desc')
             ->poll('30s')
             ->filters([
-                SelectFilter::make('status')->options(DeviceStatus::class),
+                SelectFilter::make('status')->label('Akses')->options(DeviceStatus::class),
+                SelectFilter::make('power')->label('Status layar')
+                    ->options(['on' => 'Menyala', 'standby' => 'Standby', 'off' => 'Mati'])
+                    ->query(function ($query, array $data) {
+                        $t = Device::onlineThreshold();
+
+                        return match ($data['value'] ?? null) {
+                            'on' => $query->where('last_seen_at', '>', $t)->where(fn ($q) => $q->whereNull('screen_on')->orWhere('screen_on', true)),
+                            'standby' => $query->where('last_seen_at', '>', $t)->where('screen_on', false),
+                            'off' => $query->where(fn ($q) => $q->whereNull('last_seen_at')->orWhere('last_seen_at', '<=', $t)),
+                            default => $query,
+                        };
+                    }),
             ])
             ->recordActions([
                 Action::make('command')
@@ -165,7 +190,7 @@ class DeviceResource extends Resource
     public static function getNavigationBadge(): ?string
     {
         $offline = Device::query()->where('status', DeviceStatus::Active)
-            ->where(fn ($q) => $q->whereNull('last_seen_at')->orWhere('last_seen_at', '<', now()->subMinutes(3)))
+            ->where(fn ($q) => $q->whereNull('last_seen_at')->orWhere('last_seen_at', '<=', Device::onlineThreshold())->orWhere('screen_on', false))
             ->count();
 
         return $offline > 0 ? (string) $offline : null;
@@ -178,7 +203,7 @@ class DeviceResource extends Resource
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        return 'TV tidak merespons';
+        return 'TV mati / standby';
     }
 
     public static function getPages(): array

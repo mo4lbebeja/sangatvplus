@@ -31,7 +31,7 @@ class RoomBoard extends Widget
                     'floor' => $r->floor,
                     'active' => $r->is_active,
                     'guest' => $r->currentGuest?->displayName(),
-                    'tv' => $tv === null ? 'none' : ($tv->isOnline() ? 'on' : 'off'),
+                    'tv' => $tv === null ? 'none' : ($tv->powerState() === 'on' ? 'on' : 'off'),
                 ];
             });
 

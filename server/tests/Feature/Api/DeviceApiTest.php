@@ -163,3 +163,15 @@ it('sends the screensaver delay chosen in the CMS to the TV', function () {
 
     $this->getJson('/api/v1/bootstrap')->assertOk()->assertJsonPath('config.screensaver_minutes', 60);
 });
+
+it('tracks screen on / standby / off for monitoring', function () {
+    $this->postJson('/api/v1/heartbeat', ['screen_on' => true])->assertOk();
+    expect($this->device->fresh()->powerState())->toBe('on');
+
+    $this->postJson('/api/v1/heartbeat', ['screen_on' => false])->assertOk();
+    $d = $this->device->fresh();
+    expect($d->powerState())->toBe('standby')->and($d->screen_changed_at)->not->toBeNull();
+
+    $d->forceFill(['last_seen_at' => now()->subMinutes(10)])->save();
+    expect($d->fresh()->powerState())->toBe('off');
+});
