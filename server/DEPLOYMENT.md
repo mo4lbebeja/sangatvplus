@@ -71,9 +71,10 @@ BACKUP_PASSWORD=...           # sudah diisi; salinan di laptop ~/.sangatv/backup
 GUEST_RETENTION_DAYS=90       # data tamu check-out dianonimkan setelah N hari
 ```
 - **Backup** 02.30 WIB: database (harian) + media (Minggu), AES-256, 14 terakhir di `storage/app/private/backups`,
-  salinan ke Telegram **dan Google Drive** sijalucom@gmail.com folder `SangaTV-Backup` (rclone, akses `drive.file`,
-  config `storage/app/private/rclone.conf`, `BACKUP_RCLONE_REMOTE`; disimpan 60 hari). Catatan: client_id bersama rclone
-  sedang dipensiunkan Google (2026); bila unggah Drive gagal, peringatan masuk Telegram/email → buat client_id sendiri. Manual: `php artisan sangatv:backup --media`. Pulihkan: lihat `~/.sangatv/backup-INFO.txt`.
+  salinan ke Telegram **dan Google Drive** sijalucom@gmail.com folder `SangaTV Plus - Backup` (rclone dengan OAuth
+  client milik sendiri — Google Cloud project "SangaTV Backup", status In production, akses `drive.file`; config
+  `storage/app/private/rclone.conf`, `BACKUP_RCLONE_REMOTE`; disimpan 60 hari). Folder lama `SangaTV-Backup` (client
+  bersama rclone) tidak lagi diisi/dibersihkan — boleh dihapus manual. Manual: `php artisan sangatv:backup --media`. Pulihkan: lihat `~/.sangatv/backup-INFO.txt`.
 - **Peringatan** tiap 5 menit (`sangatv:monitor`): channel gagal 3× berturut-turut, TV tanpa sinyal > 24 jam; dikirim
   sekali saat bermasalah dan sekali saat pulih. Uji: CMS → Statistik & Uptime → *Kirim notifikasi uji*.
   Server mati harus dipantau dari luar: daftarkan `https://sangatvplus.sijalucom.online/up` di UptimeRobot (gratis).
