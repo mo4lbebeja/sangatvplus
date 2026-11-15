@@ -341,3 +341,27 @@ html:has(body.fi-panel-vendor) { font-size: 14.5px; }
 .fi-panel-vendor .sg-prose { font-size: .84rem; }
 .fi-panel-vendor .sg-check b { font-size: .84rem; }
 .fi-panel-vendor .sg-check small { font-size: .74rem; }
+
+/* Guides: tight spacing */
+.fi-panel-vendor .sg-guide { gap: .5rem !important; }
+.fi-panel-vendor .sg-guide-params { padding: .55rem .7rem !important; gap: .6rem; }
+.fi-panel-vendor .sg-field { gap: .2rem; font-size: .64rem; }
+.fi-panel-vendor .sg-field input, .fi-panel-vendor .sg-field select { padding: .35rem .6rem; font-size: .82rem; }
+.fi-panel-vendor .sg-guide-toc { gap: .3rem; }
+.fi-panel-vendor .sg-guide-toc a { padding: .22rem .55rem; font-size: .74rem; }
+.fi-panel-vendor .sg-card.sg-guide-section { padding: 0 !important; }
+.fi-panel-vendor .sg-guide-section header { padding: .45rem .75rem !important; gap: .5rem; }
+.fi-panel-vendor .sg-guide-icon { width: 1.1rem; height: 1.1rem; margin-top: .1rem; }
+.fi-panel-vendor .sg-guide-section header p { margin-top: .05rem; }
+.fi-panel-vendor .sg-guide-section ol { padding: .4rem .75rem .55rem !important; gap: .3rem; }
+.fi-panel-vendor .sg-guide-section li { padding-block: 0 !important; }
+.fi-panel-vendor .sg-guide-section li.is-warn { padding: .35rem .6rem .35rem 2.1rem !important; }
+.fi-panel-vendor .sg-cmd { margin-top: .2rem; }
+.fi-panel-vendor .sg-cmd code { padding: .35rem .65rem; font-size: .76rem; }
+.fi-panel-vendor .sg-checklist li { gap: .2rem; }
+.fi-panel-vendor .sg-note { padding: .3rem .55rem; font-size: .78rem; }
+.fi-panel-vendor .sg-pms-facts { padding: .55rem .75rem; gap: .6rem; }
+.fi-panel-vendor .sg-prose { padding: .8rem 1rem; line-height: 1.55; }
+.fi-panel-vendor .sg-prose h2 { margin: 1rem 0 .4rem; }
+.fi-panel-vendor .sg-prose h3 { margin: .8rem 0 .3rem; }
+.fi-panel-vendor .sg-prose p, .fi-panel-vendor .sg-prose ul, .fi-panel-vendor .sg-prose ol { margin: .35rem 0; }
