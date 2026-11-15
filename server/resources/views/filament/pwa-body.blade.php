@@ -6,6 +6,8 @@
     // Every page opens at the top: the browser must not restore an old scroll position
     // on reload / SPA navigation (long pages like Profil Hotel looked "shifted down").
     (() => {
+        if (window.__sgScrollTopInit) return; // body scripts re-run on SPA navigation: register once
+        window.__sgScrollTopInit = true;
         try { history.scrollRestoration = 'manual'; } catch (e) {}
         const toTop = () => { if (!location.hash) window.scrollTo({ top: 0, left: 0, behavior: 'instant' }); };
         document.addEventListener('livewire:navigated', toTop);
