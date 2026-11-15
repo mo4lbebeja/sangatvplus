@@ -4,6 +4,7 @@ namespace App\Filament\Concerns;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Tenancy\HotelFeatures;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 
@@ -34,9 +35,15 @@ trait RestrictedByRole
         return static::viewRoles();
     }
 
+    /** Plan feature this module needs (Plan::FEATURES key), null = always available. */
+    protected static function requiredFeature(): ?string
+    {
+        return null;
+    }
+
     public static function canViewAny(): bool
     {
-        return static::userHasRole(static::viewRoles());
+        return static::userHasRole(static::viewRoles()) && HotelFeatures::has(static::requiredFeature());
     }
 
     public static function canView(Model $record): bool

@@ -8,13 +8,17 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 /** Sijalucom staff (vendor panel). Lives in the central database, separate from every hotel's CMS accounts. */
 #[Fillable(['name', 'email', 'role', 'password', 'is_active'])]
 #[Hidden(['password', 'remember_token', 'app_authentication_secret', 'app_authentication_recovery_codes'])]
 class VendorUser extends Authenticatable implements FilamentUser, HasAppAuthentication, HasAppAuthenticationRecovery
 {
+    use Notifiable;
+
     protected $connection = 'central';
 
     protected $attributes = ['is_active' => true, 'role' => 'owner'];
@@ -39,6 +43,12 @@ class VendorUser extends Authenticatable implements FilamentUser, HasAppAuthenti
             'app_authentication_secret' => 'encrypted',
             'app_authentication_recovery_codes' => 'encrypted:array',
         ];
+    }
+
+    /** Bell notifications live in the central database. */
+    public function notifications(): MorphMany
+    {
+        return $this->morphMany(ConsoleNotification::class, 'notifiable')->latest();
     }
 
     public function canAccessPanel(Panel $panel): bool

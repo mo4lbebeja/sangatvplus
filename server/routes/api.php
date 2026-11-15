@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\HeartbeatController;
 use App\Http\Controllers\Api\V1\ProvisionController;
 use App\Http\Controllers\Api\V1\TechnicianController;
 use App\Http\Controllers\Api\V1\ViewerController;
+use App\Http\Controllers\PaymentWebhookController;
 use App\Http\Middleware\AuthenticatePms;
 use App\Http\Middleware\EnsureActiveDevice;
 use Illuminate\Support\Facades\Route;
@@ -50,3 +51,7 @@ Route::prefix('pms/v1')->name('api.pms.')->middleware([AuthenticatePms::class, '
     Route::post('stays/{reservation}/move', [PmsController::class, 'move'])->name('stays.move');
     Route::post('sync', [PmsController::class, 'sync'])->name('sync');
 });
+
+// Online payment webhooks (Xendit / Midtrans) — verified by token / signature, central database only.
+Route::post('payments/xendit', [PaymentWebhookController::class, 'xendit'])->name('api.payments.xendit');
+Route::post('payments/midtrans', [PaymentWebhookController::class, 'midtrans'])->name('api.payments.midtrans');

@@ -29,6 +29,11 @@ class PmsIntegrationResource extends Resource
 {
     use RestrictedByRole;
 
+    protected static function requiredFeature(): ?string
+    {
+        return 'pms';
+    }
+
     protected static ?string $model = PmsIntegration::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;

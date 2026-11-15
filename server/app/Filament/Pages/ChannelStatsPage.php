@@ -8,6 +8,7 @@ use App\Models\HotelProfile;
 use App\Models\User;
 use App\Services\ChannelStats;
 use App\Services\Notifier;
+use App\Tenancy\HotelFeatures;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
@@ -40,6 +41,10 @@ class ChannelStatsPage extends Page
     public static function canAccess(): bool
     {
         $user = Auth::user();
+
+        if (! HotelFeatures::has('stats')) {
+            return false;
+        }
 
         return $user instanceof User && $user->is_active && ($user->isAdmin() || $user->hasRole(UserRole::It));
     }

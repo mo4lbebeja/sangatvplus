@@ -27,6 +27,7 @@ class Support
             return $ticket;
         });
         VendorActivity::record('ticket.created', "Tiket {$ticket->number}: {$subject}", $hotel);
+        ConsoleNotify::all("Tiket baru {$ticket->number}", "{$hotel->name}: {$subject}", 'heroicon-o-lifebuoy', $priority === 'urgent' ? 'danger' : 'warning', 'support', url('/sijalucom/tiket/'.$ticket->id));
         rescue(fn () => app(Notifier::class)->sendToVendor(($priority === 'urgent' ? '🚨 ' : '🎫 ')."Tiket baru {$ticket->number} · {$hotel->name}",
             "{$subject}\nKategori: ".Ticket::CATEGORIES[$category].' · Prioritas: '.Ticket::PRIORITIES[$priority]."\nDari: {$name}\n\n".mb_substr($body, 0, 600)."\n\n".url('/sijalucom/tiket/'.$ticket->id)), report: false);
 

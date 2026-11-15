@@ -23,6 +23,11 @@ class PmsEventResource extends Resource
 {
     use RestrictedByRole;
 
+    protected static function requiredFeature(): ?string
+    {
+        return 'pms';
+    }
+
     protected static ?string $model = PmsEvent::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQueueList;

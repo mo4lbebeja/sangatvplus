@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 /** A hotel renting SangaTV Plus (central database). Its data lives in its own database ($database). */
 class Hotel extends Model
@@ -25,7 +26,8 @@ class Hotel extends Model
     protected function casts(): array
     {
         return ['features' => 'array', 'service_expires_at' => 'datetime', 'service_released_at' => 'datetime', 'activated_at' => 'datetime',
-            'discount_percent' => 'float', 'auto_invoice' => 'boolean'];
+            'discount_percent' => 'float', 'auto_invoice' => 'boolean', 'churned_at' => 'datetime', 'latitude' => 'float', 'longitude' => 'float',
+            'content_template' => 'array'];
     }
 
     /** CMS can be used (data export stays possible after the service ended; only "suspended" locks it). */
@@ -65,6 +67,26 @@ class Hotel extends Model
     public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);
+    }
+
+    /** Secret link to the client portal (invoices, receipts, documents, reports) — created on first use. */
+    public function portalUrl(): string
+    {
+        if (! $this->portal_token) {
+            $this->forceFill(['portal_token' => Str::random(48)])->save();
+        }
+
+        return url('/portal/'.$this->portal_token);
+    }
+
+    public function fieldJobs(): HasMany
+    {
+        return $this->hasMany(FieldJob::class);
+    }
+
+    public function assets(): HasMany
+    {
+        return $this->hasMany(Asset::class);
     }
 
     public function documents(): HasMany

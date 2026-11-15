@@ -23,6 +23,7 @@ use Filament\Forms\Components\Radio;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Icons\Heroicon;
@@ -32,6 +33,9 @@ use Throwable;
 class HotelActions
 {
     use VendorAccess;
+
+    public const CHURN_REASONS = ['price' => 'Harga / anggaran', 'competitor' => 'Pindah ke vendor lain', 'closed' => 'Hotel tutup / renovasi',
+        'quality' => 'Kualitas layanan / kendala teknis', 'feature' => 'Fitur kurang', 'unpaid' => 'Tidak membayar', 'other' => 'Lainnya'];
 
     public static function extend(): Action
     {
@@ -78,6 +82,20 @@ class HotelActions
             });
     }
 
+    public static function quota(): Action
+    {
+        return Action::make('quota')->label('Ubah kuota TV')->icon(Heroicon::OutlinedTv)->color('gray')
+            ->visible(fn () => static::allowed('finance'))
+            ->modalIcon(Heroicon::OutlinedTv)
+            ->modalDescription('Penambahan di tengah periode ditagih prorata sampai akhir masa sewa saat ini (tagihan biaya terpisah).')
+            ->schema([TextInput::make('quota')->label('Kuota TV baru')->numeric()->minValue(1)->required()->suffix('TV')->default(fn (Hotel $record) => $record->tv_quota)])
+            ->action(function (Hotel $record, array $data) {
+                $invoice = Billing::changeQuota($record, (int) $data['quota']);
+                Notification::make()->title("Kuota TV menjadi {$data['quota']}")
+                    ->body($invoice ? "Tagihan prorata {$invoice->number}: ".Billing::rupiah($invoice->total) : 'Tidak ada tagihan prorata.')->success()->send();
+            });
+    }
+
     public static function impersonate(): Action
     {
         return Action::make('impersonate')->label('Masuk CMS')->icon(Heroicon::OutlinedArrowRightEndOnRectangle)->color('gray')
@@ -105,9 +123,12 @@ class HotelActions
             ->visible(fn (Hotel $record) => $record->service_released_at === null && static::allowed('owner'))
             ->requiresConfirmation()
             ->modalDescription('Semua TV hotel ini masuk Mode lepas (kembali ke launcher bawaan) pada heartbeat berikutnya. CMS tetap bisa dibuka untuk ekspor data.')
-            ->action(function (Hotel $record) {
-                $record->update(['service_released_at' => now()]);
-                VendorActivity::record('service.released', 'Layanan TV dilepas (kontrak selesai)', $record);
+            ->schema([
+                Select::make('churn_reason')->label('Alasan berhenti (analisa churn)')->required()->options(self::CHURN_REASONS),
+            ])
+            ->action(function (Hotel $record, array $data) {
+                $record->update(['service_released_at' => now(), 'churn_reason' => $data['churn_reason'], 'churned_at' => now()]);
+                VendorActivity::record('service.released', 'Layanan TV dilepas: '.(self::CHURN_REASONS[$data['churn_reason']] ?? $data['churn_reason']), $record);
             });
     }
 
@@ -117,7 +138,7 @@ class HotelActions
             ->visible(fn (Hotel $record) => $record->service_released_at !== null && static::allowed('owner'))
             ->requiresConfirmation()
             ->action(function (Hotel $record) {
-                $record->update(['service_released_at' => null]);
+                $record->update(['service_released_at' => null, 'churned_at' => null, 'churn_reason' => null]);
                 VendorActivity::record('service.restored', 'Layanan TV dipulihkan', $record);
             });
     }
@@ -174,6 +195,21 @@ class HotelActions
             });
     }
 
+    public static function portal(): Action
+    {
+        return Action::make('portal')->label('Portal klien')->icon(Heroicon::OutlinedGlobeAlt)->color('gray')
+            ->modalIcon(Heroicon::OutlinedGlobeAlt)->modalSubmitActionLabel('Buat tautan baru')
+            ->modalDescription(fn (Hotel $record) => 'Tautan rahasia untuk pemilik/keuangan hotel: tagihan, bayar online, kwitansi, dokumen, laporan bulanan. '.$record->portalUrl())
+            ->schema([Toggle::make('rotate')->label('Ganti tautan (tautan lama tidak berlaku lagi)')])
+            ->action(function (Hotel $record, array $data) {
+                if ($data['rotate'] ?? false) {
+                    $record->forceFill(['portal_token' => null])->save();
+                    VendorActivity::record('portal.rotated', 'Tautan portal klien diganti', $record);
+                }
+                Notification::make()->title('Tautan portal klien')->body($record->fresh()->portalUrl())->persistent()->success()->send();
+            });
+    }
+
     public static function refresh(): Action
     {
         return Action::make('refresh')->label('Muat ulang data TV')->icon(Heroicon::OutlinedArrowPath)->color('gray')
@@ -183,6 +219,6 @@ class HotelActions
     /** @return array<int, Action> */
     public static function all(): array
     {
-        return [static::extend(), static::impersonate(), static::tvCommand(), static::release(), static::restore(), static::suspend(), static::activate(), static::refresh()];
+        return [static::extend(), static::quota(), static::impersonate(), static::tvCommand(), static::portal(), static::release(), static::restore(), static::suspend(), static::activate(), static::refresh()];
     }
 }

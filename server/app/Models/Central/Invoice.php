@@ -14,13 +14,13 @@ class Invoice extends Model
 
     public const STATUSES = ['draft' => 'Draf', 'unpaid' => 'Belum dibayar', 'paid' => 'Lunas', 'void' => 'Dibatalkan'];
 
-    public const METHODS = ['transfer' => 'Transfer bank', 'qris' => 'QRIS', 'cash' => 'Tunai', 'other' => 'Lainnya'];
+    public const METHODS = ['transfer' => 'Transfer bank', 'qris' => 'QRIS', 'cash' => 'Tunai', 'xendit' => 'Online (Xendit)', 'midtrans' => 'Online (Midtrans)', 'other' => 'Lainnya'];
 
     protected function casts(): array
     {
         return [
             'items' => 'array', 'period_start' => 'date', 'period_end' => 'date', 'issued_at' => 'date', 'due_at' => 'date',
-            'paid_at' => 'datetime', 'applied_at' => 'datetime', 'tax_percent' => 'float',
+            'paid_at' => 'datetime', 'applied_at' => 'datetime', 'tax_percent' => 'float', 'reminders' => 'array',
         ];
     }
 

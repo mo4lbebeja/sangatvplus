@@ -24,3 +24,5 @@ Schedule::command('sangatv:pengingat-sewa')->dailyAt('08:00')->timezone('Asia/Ja
     ->when(fn () => config('tenancy.enabled'));
 Schedule::command('sangatv:tagihan')->dailyAt('07:30')->timezone('Asia/Jakarta')
     ->when(fn () => config('tenancy.enabled'));
+Schedule::command('sangatv:snapshot')->everyFifteenMinutes()->withoutOverlapping()->when(fn () => config('tenancy.enabled'));
+Schedule::command('sangatv:laporan-bulanan')->monthlyOn(1, '08:00')->timezone('Asia/Jakarta')->when(fn () => config('tenancy.enabled'));

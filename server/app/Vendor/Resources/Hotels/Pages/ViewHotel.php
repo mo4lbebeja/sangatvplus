@@ -31,7 +31,7 @@ class ViewHotel extends ViewRecord
             HotelActions::extend(),
             HotelActions::impersonate(),
             EditAction::make()->modalWidth('4xl')->after(fn () => VendorActivity::record('hotel.updated', 'Data hotel diubah', $this->record)),
-            ActionGroup::make([HotelActions::tvCommand(), HotelActions::release(), HotelActions::restore(), HotelActions::suspend(), HotelActions::activate(), HotelActions::refresh()])
+            ActionGroup::make([HotelActions::quota(), HotelActions::portal(), HotelActions::tvCommand(), HotelActions::release(), HotelActions::restore(), HotelActions::suspend(), HotelActions::activate(), HotelActions::refresh()])
                 ->label('Lainnya')->button()->color('gray'),
         ];
     }

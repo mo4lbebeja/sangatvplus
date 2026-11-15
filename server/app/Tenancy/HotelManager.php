@@ -171,6 +171,59 @@ class HotelManager
             : $central->statement("DROP DATABASE IF EXISTS `{$hotel->database}`");
     }
 
+    public const CONTENT_PARTS = [
+        'channels' => ['label' => 'Channel TV, kategori & provider', 'tables' => ['channel_categories', 'channel_providers', 'channels']],
+        'apps' => ['label' => 'Aplikasi diizinkan', 'tables' => ['app_whitelist']],
+        'slides' => ['label' => 'Slide beranda', 'tables' => ['slides']],
+        'facilities' => ['label' => 'Fasilitas & galeri', 'tables' => ['facilities', 'gallery_photos']],
+        'announcements' => ['label' => 'Pengumuman TV', 'tables' => ['announcements']],
+    ];
+
+    private const FILE_COLUMNS = ['logo_path', 'image_path', 'icon_path', 'thumb_path'];
+
+    /**
+     * Template for a new hotel: copy content tables (same ids) and their media files from another hotel.
+     *
+     * @param  list<string>  $parts  keys of CONTENT_PARTS
+     */
+    public function copyContent(Hotel $source, Hotel $target, array $parts): void
+    {
+        $tables = collect($parts)->flatMap(fn ($p) => self::CONTENT_PARTS[$p]['tables'] ?? [])->values()->all();
+        if ($tables === []) {
+            return;
+        }
+        $rows = $this->run($source, fn () => collect($tables)->mapWithKeys(fn ($t) => [$t => DB::table($t)->get()->map(fn ($r) => (array) $r)->all()])->all());
+        $base = storage_path('app/public');
+        $src = $base.($source->storage_dir ? '/'.trim($source->storage_dir, '/') : '');
+        $dst = $base.($target->storage_dir ? '/'.trim($target->storage_dir, '/') : '');
+
+        $this->run($target, function () use ($tables, $rows) {
+            foreach (array_reverse($tables) as $t) {
+                DB::table($t)->delete();
+            }
+            foreach ($tables as $t) {
+                foreach (array_chunk($rows[$t], 200) as $chunk) {
+                    DB::table($t)->insert($chunk);
+                }
+                if (DB::getDriverName() === 'pgsql' && $rows[$t] !== []) {
+                    DB::statement("SELECT setval(pg_get_serial_sequence('{$t}', 'id'), (SELECT MAX(id) FROM {$t}))");
+                }
+            }
+        });
+
+        foreach ($rows as $list) {
+            foreach ($list as $row) {
+                foreach (self::FILE_COLUMNS as $col) {
+                    $path = $row[$col] ?? null;
+                    if ($path && is_file("{$src}/{$path}") && ! is_file("{$dst}/{$path}")) {
+                        @mkdir(dirname("{$dst}/{$path}"), 0775, true);
+                        @copy("{$src}/{$path}", "{$dst}/{$path}");
+                    }
+                }
+            }
+        }
+    }
+
     /** @return array{ok: bool, output: string} */
     public function migrate(Hotel $hotel): array
     {

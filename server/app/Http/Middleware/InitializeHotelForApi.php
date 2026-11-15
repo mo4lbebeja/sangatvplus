@@ -6,6 +6,7 @@ use App\Models\Central\Hotel;
 use App\Models\Central\HotelCode;
 use App\Models\Central\PmsKeyIndex;
 use App\Models\ProvisioningCode;
+use App\Tenancy\HotelFeatures;
 use App\Tenancy\HotelManager;
 use Closure;
 use Illuminate\Http\Request;
@@ -26,7 +27,8 @@ class InitializeHotelForApi
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $this->tenancy->enabled()) {
+        // Payment gateway webhooks only touch the central database.
+        if (! $this->tenancy->enabled() || $request->is('api/payments/*')) {
             return $next($request);
         }
 
@@ -44,6 +46,9 @@ class InitializeHotelForApi
         }
 
         $this->tenancy->initialize($hotel);
+        if ($request->is('api/pms/*') && ! HotelFeatures::has('pms')) {
+            return response()->json(['message' => 'Paket SangaTV Plus hotel ini tidak termasuk integrasi PMS.'], 403);
+        }
 
         return $next($request);
     }

@@ -6,6 +6,7 @@ use App\Mail\InvoiceMail;
 use App\Models\Central\Invoice;
 use App\Models\Central\VendorActivity;
 use App\Vendor\Billing;
+use App\Vendor\Payments;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
@@ -48,10 +49,39 @@ class InvoiceActions
     {
         return Action::make('applyNow')->label('Perpanjang sekarang')->icon(Heroicon::OutlinedForward)->color('warning')
             ->tooltip('Perpanjang masa sewa sebelum tagihan lunas')
-            ->visible(fn (Invoice $record) => $record->status === 'unpaid' && $record->applied_at === null)
+            ->visible(fn (Invoice $record) => $record->status === 'unpaid' && $record->applied_at === null && $record->kind !== 'one_off')
             ->requiresConfirmation()
             ->modalDescription(fn (Invoice $record) => 'Masa sewa '.$record->hotel->name.' diperpanjang sampai '.$record->period_end->translatedFormat('d M Y').' walaupun belum dibayar.')
             ->action(fn (Invoice $record) => Billing::apply($record));
+    }
+
+    public static function receipt(): Action
+    {
+        return Action::make('receipt')->label('Kwitansi')->icon(Heroicon::OutlinedReceiptPercent)->color('success')
+            ->visible(fn (Invoice $record) => $record->status === 'paid')
+            ->url(fn (Invoice $record) => route('vendor.invoice.receipt', $record), shouldOpenInNewTab: true);
+    }
+
+    public static function payLink(): Action
+    {
+        return Action::make('payLink')->label('Link bayar online')->icon(Heroicon::OutlinedLink)->color('primary')
+            ->visible(fn (Invoice $record) => $record->status === 'unpaid' && Payments::enabled())
+            ->action(function (Invoice $record) {
+                try {
+                    $url = Payments::link($record, fresh: blank($record->payment_url));
+                    Notification::make()->title('Link pembayaran siap')->body($url)->persistent()->success()->send();
+                } catch (Throwable $e) {
+                    Notification::make()->title('Gagal membuat link')->body($e->getMessage())->danger()->send();
+                }
+            });
+    }
+
+    public static function taxNumber(): Action
+    {
+        return Action::make('taxNumber')->label('No. faktur pajak')->icon(Heroicon::OutlinedIdentification)->color('gray')
+            ->visible(fn (Invoice $record) => $record->status !== 'void')
+            ->schema([TextInput::make('tax_number')->label('Nomor seri faktur pajak')->maxLength(40)->default(fn (Invoice $record) => $record->tax_number)])
+            ->action(fn (Invoice $record, array $data) => $record->update(['tax_number' => $data['tax_number'] ?: null]));
     }
 
     public static function proof(): Action
@@ -100,6 +130,6 @@ class InvoiceActions
     /** @return array<int, Action> */
     public static function all(): array
     {
-        return [static::markPaid(), static::print(), static::send(), static::proof(), static::applyNow(), static::void()];
+        return [static::markPaid(), static::payLink(), static::print(), static::receipt(), static::send(), static::proof(), static::taxNumber(), static::applyNow(), static::void()];
     }
 }

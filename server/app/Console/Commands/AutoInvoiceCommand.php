@@ -9,6 +9,7 @@ use App\Models\Central\VendorSetting;
 use App\Services\Notifier;
 use App\Tenancy\HotelManager;
 use App\Vendor\Billing;
+use App\Vendor\Collections;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
@@ -21,7 +22,7 @@ class AutoInvoiceCommand extends Command
 {
     protected $signature = 'sangatv:tagihan {--tanpa-email : jangan kirim tagihan ke email hotel}';
 
-    protected $description = 'Buat tagihan perpanjangan otomatis & laporkan tagihan lewat jatuh tempo';
+    protected $description = 'Tagihan perpanjangan otomatis, pengingat bayar ke hotel, penangguhan otomatis, laporan tagihan lewat tempo';
 
     public function handle(HotelManager $tenancy, Notifier $notifier): int
     {
@@ -57,11 +58,16 @@ class AutoInvoiceCommand extends Command
             }
         }
 
+        $reminders = Collections::sendReminders();
+        $suspended = Collections::autoSuspend();
+
         $overdue = Invoice::query()->with('hotel')->overdue()->orderBy('due_at')->get()
             ->map(fn (Invoice $i) => "• {$i->hotel->name}: {$i->number} ".Billing::rupiah($i->total).' (tempo '.$i->due_at->translatedFormat('d M').')');
 
-        if ($created !== [] || $overdue->isNotEmpty()) {
+        if ($created !== [] || $overdue->isNotEmpty() || $reminders !== [] || $suspended !== []) {
             $body = ($created ? "Tagihan baru:\n".implode("\n", $created)."\n\n" : '')
+                .($reminders ? "Pengingat terkirim:\n".implode("\n", $reminders)."\n\n" : '')
+                .($suspended ? "Penangguhan otomatis:\n".implode("\n", $suspended)."\n\n" : '')
                 .($overdue->isNotEmpty() ? "Lewat jatuh tempo:\n".$overdue->implode("\n")."\n\n" : '')
                 .'Kelola: '.url('/sijalucom/tagihan');
             $notifier->sendToVendor('🧾 Tagihan SangaTV Plus', $body);

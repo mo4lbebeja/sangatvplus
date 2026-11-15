@@ -4,9 +4,11 @@ namespace App\Vendor\Pages;
 
 use App\Models\Central\Hotel;
 use App\Models\Central\Invoice;
+use App\Models\Central\Lead;
 use App\Vendor\Billing;
 use App\Vendor\Concerns\VendorAccess;
 use App\Vendor\HotelStats;
+use App\Vendor\Sla;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
@@ -79,6 +81,10 @@ class Reports extends Page
                 'top' => $d['top_channels'][0]['name'] ?? '–', 'guests' => $d['guests_in_house'], 'ok' => $s['ok']];
         });
 
+        $sla = $hotels->where('status', 'active')->map(fn (Hotel $h) => ['hotel' => $h, 'month' => Sla::forMonth($h, now()), 'prev' => Sla::forMonth($h, now()->subMonthNoOverflow())]);
+        $churned = $hotels->filter(fn (Hotel $h) => $h->churned_at && (int) $h->churned_at->setTimezone($tz)->year === $this->year);
+        $leads = Lead::query()->get();
+
         $years = range((int) now($tz)->year, max(2026, (int) now($tz)->year - 4));
 
         return [
@@ -93,6 +99,12 @@ class Reports extends Page
             'overdue' => Invoice::query()->overdue()->sum('total'),
             'arpa' => $hotels->filter->isBillable()->count() ? (int) round(Billing::mrr($hotels) / $hotels->filter->isBillable()->count()) : 0,
             'rp' => fn ($v) => Billing::rupiah($v),
+            'sla' => $sla,
+            'churned' => $churned,
+            'churnReasons' => $churned->groupBy('churn_reason')->map->count()->sortDesc(),
+            'churnRate' => ($base = $hotels->filter(fn ($h) => $h->activated_at && (int) $h->activated_at->year <= $this->year)->count()) ? round($churned->count() / $base * 100, 1) : 0,
+            'pipeline' => collect(Lead::STAGES)->map(fn ($label, $k) => ['label' => $label, 'count' => $leads->where('stage', $k)->count(), 'value' => $leads->where('stage', $k)->sum('estimated_value')]),
+            'conversion' => ($closed = $leads->whereIn('stage', ['won', 'lost'])->count()) ? round($leads->where('stage', 'won')->count() / $closed * 100) : 0,
         ];
     }
 }

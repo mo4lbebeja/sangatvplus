@@ -1,5 +1,7 @@
 <x-filament-panels::page>
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+    <style>@media print { .fi-sidebar, .fi-topbar, .fi-header-actions-ctn, .vc-noprint { display: none !important; } .fi-main-ctn::before { display: none; } }</style>
+    <div class="vc-noprint" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+        <x-filament::button size="xs" color="gray" icon="heroicon-o-printer" onclick="window.print()">Cetak / PDF</x-filament::button>
         @foreach ($years as $y)
             <x-filament::button size="xs" :color="$y === $year ? 'primary' : 'gray'" wire:click="$set('year', {{ $y }})">{{ $y }}</x-filament::button>
         @endforeach
@@ -48,6 +50,38 @@
                 @endforelse
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <div style="display:grid;gap:.75rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr))">
+        <div class="vc-card">
+            <div class="vc-label" style="margin-bottom:.5rem">Uptime & SLA per hotel</div>
+            <table class="vc-table">
+                <thead><tr><th>Hotel</th><th style="text-align:right">Uptime bln ini</th><th style="text-align:right">TV online</th><th style="text-align:right">Bln lalu</th><th style="text-align:right">Gangguan</th></tr></thead>
+                <tbody>
+                @foreach ($sla as $r)
+                    <tr><td><strong>{{ $r['hotel']->name }}</strong></td>
+                        <td style="text-align:right" @class(['text-danger-600' => ($r['month']['server'] ?? 100) < 99])>{{ $r['month']['server'] !== null ? number_format($r['month']['server'], 2, ',', '.').'%' : '–' }}</td>
+                        <td style="text-align:right">{{ $r['month']['tv'] !== null ? number_format($r['month']['tv'], 1, ',', '.').'%' : '–' }}</td>
+                        <td style="text-align:right" class="vc-muted">{{ $r['prev']['server'] !== null ? number_format($r['prev']['server'], 2, ',', '.').'%' : '–' }}</td>
+                        <td style="text-align:right">{{ count($r['month']['incidents']) }}</td></tr>
+                @endforeach
+                </tbody>
+            </table>
+            <div class="vc-muted" style="margin-top:.4rem">Uptime = server mencatat armada tiap 15 menit; gangguan = semua TV hotel offline ≥ 30 menit.</div>
+        </div>
+        <div class="vc-card">
+            <div class="vc-label" style="margin-bottom:.5rem">Pipeline penjualan · konversi {{ $conversion }}%</div>
+            <table class="vc-table">
+                <thead><tr><th>Tahap</th><th style="text-align:right">Prospek</th><th style="text-align:right">Nilai / bulan</th></tr></thead>
+                <tbody>@foreach ($pipeline as $p)<tr><td>{{ $p['label'] }}</td><td style="text-align:right">{{ $p['count'] }}</td><td style="text-align:right">{{ $p['value'] ? $rp($p['value']) : '–' }}</td></tr>@endforeach</tbody>
+            </table>
+            <div class="vc-label" style="margin:.75rem 0 .4rem">Churn {{ $year }}: {{ $churned->count() }} hotel ({{ $churnRate }}%)</div>
+            @forelse ($churnReasons as $reason => $n)
+                <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.15rem 0"><span>{{ \App\Vendor\Resources\Hotels\HotelActions::CHURN_REASONS[$reason] ?? ($reason ?: 'Tanpa alasan') }}</span><strong>{{ $n }}</strong></div>
+            @empty
+                <div class="vc-muted">Belum ada hotel berhenti di {{ $year }}.</div>
+            @endforelse
         </div>
     </div>
 

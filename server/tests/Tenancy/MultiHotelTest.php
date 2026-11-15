@@ -3,8 +3,12 @@
 use App\Mail\InvoiceMail;
 use App\Models\AppRelease;
 use App\Models\AuditLog;
+use App\Models\Central\ConsoleNotification;
+use App\Models\Central\FleetSnapshot;
 use App\Models\Central\Hotel;
 use App\Models\Central\Invoice;
+use App\Models\Central\Lead;
+use App\Models\Central\LoginLog;
 use App\Models\Central\Notice;
 use App\Models\Central\Plan;
 use App\Models\Central\Release;
@@ -12,6 +16,8 @@ use App\Models\Central\Ticket;
 use App\Models\Central\VendorActivity;
 use App\Models\Central\VendorSetting;
 use App\Models\Central\VendorUser;
+use App\Models\Channel;
+use App\Models\ChannelCategory;
 use App\Models\Device;
 use App\Models\DeviceCommand;
 use App\Models\HotelProfile;
@@ -22,12 +28,17 @@ use App\Models\User;
 use App\Services\Notifier;
 use App\Tenancy\HotelManager;
 use App\Vendor\Billing;
+use App\Vendor\Collections;
 use App\Vendor\Impersonation;
 use App\Vendor\Pages\Guides;
+use App\Vendor\Payments;
 use App\Vendor\Resources\Hotels\Pages\ManageHotels;
+use App\Vendor\Resources\Leads\Pages\ManageLeads;
 use App\Vendor\Resources\Releases\Pages\ManageReleases;
 use App\Vendor\Resources\Releases\ReleaseResource;
+use App\Vendor\Sla;
 use App\Vendor\Support;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -233,7 +244,7 @@ it('suspends a hotel and releases its TVs from the vendor panel', function () {
     $tv = provisionTv(codeFor($this->bravo));
     vendorLogin();
     Livewire\Livewire::test(ManageHotels::class)
-        ->callTableAction('release', $this->bravo)
+        ->callTableAction('release', $this->bravo, ['churn_reason' => 'price'])
         ->callTableAction('suspend', $this->alpha);
 
     expect($this->bravo->fresh()->serviceStatus())->toBe('released')->and($this->alpha->fresh()->status)->toBe('suspended');
@@ -442,4 +453,148 @@ it('publishes OTA releases only from the console, to the targeted hotels', funct
     $c = Hotel::query()->where('slug', 'charlie')->sole();
     expect($this->tenancy->run($c, fn () => AppRelease::query()->where('version_code', 20)->value('is_active')))->toBeTrue();
     $this->tenancy->dropDatabase($c);
+});
+
+// ------------------------------------------------------------------ business suite
+
+function billable(Hotel $h, array $extra = []): Hotel
+{
+    $h->update(['plan_id' => testPlan()->id, 'tv_quota' => 10, 'contact_phone' => '0812-1111-2222', 'billing_email' => "finance@{$h->slug}.test"] + $extra);
+
+    return $h->fresh();
+}
+
+it('takes online payments through Xendit and Midtrans webhooks', function () {
+    VendorSetting::put(['payment_gateway' => 'xendit', 'xendit_secret_key' => 'xnd_test', 'xendit_callback_token' => 'cb-token', 'midtrans_server_key' => 'SB-Mid-server']);
+    expect(VendorSetting::query()->find('xendit_secret_key')->value)->not->toBe('xnd_test'); // encrypted at rest
+    Http::fake([
+        'api.xendit.co/*' => Http::response(['id' => 'inv_1', 'invoice_url' => 'https://checkout.xendit.co/web/inv_1']),
+        'app.sandbox.midtrans.com/*' => Http::response(['token' => 't', 'redirect_url' => 'https://app.sandbox.midtrans.com/snap/v4/redirection/t']),
+    ]);
+    $hotel = billable($this->alpha);
+    $inv = Billing::createInvoice($hotel, 1);
+    expect(Payments::link($inv))->toBe('https://checkout.xendit.co/web/inv_1');
+
+    $this->postJson('/api/payments/xendit', ['external_id' => $inv->number, 'status' => 'PAID', 'id' => 'inv_1'], ['x-callback-token' => 'wrong'])->assertUnauthorized();
+    $this->postJson('/api/payments/xendit', ['external_id' => $inv->number, 'status' => 'PAID', 'id' => 'inv_1'], ['x-callback-token' => 'cb-token'])->assertOk();
+    expect($inv->fresh()->status)->toBe('paid')->and($inv->fresh()->payment_method)->toBe('xendit')->and($hotel->fresh()->service_expires_at)->not->toBeNull();
+
+    VendorSetting::put(['payment_gateway' => 'midtrans']);
+    $inv2 = Billing::createInvoice($hotel->fresh(), 1);
+    Payments::link($inv2);
+    $order = $inv2->fresh()->gateway_ref;
+    $sig = hash('sha512', $order.'200'.$inv2->total.'.00'.'SB-Mid-server');
+    $this->postJson('/api/payments/midtrans', ['order_id' => $order, 'status_code' => '200', 'gross_amount' => $inv2->total.'.00', 'signature_key' => 'bad', 'transaction_status' => 'settlement'])->assertUnauthorized();
+    $this->postJson('/api/payments/midtrans', ['order_id' => $order, 'status_code' => '200', 'gross_amount' => $inv2->total.'.00', 'signature_key' => $sig, 'transaction_status' => 'settlement', 'transaction_id' => 'tx'])->assertOk();
+    expect($inv2->fresh()->status)->toBe('paid');
+});
+
+it('reminds hotels by email and WhatsApp once per stage, suspends long-overdue hotels and reactivates them on payment', function () {
+    config(['mail.default' => 'array']);
+    Mail::fake();
+    Http::fake(['api.fonnte.com/*' => Http::response(['status' => true])]);
+    VendorSetting::put(['whatsapp_provider' => 'fonnte', 'whatsapp_token' => 'fonnte-token', 'suspend_after_days' => 7, 'reminder_days' => '3,0,-3']);
+    $hotel = billable($this->alpha);
+    $inv = Billing::createInvoice($hotel, 1);
+    $inv->update(['due_at' => now('Asia/Jakarta')->addDays(3)->toDateString()]);
+
+    expect(Collections::sendReminders())->toHaveCount(1)->and(Collections::sendReminders())->toHaveCount(0);
+    Mail::assertSent(InvoiceMail::class, fn ($m) => $m->hasTo('finance@alpha.test') && $m->reminderNote !== null);
+    Http::assertSent(fn ($r) => str_contains($r->url(), 'fonnte') && $r['target'] === '6281211112222');
+
+    $inv->update(['due_at' => now('Asia/Jakarta')->subDays(8)->toDateString()]);
+    Collections::autoSuspend();
+    expect($hotel->fresh()->status)->toBe('suspended')->and($hotel->fresh()->suspended_reason)->toBe('overdue');
+    Billing::markPaid($inv->fresh(), now('Asia/Jakarta')->toDateString(), 'transfer');
+    expect($hotel->fresh()->status)->toBe('active');
+});
+
+it('bills one-off costs, prorated extra TVs and prints a receipt in words', function () {
+    $hotel = billable($this->alpha, ['service_expires_at' => now('Asia/Jakarta')->addDays(15)->toDateString()]);
+    $one = Billing::createOneOff($hotel, [['description' => 'Instalasi', 'qty' => 2, 'price' => 150_000]]);
+    expect($one->kind)->toBe('one_off')->and($one->total)->toBe(300_000);
+
+    $pro = Billing::changeQuota($hotel, 20); // +10 TV × 50.000 = 500.000/bln → 15 hari
+    expect($hotel->fresh()->tv_quota)->toBe(20)->and($pro->total)->toBe((int) round(500_000 / 30 * 15));
+
+    Billing::markPaid($one, now('Asia/Jakarta')->toDateString(), 'cash');
+    expect(Billing::terbilang(1_250_500))->toBe('satu juta dua ratus lima puluh ribu lima ratus rupiah');
+    vendorLogin();
+    $this->get("/sijalucom/tagihan/{$one->id}/kwitansi")->assertOk()->assertSee('KWITANSI')->assertSee('tiga ratus ribu rupiah');
+});
+
+it('records fleet snapshots for SLA and warns when a whole hotel goes dark', function () {
+    VendorUser::query()->create(['name' => 'S', 'email' => 's@sijalucom.test', 'password' => 'x-long-password', 'role' => 'support']);
+    $tvs = [provisionTv(codeFor($this->alpha)), provisionTv(codeFor($this->alpha))];
+    app('auth')->forgetGuards();
+    $this->tenancy->run($this->alpha, fn () => Device::query()->update(['last_seen_at' => now()]));
+    $this->artisan('sangatv:snapshot')->assertSuccessful();
+    expect(FleetSnapshot::query()->where('hotel_id', $this->alpha->id)->value('online'))->toBe(2);
+
+    $this->tenancy->run($this->alpha, fn () => Device::query()->update(['last_seen_at' => now()->subHour()]));
+    $this->artisan('sangatv:snapshot')->assertSuccessful();
+    expect(ConsoleNotification::query()->count())->toBe(1);
+    $sla = Sla::forPeriod($this->alpha, now()->subDay(), now()->addMinute());
+    expect($sla['samples'])->toBe(2)->and($sla['tv'])->toBe(50.0);
+});
+
+it('emails the monthly report and serves the client portal only for its own hotel', function () {
+    config(['mail.default' => 'array']);
+    $hotel = billable($this->alpha);
+    $inv = Billing::createInvoice($hotel, 1);
+    $other = Billing::createInvoice(billable($this->bravo), 1);
+    $this->artisan('sangatv:laporan-bulanan', ['--hotel' => 'alpha'])->expectsOutputToContain('finance@alpha.test')->assertSuccessful();
+
+    $url = $hotel->fresh()->portalUrl();
+    $this->get($url)->assertOk()->assertSee('Hotel Alpha')->assertSee($inv->number)->assertDontSee($other->number);
+    $this->get($url."/tagihan/{$inv->id}/cetak")->assertOk()->assertSee($inv->number);
+    $this->get($url."/tagihan/{$other->id}/cetak")->assertNotFound();
+    $this->get($url.'/laporan/'.now()->format('Y-m'))->assertOk()->assertSee('Laporan layanan');
+    $this->get('/portal/'.str_repeat('x', 48))->assertNotFound();
+});
+
+it('converts a lead into a client hotel with copied starter content', function () {
+    $this->tenancy->run($this->alpha, function () {
+        $cat = ChannelCategory::query()->create(['name' => 'Berita', 'slug' => 'berita', 'sort_order' => 1]);
+        Channel::factory()->create(['name' => 'Kanal Template', 'channel_category_id' => $cat->id]);
+    });
+    vendorLogin();
+    $lead = Lead::query()->create(['name' => 'Hotel Delta', 'city' => 'Garut', 'contact_email' => 'gm@delta.test', 'rooms' => 30, 'stage' => 'negotiation']);
+    Livewire\Livewire::test(ManageLeads::class)
+        ->callTableAction('convert', $lead, ['slug' => 'delta', 'admin_email' => 'gm@delta.test', 'plan_id' => testPlan()->id, 'tv_quota' => 30, 'activation' => 'trial'])
+        ->assertHasNoTableActionErrors();
+    $delta = Hotel::query()->where('slug', 'delta')->sole();
+    expect($lead->fresh()->stage)->toBe('won')->and($delta->service_expires_at)->not->toBeNull();
+
+    $this->tenancy->copyContent($this->alpha, $delta, ['channels']);
+    expect($this->tenancy->run($delta, fn () => Channel::query()->pluck('name')->all()))->toContain('Kanal Template');
+    $this->tenancy->dropDatabase($delta);
+});
+
+it('enforces plan features in the CMS and the PMS API', function () {
+    $basic = Plan::query()->create(['code' => 'basic', 'name' => 'Basic', 'base_price' => 100, 'features' => ['tv_live', 'launcher']]);
+    $this->bravo->update(['plan_id' => $basic->id]);
+    $admin = $this->tenancy->run($this->bravo, fn () => User::query()->first());
+    $this->withSession(['hotel_id' => $this->bravo->id])->actingAs($admin)->get('/admin/pms-kunci-api')->assertForbidden();
+    app('auth')->forgetGuards();
+    $key = $this->tenancy->run($this->bravo, fn () => PmsIntegration::query()->create(['name' => 'X', 'key_id' => PmsIntegration::newKeyId(), 'secret' => 's3cret', 'auth_mode' => 'bearer', 'is_active' => true]))->key_id;
+    $this->getJson('/api/pms/v1/ping', ['X-SangaTV-Key' => $key])->assertForbidden();
+});
+
+it('logs console logins and flags a new IP', function () {
+    $v = VendorUser::query()->create(['name' => 'O', 'email' => 'o@sijalucom.test', 'password' => 'x-long-password']);
+    event(new Login('vendor', $v, false));
+    $this->withServerVariables(['REMOTE_ADDR' => '10.9.9.9']);
+    request()->server->set('REMOTE_ADDR', '10.9.9.9');
+    event(new Login('vendor', $v, false));
+    expect(LoginLog::query()->count())->toBe(2)->and(LoginLog::query()->latest('id')->value('new_ip'))->toBeTrue();
+});
+
+it('renders every business console page', function () {
+    $hotel = billable($this->alpha);
+    vendorLogin();
+    foreach (['/sijalucom', '/sijalucom/prospek', '/sijalucom/kunjungan', '/sijalucom/inventaris', '/sijalucom/log-login', '/sijalucom/monitor-server',
+        '/sijalucom/pengaturan', '/sijalucom/laporan', "/sijalucom/hotel/{$hotel->id}"] as $url) {
+        $this->get($url)->assertOk();
+    }
 });

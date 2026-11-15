@@ -6,6 +6,7 @@ use App\Vendor\Widgets\BusinessStats;
 use App\Vendor\Widgets\ConsoleHero;
 use App\Vendor\Widgets\ExpiringRentals;
 use App\Vendor\Widgets\FleetHealth;
+use App\Vendor\Widgets\HotelMap;
 use App\Vendor\Widgets\PlanMixChart;
 use App\Vendor\Widgets\QuickActions;
 use App\Vendor\Widgets\RecentActivity;
@@ -22,7 +23,7 @@ class Dashboard extends BaseDashboard
 
     public function getWidgets(): array
     {
-        return [ConsoleHero::class, QuickActions::class, BusinessStats::class, RevenueChart::class, PlanMixChart::class, ExpiringRentals::class, UnpaidInvoices::class, RecentActivity::class, FleetHealth::class];
+        return [ConsoleHero::class, QuickActions::class, BusinessStats::class, RevenueChart::class, PlanMixChart::class, HotelMap::class, RecentActivity::class, ExpiringRentals::class, UnpaidInvoices::class, FleetHealth::class];
     }
 
     public function getColumns(): int|array

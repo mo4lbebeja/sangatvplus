@@ -67,6 +67,8 @@ class HotelResource extends Resource
         return $user !== null && ($area === null || $area === 'any' ? true : $user->hasAccess($area));
     }
 
+    public const SOURCES = ['referral' => 'Rekomendasi', 'sales' => 'Kunjungan sales', 'website' => 'Website / medsos', 'partner' => 'Mitra / vendor PMS', 'event' => 'Pameran / acara', 'other' => 'Lainnya'];
+
     public static function getNavigationBadge(): ?string
     {
         $n = Hotel::query()->whereNotNull('service_expires_at')->whereNull('service_released_at')->where('service_expires_at', '<=', now()->addDays(14))->count();
@@ -113,6 +115,7 @@ class HotelResource extends Resource
             TextInput::make('contact_name')->label('Nama PIC hotel')->prefixIcon(Heroicon::OutlinedUser)->maxLength(120),
             TextInput::make('contact_phone')->label('Telepon / WhatsApp PIC')->prefixIcon(Heroicon::OutlinedPhone)->tel()->maxLength(32),
             TextInput::make('contact_email')->label('Email PIC')->prefixIcon(Heroicon::OutlinedEnvelope)->email()->maxLength(160),
+            Select::make('source')->label('Sumber klien')->prefixIcon(Heroicon::OutlinedMegaphone)->options(self::SOURCES),
         ];
     }
 
@@ -223,7 +226,7 @@ class HotelResource extends Resource
 
     public static function getRelations(): array
     {
-        return [InvoicesRelationManager::class, RelationManagers\TicketsRelationManager::class, RelationManagers\DocumentsRelationManager::class, ActivitiesRelationManager::class];
+        return [InvoicesRelationManager::class, RelationManagers\TicketsRelationManager::class, RelationManagers\DocumentsRelationManager::class, RelationManagers\FieldJobsRelationManager::class, RelationManagers\AssetsRelationManager::class, ActivitiesRelationManager::class];
     }
 
     public static function getPages(): array

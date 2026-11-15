@@ -55,7 +55,8 @@ class VendorPanelProvider extends PanelProvider
             ->maxContentWidth(Width::Full)
             ->spa()
             ->globalSearchKeyBindings(['command+k', 'ctrl+k'])
-            ->databaseNotifications(false)
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('60s')
             ->navigationGroups([
                 NavigationGroup::make('Klien'),
                 NavigationGroup::make('Keuangan'),

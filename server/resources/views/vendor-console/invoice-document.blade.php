@@ -34,7 +34,12 @@
             <table style="width:100%;border-collapse:collapse;font-size:12.5px">
                 <tr><td style="color:#64748B;padding:2px 0">Tanggal terbit</td><td style="text-align:right;font-weight:600">{{ $invoice->issued_at->translatedFormat('d F Y') }}</td></tr>
                 <tr><td style="color:#64748B;padding:2px 0">Jatuh tempo</td><td style="text-align:right;font-weight:600">{{ $invoice->due_at->translatedFormat('d F Y') }}</td></tr>
-                <tr><td style="color:#64748B;padding:2px 0">Periode sewa</td><td style="text-align:right;font-weight:600">{{ $invoice->period_start->translatedFormat('d M Y') }} – {{ $invoice->period_end->translatedFormat('d M Y') }}</td></tr>
+                @if ($invoice->kind !== 'one_off')
+                    <tr><td style="color:#64748B;padding:2px 0">Periode sewa</td><td style="text-align:right;font-weight:600">{{ $invoice->period_start->translatedFormat('d M Y') }} – {{ $invoice->period_end->translatedFormat('d M Y') }}</td></tr>
+                @endif
+                @if ($invoice->tax_number)
+                    <tr><td style="color:#64748B;padding:2px 0">No. faktur pajak</td><td style="text-align:right;font-weight:600">{{ $invoice->tax_number }}</td></tr>
+                @endif
                 <tr><td style="color:#64748B;padding:2px 0">Kode hotel</td><td style="text-align:right;font-weight:600">{{ $h->slug }}</td></tr>
                 @if ($invoice->paid_at)
                     <tr><td style="color:#64748B;padding:2px 0">Dibayar</td><td style="text-align:right;font-weight:600;color:#059669">{{ $invoice->paid_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y') }}</td></tr>
@@ -68,6 +73,9 @@
                 <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:#64748B;font-weight:700">Pembayaran ke</div>
                 <div style="white-space:pre-line;margin-top:4px;font-weight:600">{{ $s['bank_accounts'] }}</div>
                 <div style="color:#64748B;font-size:11.5px;margin-top:4px">Cantumkan nomor tagihan {{ $invoice->number }} pada berita transfer.</div>
+            @endif
+            @if ($invoice->status === 'unpaid' && $invoice->payment_url)
+                <div style="margin-top:12px"><a href="{{ $invoice->payment_url }}" style="display:inline-block;background:#4F46E5;color:#fff;padding:9px 16px;border-radius:9px;font-weight:700;text-decoration:none">Bayar online (QRIS / VA / e-wallet)</a></div>
             @endif
             @if ($invoice->notes)
                 <div style="margin-top:10px;color:#475569;white-space:pre-line"><strong>Catatan:</strong> {{ $invoice->notes }}</div>
