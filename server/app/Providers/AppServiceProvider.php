@@ -2,14 +2,18 @@
 
 namespace App\Providers;
 
+use App\Models\Announcement;
 use App\Models\AppRelease;
 use App\Models\AppWhitelist;
 use App\Models\Channel;
 use App\Models\ChannelCategory;
+use App\Models\ChannelCheck;
 use App\Models\ChannelProvider;
 use App\Models\ChannelReport;
+use App\Models\ChannelView;
 use App\Models\Device;
 use App\Models\DeviceCommand;
+use App\Models\EpgProgramme;
 use App\Models\Facility;
 use App\Models\GalleryPhoto;
 use App\Models\Guest;
@@ -85,6 +89,10 @@ class AppServiceProvider extends ServiceProvider
             'pms_event' => PmsEvent::class,
             'gallery_photo' => GalleryPhoto::class,
             'channel_report' => ChannelReport::class,
+            'announcement' => Announcement::class,
+            'epg_programme' => EpgProgramme::class,
+            'channel_view' => ChannelView::class,
+            'channel_check' => ChannelCheck::class,
         ]);
 
         // Per-device API budget (≈2 req/s sustained is far above normal use).

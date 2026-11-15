@@ -32,6 +32,7 @@ class SangaService : Service() {
             startForeground(ID, n)
         }
         (application as SangaApp).repository.start()
+        SleepTimer.restore(this) // in case the app died between a sleep-timer standby and the next wake
         if (AutoStart.isEarlyBoot()) {
             TvDefaults.freshSession = true
             TvDefaults.applyVolume(this, (application as SangaApp).repository.bootstrap.value?.config?.startVolume)
@@ -53,8 +54,13 @@ class SangaService : Service() {
             // Tell the CMS right away so monitoring shows Menyala / Standby without waiting.
             val repo = (application as SangaApp).repository
             repo.beatNow()
-            if (intent.action == Intent.ACTION_SCREEN_OFF) return
+            if (intent.action == Intent.ACTION_SCREEN_OFF) {
+                AdultLock.relock() // next guest / next session must enter the PIN again
+                SleepTimer.cancel()
+                return
+            }
             if (intent.action == Intent.ACTION_SCREEN_ON) {
+                SleepTimer.restore(this@SangaService)
                 TvDefaults.freshSession = true
                 TvDefaults.applyVolume(this@SangaService, repo.bootstrap.value?.config?.startVolume)
             }

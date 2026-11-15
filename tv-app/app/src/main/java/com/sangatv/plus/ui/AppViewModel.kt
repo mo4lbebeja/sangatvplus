@@ -20,6 +20,8 @@ sealed interface Screen {
     data class Info(val section: InfoSection) : Screen
     data object Apps : Screen
     data object Technician : Screen
+    /** Sleep timer fired: black screen while the TV goes to standby. */
+    data class Sleep(val standby: Boolean) : Screen
 }
 
 class AppViewModel(app: Application) : AndroidViewModel(app) {
@@ -43,6 +45,16 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun goHome() = open(Screen.Home)
+
+    // ---- Announcements: full-screen ones the guest closed (shown as ticker afterwards) ----
+    private val _dismissed = MutableStateFlow(prefs.getStringSet("dismissed_announcements", emptySet()).orEmpty())
+    val dismissed: StateFlow<Set<String>> = _dismissed.asStateFlow()
+
+    fun dismissAnnouncement(version: String) {
+        val next = (_dismissed.value + version).toList().takeLast(50).toSet()
+        _dismissed.value = next
+        prefs.edit().putStringSet("dismissed_announcements", next).apply()
+    }
 
     // ---- Channels ----
     var lastChannelId: Long

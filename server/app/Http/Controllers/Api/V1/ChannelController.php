@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Channel;
 use App\Models\ChannelCategory;
+use App\Models\Device;
 use App\Services\StreamUrlSigner;
 use App\Support\MediaUrl;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ChannelController extends Controller
 {
@@ -15,17 +17,28 @@ class ChannelController extends Controller
      * Active channels with playable URLs. When provider URLs are signed,
      * `expires_at` tells the TV when to refetch the list.
      */
-    public function __invoke(StreamUrlSigner $signer): JsonResponse
+    public function __invoke(Request $request, StreamUrlSigner $signer): JsonResponse
     {
+        /** @var Device $device */
+        $device = $request->user();
+        $room = $device->room()->with('currentGuest')->first();
+
         $channels = Channel::query()
+            ->visibleTo($room)
             ->with(['category', 'provider'])
-            ->where('is_active', true)
+            ->withExists(['programmes as has_epg' => fn ($query) => $query->where('ends_at', '>', now())])
             ->orderBy('sort_order')
             ->orderBy('number')
             ->get();
 
+        // Foreign guests: channels in their language come first (numbers stay the same).
+        $lang = $room?->currentGuest?->language;
+        if ($lang && $lang !== 'id') {
+            $channels = $channels->sortBy(fn (Channel $c) => $c->language === $lang ? 0 : 1)->values();
+        }
+
         $expiry = null;
-        $items = $channels->map(function (Channel $c) use ($signer, &$expiry) {
+        $items = $channels->map(function (Channel $c, int $i) use ($signer, &$expiry) {
             $signed = $signer->sign($c);
             if ($signed['expires_at'] && ($expiry === null || $signed['expires_at']->lt($expiry))) {
                 $expiry = $signed['expires_at'];
@@ -42,7 +55,10 @@ class ChannelController extends Controller
                 'backup_url' => $signed['backup_url'],
                 'drm' => self::drm($c->drm),
                 'logo_url' => MediaUrl::of($c->logo_path),
-                'sort_order' => $c->sort_order,
+                // Position in the list as the server ordered it (TV sorts by this).
+                'sort_order' => $i,
+                'is_adult' => $c->is_adult,
+                'has_epg' => (bool) $c->has_epg,
             ];
         });
 

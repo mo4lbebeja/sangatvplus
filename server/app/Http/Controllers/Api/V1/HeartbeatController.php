@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\CommandStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\AppWhitelist;
 use App\Models\Channel;
 use App\Models\Device;
@@ -53,6 +54,7 @@ class HeartbeatController extends Controller
         return response()->json([
             'server_time' => now()->toIso8601String(),
             'content_version' => $this->contentVersion($device),
+            'announcements' => ($room = $device->room()->first()) ? Announcement::payloadFor($room) : [],
             'commands' => $commands->map(fn (DeviceCommand $c) => [
                 'id' => $c->id,
                 'type' => $c->type->value,
@@ -94,6 +96,8 @@ class HeartbeatController extends Controller
             GalleryPhoto::query()->max('updated_at'), GalleryPhoto::query()->count(),
             AppWhitelist::query()->max('updated_at'), AppWhitelist::query()->count(),
             $device->room?->guests()->max('updated_at'),
+            $device->room?->updated_at,
+            HotelProfile::query()->value('epg_synced_at'),
         ];
 
         return substr(sha1(implode('|', array_map('strval', $parts))), 0, 16);

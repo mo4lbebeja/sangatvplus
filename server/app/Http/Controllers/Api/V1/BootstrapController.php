@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\AppWhitelist;
 use App\Models\Channel;
 use App\Models\Device;
@@ -69,6 +70,9 @@ class BootstrapController extends Controller
                 'volume' => $hotel->home_music_volume,
             ] : null,
             'technician_pin' => $hotel->technician_pin,
+            'adult_pin' => $hotel->adult_pin,
+            'favorites' => array_values(array_map('intval', (array) ($guest?->favorite_channel_ids ?? []))),
+            'announcements' => Announcement::payloadFor($room),
             'weather' => $weather->current($hotel),
             'config' => [
                 'heartbeat_seconds' => 60,

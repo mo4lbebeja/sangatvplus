@@ -10,3 +10,4 @@ Project spec: ../doc/CLAUDEsangatv.md — read it first.
 - Run `php artisan test --compact` and `vendor/bin/pint` before finishing.
 - Production: see DEPLOYMENT.md (`./deploy.sh`). Never run `db:seed` in production; first admin via `php artisan sangatv:install`.
 - PMS/BMS inbound API: `routes/api.php` (`/api/pms/v1`, `AuthenticatePms` HMAC/bearer + IP + idempotency, every call logged in `pms_events`). Stay logic in `PmsStayService` (reservation id = `guests.external_ref`). Vendor doc source: `resources/views/pms/vendor-doc.blade.php` (shown in CMS → Integrasi PMS and downloadable).
+- Channel features: EPG (`EpgImporter`, XMLTV sources in `hotel_profiles.epg_urls`, `/api/v1/epg`), room-type packages + adult PIN (`Channel::scopeVisibleTo`), announcements (`Announcement::payloadFor`, delivered in bootstrap + heartbeat), viewing stats (`/api/v1/views` → `channel_views`) and uptime (`channel_checks`) in `ChannelStats`.

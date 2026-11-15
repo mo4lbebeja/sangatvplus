@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\SourceType;
 use App\Models\Channel;
+use App\Models\ChannelCheck;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -57,6 +58,7 @@ class ChannelHealthChecker
     private function save(Channel $channel, string $status, ?string $message): array
     {
         $channel->forceFill(['health_status' => $status, 'health_message' => $message, 'health_checked_at' => now()])->saveQuietly();
+        ChannelCheck::query()->create(['channel_id' => $channel->id, 'status' => $status, 'message' => $message ? mb_substr($message, 0, 255) : null, 'checked_at' => now()]);
 
         return ['status' => $status, 'message' => $message];
     }

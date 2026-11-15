@@ -14,7 +14,7 @@ class HotelProfile extends Model
 
     protected $guarded = ['id'];
 
-    protected $hidden = ['wifi_password', 'technician_pin'];
+    protected $hidden = ['wifi_password', 'technician_pin', 'adult_pin'];
 
     protected function casts(): array
     {
@@ -29,6 +29,8 @@ class HotelProfile extends Model
             'pms_checklist' => 'array',
             'tv_start_volume' => 'integer',
             'show_hdmi_inputs' => 'boolean',
+            'adult_pin' => 'array',
+            'epg_synced_at' => 'datetime',
         ];
     }
 
@@ -38,15 +40,15 @@ class HotelProfile extends Model
     }
 
     /**
-     * Store the technician PIN as PBKDF2-SHA256 so the TV can also verify
-     * it offline (the plain PIN is never stored or sent).
+     * PINs are stored as PBKDF2-SHA256 so the TV can also verify them offline
+     * (the plain PIN is never stored or sent).
      */
-    public function setTechnicianPin(string $pin): void
+    public static function hashPin(string $pin): array
     {
         $salt = random_bytes(16);
         $iterations = 120_000;
 
-        $this->technician_pin = [
+        return [
             'algo' => 'pbkdf2-sha256',
             'iterations' => $iterations,
             'salt' => base64_encode($salt),
@@ -54,15 +56,35 @@ class HotelProfile extends Model
         ];
     }
 
-    public function verifyTechnicianPin(string $pin): bool
+    public static function pinMatches(mixed $stored, string $pin): bool
     {
-        $p = $this->technician_pin;
-        if (! is_array($p) || ($p['algo'] ?? null) !== 'pbkdf2-sha256') {
+        if (! is_array($stored) || ($stored['algo'] ?? null) !== 'pbkdf2-sha256') {
             return false;
         }
 
-        $calc = hash_pbkdf2('sha256', $pin, base64_decode($p['salt']), (int) $p['iterations'], 32, true);
+        $calc = hash_pbkdf2('sha256', $pin, base64_decode($stored['salt']), (int) $stored['iterations'], 32, true);
 
-        return hash_equals(base64_decode($p['hash']), $calc);
+        return hash_equals(base64_decode($stored['hash']), $calc);
+    }
+
+    public function setTechnicianPin(string $pin): void
+    {
+        $this->technician_pin = self::hashPin($pin);
+    }
+
+    public function verifyTechnicianPin(string $pin): bool
+    {
+        return self::pinMatches($this->technician_pin, $pin);
+    }
+
+    /** XMLTV sources, one per line. */
+    public function epgUrlList(): array
+    {
+        return array_values(array_filter(array_map('trim', preg_split('/\R/', (string) $this->epg_urls)), fn ($u) => str_starts_with($u, 'http')));
+    }
+
+    public function reportEmailList(): array
+    {
+        return array_values(array_filter(array_map('trim', preg_split('/[\s,;]+/', (string) $this->report_emails)), fn ($e) => filter_var($e, FILTER_VALIDATE_EMAIL)));
     }
 }

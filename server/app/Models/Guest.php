@@ -21,6 +21,7 @@ class Guest extends Model
             'checked_in_at' => 'datetime',
             'checked_out_at' => 'datetime',
             'expected_checkout_at' => 'datetime',
+            'favorite_channel_ids' => 'array',
         ];
     }
 

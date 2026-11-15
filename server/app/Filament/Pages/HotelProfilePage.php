@@ -58,7 +58,7 @@ class HotelProfilePage extends Page
         // wifi_password is a hidden attribute; fill it explicitly. The PIN is write-only.
         $this->form->fill([
             ...$hotel->only(['name', 'tagline', 'about', 'logo_path', 'address', 'reception_phone', 'reception_extension',
-                'wifi_ssid', 'check_in_time', 'check_out_time', 'check_out_info', 'timezone', 'latitude', 'longitude', 'screensaver_minutes', 'tv_start_volume', 'tv_start_channel_id', 'show_hdmi_inputs']),
+                'wifi_ssid', 'check_in_time', 'check_out_time', 'check_out_info', 'timezone', 'latitude', 'longitude', 'screensaver_minutes', 'tv_start_volume', 'tv_start_channel_id', 'show_hdmi_inputs', 'epg_urls', 'report_emails']),
             'wifi_password' => $hotel->wifi_password,
         ]);
     }
@@ -104,6 +104,21 @@ class HotelProfilePage extends Page
                     Toggle::make('show_hdmi_inputs')->label('Tampilkan input HDMI di menu Aplikasi')
                         ->helperText('Tamu bisa menyambung laptop/konsol ke TV.'),
                 ])->columns(2),
+                Section::make('Channel TV')->icon(Heroicon::OutlinedTv)->description('Jadwal acara, kunci channel dewasa, dan laporan mingguan.')->columns(2)->schema([
+                    Textarea::make('epg_urls')->label('Sumber jadwal acara (XMLTV)')->rows(3)->columnSpanFull()
+                        ->placeholder("https://www.open-epg.com/files/indonesia1.xml\nhttps://epg.pw/xmltv/epg_ID.xml.gz")
+                        ->helperText(fn () => 'Satu URL per baris (.xml / .xml.gz), urutan = prioritas. Diperbarui otomatis tiap 6 jam.'
+                            .(($h = HotelProfile::current())->epg_synced_at ? ' Terakhir '.$h->epg_synced_at->diffForHumans().': '.$h->epg_status : '')),
+                    TextInput::make('new_adult_pin')->label('PIN channel dewasa (4 digit)')->prefixIcon(Heroicon::OutlinedLockClosed)
+                        ->password()->revealable()
+                        ->helperText(fn () => HotelProfile::current()->adult_pin
+                            ? 'PIN aktif. Isi untuk mengganti; ketik "hapus" untuk menyembunyikan channel dewasa.'
+                            : 'Belum diatur: channel dewasa disembunyikan dari TV.')
+                        ->rule(fn () => fn (string $attribute, mixed $value, \Closure $fail) => blank($value) || $value === 'hapus' || preg_match('/^\d{4}$/', (string) $value) ? null : $fail('PIN harus 4 digit.')),
+                    Textarea::make('report_emails')->label('Email laporan uptime mingguan')->rows(2)
+                        ->placeholder('it@hotel.com, gm@hotel.com')
+                        ->helperText('Dikirim tiap Senin 07:00: uptime per channel dan channel paling banyak ditonton.'),
+                ]),
                 Section::make('Lokasi (untuk cuaca)')->icon(Heroicon::OutlinedMapPin)->columns(3)->schema([
                     Select::make('timezone')->label('Zona waktu')->required()
                         ->options(['Asia/Jakarta' => 'WIB', 'Asia/Makassar' => 'WITA', 'Asia/Jayapura' => 'WIT']),
@@ -140,7 +155,13 @@ class HotelProfilePage extends Page
         $hotel = HotelProfile::current();
 
         $pin = $data['new_pin'] ?? null;
-        unset($data['new_pin']);
+        $adultPin = $data['new_adult_pin'] ?? null;
+        unset($data['new_pin'], $data['new_adult_pin']);
+        if ($adultPin === 'hapus') {
+            $hotel->adult_pin = null;
+        } elseif (filled($adultPin)) {
+            $hotel->adult_pin = HotelProfile::hashPin($adultPin);
+        }
 
         $hotel->fill($data);
         if (filled($pin)) {
@@ -151,6 +172,10 @@ class HotelProfilePage extends Page
         if (filled($pin)) {
             Audit::log('technician.pin_changed', $hotel);
             $this->data['new_pin'] = null;
+        }
+        if (filled($adultPin)) {
+            Audit::log($adultPin === 'hapus' ? 'adult_pin.removed' : 'adult_pin.changed', $hotel);
+            $this->data['new_adult_pin'] = null;
         }
 
         Notification::make()->title('Profil hotel disimpan')->success()->send();

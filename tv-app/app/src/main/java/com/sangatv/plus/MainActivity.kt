@@ -14,10 +14,32 @@ import java.util.Locale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.focusable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.delay
+import com.sangatv.plus.device.SleepTimer
+import com.sangatv.plus.ui.components.AnnouncementModal
+import com.sangatv.plus.ui.components.AnnouncementTicker
+import com.sangatv.plus.ui.components.SleepScreen
+import com.sangatv.plus.ui.components.SleepWarning
 import com.sangatv.plus.device.AutoStart
 import com.sangatv.plus.ui.AppViewModel
 import com.sangatv.plus.ui.Screen
@@ -28,6 +50,7 @@ import com.sangatv.plus.ui.screens.InfoScreen
 import com.sangatv.plus.ui.screens.ProvisionScreen
 import com.sangatv.plus.ui.screens.TechnicianScreen
 import com.sangatv.plus.ui.theme.Sanga
+import com.sangatv.plus.ui.theme.px
 import com.sangatv.plus.ui.theme.SangaTheme
 
 /**
@@ -47,6 +70,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AutoStart.startService(this)
+        SleepTimer.restore(this) // TV woke up after a sleep-timer standby
         setContent { SangaTheme { Root(vm) } }
 
         // Follow the guest's language; recreate only when it actually changes.
@@ -119,8 +143,55 @@ private fun Root(vm: AppViewModel) {
     val facilities by vm.facilities.collectAsStateWithLifecycle()
     val online by vm.online.collectAsStateWithLifecycle()
     val provisionState by vm.provisionState.collectAsStateWithLifecycle()
+    val announcements by vm.repo.announcements.collectAsStateWithLifecycle()
+    val dismissed by vm.dismissed.collectAsStateWithLifecycle()
+    val forceChannel by vm.repo.forceChannel.collectAsStateWithLifecycle()
+    val sleepEnds by SleepTimer.endsAt.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
-    Box(Modifier.fillMaxSize().background(Sanga.Deepest)) {
+    // Announcement "pindahkan ke channel": open the TV screen; ChannelScreen tunes and consumes it.
+    LaunchedEffect(forceChannel, provisioned) {
+        if (forceChannel != null && provisioned && screen !is Screen.Tv && screen != Screen.Technician) vm.open(Screen.Tv)
+    }
+
+    // Sleep timer: warning during the last minute, then standby.
+    var sleepSecs by remember { mutableIntStateOf(-1) }
+    LaunchedEffect(sleepEnds) {
+        sleepSecs = -1
+        if (sleepEnds == 0L) return@LaunchedEffect
+        while (true) {
+            val left = ((sleepEnds - System.currentTimeMillis()) / 1000).toInt()
+            if (left <= 0) {
+                sleepSecs = -1
+                val standby = SleepTimer.sleepNow(context)
+                vm.open(Screen.Sleep(standby))
+                break
+            }
+            sleepSecs = if (left <= 60) left else -1
+            delay(1000)
+        }
+    }
+
+    val live = announcements.filter { a -> a.endsAt == null || runCatching { java.time.OffsetDateTime.parse(a.endsAt).toInstant().isAfter(java.time.Instant.now()) }.getOrDefault(true) }
+    val modal = live.firstOrNull { it.style == "fullscreen" && (it.isEmergency || it.version !in dismissed) }
+    val tickers = live.filter { it != modal && (it.style != "fullscreen" || it.version in dismissed) }
+
+    Box(
+        Modifier.fillMaxSize().background(Sanga.Deepest).onPreviewKeyEvent { e ->
+            if (e.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+            val volume = e.key == Key.VolumeUp || e.key == Key.VolumeDown || e.key == Key.VolumeMute
+            when {
+                sleepSecs >= 0 && !volume -> { SleepTimer.cancel(); true }
+                modal != null && !volume -> {
+                    if (!modal.isEmergency && (e.key == Key.DirectionCenter || e.key == Key.Enter || e.key == Key.NumPadEnter || e.key == Key.Back)) {
+                        vm.dismissAnnouncement(modal.version)
+                    }
+                    true
+                }
+                else -> false
+            }
+        },
+    ) {
         if (!provisioned) {
             ProvisionScreen(provisionState, vm.repo.deviceUid, vm.repo.apiHost, vm::provision)
             return@Box
@@ -149,6 +220,22 @@ private fun Root(vm: AppViewModel) {
                 BackHandler { vm.goHome() }
                 TechnicianScreen(vm, bootstrap?.room?.number, online, vm::goHome)
             }
+            is Screen.Sleep -> {
+                BackHandler { vm.goHome() }
+                val focus = remember { FocusRequester() }
+                LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+                Box(
+                    Modifier.fillMaxSize().focusRequester(focus).focusable()
+                        .onKeyEvent { e -> if (e.type == KeyEventType.KeyDown) { vm.goHome(); true } else false },
+                ) { SleepScreen(s.standby) }
+            }
+        }
+
+        if (screen != Screen.Technician && screen !is Screen.Sleep) {
+            // Home: sit on top of the bottom menu bar (150 px) instead of covering it.
+            AnnouncementTicker(tickers, Modifier.align(Alignment.BottomCenter).padding(bottom = if (screen == Screen.Home) 150.px else 0.px))
+            modal?.let { AnnouncementModal(it) }
+            if (sleepSecs >= 0) SleepWarning(sleepSecs, Modifier.align(Alignment.Center))
         }
     }
 }

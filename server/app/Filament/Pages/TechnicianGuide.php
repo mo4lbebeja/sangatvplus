@@ -115,6 +115,7 @@ class TechnicianGuide extends Page
                     ['label' => 'Izin instal update (OTA)', 'cmd' => 'adb {s} shell appops set {pkg} REQUEST_INSTALL_PACKAGES allow'],
                     ['label' => 'Izin notifikasi layanan latar', 'cmd' => 'adb {s} shell pm grant {pkg} android.permission.POST_NOTIFICATIONS'],
                     ['label' => 'Izin ubah pengaturan sistem (durasi screensaver dari CMS → Profil Hotel)', 'cmd' => 'adb {s} shell appops set {pkg} WRITE_SETTINGS allow'],
+                    ['label' => 'Izin sleep timer tamu (TV standby otomatis dari menu Opsi channel)', 'cmd' => 'adb {s} shell pm grant {pkg} android.permission.WRITE_SECURE_SETTINGS'],
                     ['label' => 'Tidak dibatasi baterai', 'cmd' => 'adb {s} shell dumpsys deviceidle whitelist +{pkg}'],
                     ['label' => 'Nonaktifkan launcher bawaan (wajib agar tidak tampil duluan)', 'cmd' => 'adb {s} shell pm disable-user --user 0 {launcher}'],
                     ['label' => 'Nonaktifkan HotelTV bila terpasang (agar tidak berebut saat boot)', 'cmd' => 'adb {s} shell pm disable-user --user 0 com.sijalucom.hoteltv'],

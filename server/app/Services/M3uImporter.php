@@ -14,7 +14,7 @@ use Throwable;
 
 /**
  * Imports channels from an M3U / M3U8 playlist (the format IPTV providers and
- * encoders hand out). Supports #EXTINF attributes tvg-chno, tvg-logo, group-title.
+ * encoders hand out). Supports #EXTINF attributes tvg-chno, tvg-logo, group-title, tvg-id (→ EPG id).
  */
 class M3uImporter
 {
@@ -80,6 +80,7 @@ class M3uImporter
             'number' => ctype_digit((string) $chno) && (int) $chno >= 1 && (int) $chno <= 9999 ? (int) $chno : null,
             'logo' => $logo && preg_match('#^https?://#i', $logo) ? $logo : null,
             'group' => $group ?: null,
+            'epg_id' => filled($attrs['tvg-id'] ?? null) ? Str::limit($attrs['tvg-id'], 191, '') : null,
         ];
     }
 
@@ -164,6 +165,7 @@ class M3uImporter
                     'source_type' => $type,
                     'url' => $e['url'],
                     'logo_path' => $logoPath,
+                    'epg_id' => $e['epg_id'] ?? null,
                     'sort_order' => $sort += 10,
                     'is_active' => (bool) ($opt['activate'] ?? false),
                 ]);

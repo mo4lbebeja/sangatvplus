@@ -4,7 +4,10 @@ import com.sangatv.plus.data.model.AckRequest
 import com.sangatv.plus.data.model.Bootstrap
 import com.sangatv.plus.data.model.ChannelReportRequest
 import com.sangatv.plus.data.model.ChannelsResponse
+import com.sangatv.plus.data.model.EpgResponse
 import com.sangatv.plus.data.model.FacilitiesResponse
+import com.sangatv.plus.data.model.FavoritesRequest
+import com.sangatv.plus.data.model.ViewsRequest
 import com.sangatv.plus.data.model.HeartbeatRequest
 import com.sangatv.plus.data.model.HeartbeatResponse
 import com.sangatv.plus.data.model.OfflineAttempts
@@ -19,6 +22,7 @@ import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 import retrofit2.http.Streaming
@@ -36,6 +40,15 @@ interface ApiService {
 
     @POST("api/v1/channels/{id}/report")
     suspend fun reportChannel(@Path("id") id: Long, @Body body: ChannelReportRequest)
+
+    @GET("api/v1/epg")
+    suspend fun epg(@Query("hours") hours: Int = 24): EpgResponse
+
+    @PUT("api/v1/favorites")
+    suspend fun favorites(@Body body: FavoritesRequest): Response<Unit>
+
+    @POST("api/v1/views")
+    suspend fun views(@Body body: ViewsRequest)
 
     @GET("api/v1/facilities")
     suspend fun facilities(): FacilitiesResponse

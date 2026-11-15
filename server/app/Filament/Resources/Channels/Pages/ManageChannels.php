@@ -4,7 +4,9 @@ namespace App\Filament\Resources\Channels\Pages;
 
 use App\Filament\Resources\Channels\ChannelResource;
 use App\Models\ChannelProvider;
+use App\Models\HotelProfile;
 use App\Services\ChannelHealthChecker;
+use App\Services\EpgImporter;
 use App\Services\M3uImporter;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -38,6 +40,34 @@ class ManageChannels extends ManageRecords
                         ->title($n['error'] ? "{$n['error']} channel gagal" : 'Semua channel normal')
                         ->body("Normal {$n['ok']} · Gagal {$n['error']} · Tidak dicek (multicast lokal) {$n['skipped']}")
                         ->{$n['error'] ? 'warning' : 'success'}()->send();
+                }),
+            Action::make('syncEpg')
+                ->label('Sinkron EPG')
+                ->icon(Heroicon::OutlinedCalendarDays)
+                ->color('gray')
+                ->visible(fn () => ChannelResource::canCreate())
+                ->modalHeading('Sinkron jadwal acara (EPG)')
+                ->modalDescription(fn () => ($s = HotelProfile::current()->epg_status) ? 'Terakhir: '.$s : 'Mengambil jadwal dari sumber XMLTV di Profil Hotel → Channel TV.')
+                ->modalIcon(Heroicon::OutlinedCalendarDays)
+                ->modalSubmitActionLabel('Sinkron sekarang')
+                ->schema([
+                    Toggle::make('auto_match')->label('Cocokkan ID EPG otomatis untuk channel yang masih kosong')->default(true)
+                        ->helperText('Berdasarkan nama channel. Periksa hasilnya di kolom EPG.'),
+                ])
+                ->action(function (array $data, EpgImporter $importer) {
+                    try {
+                        $r = $importer->sync();
+                        $matched = 0;
+                        if ($data['auto_match'] && ($matched = EpgImporter::autoMatch()) > 0) {
+                            $r = $importer->sync();
+                        }
+                        Notification::make()
+                            ->title("{$r['channels']} channel punya jadwal acara")
+                            ->body(($matched ? "{$matched} ID EPG dicocokkan otomatis · " : '')."{$r['programmes']} acara · ".implode(' · ', $r['sources']))
+                            ->success()->send();
+                    } catch (Throwable $e) {
+                        Notification::make()->title('Sinkron EPG gagal')->body($e->getMessage())->danger()->send();
+                    }
                 }),
             $this->importAction(),
             CreateAction::make()->icon(Heroicon::OutlinedPlus),

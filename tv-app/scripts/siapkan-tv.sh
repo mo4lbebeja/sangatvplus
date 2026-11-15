@@ -37,6 +37,7 @@ echo "• Launcher utama (HOME)";           sh cmd role add-role-holder android.
 echo "• Tampil di atas aplikasi lain";     sh appops set "$PKG" SYSTEM_ALERT_WINDOW allow
 echo "• Instal aplikasi tidak dikenal (OTA)"; sh appops set "$PKG" REQUEST_INSTALL_PACKAGES allow
 echo "• Ubah pengaturan sistem (durasi screensaver dari CMS)"; sh appops set "$PKG" WRITE_SETTINGS allow
+echo "• Sleep timer tamu (TV standby otomatis)"; sh pm grant "$PKG" android.permission.WRITE_SECURE_SETTINGS >/dev/null 2>&1 || echo "  (tidak didukung TV ini: sleep timer memakai layar gelap)"
 echo "• Notifikasi layanan latar";        sh pm grant "$PKG" android.permission.POST_NOTIFICATIONS >/dev/null 2>&1 || true
 echo "• Tidak dibatasi baterai";          sh dumpsys deviceidle whitelist +"$PKG" >/dev/null
 
@@ -56,6 +57,7 @@ echo "Hasil:"
 echo "  HOME           : $(sh cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME | tail -1)"
 echo "  Overlay        : $(sh appops get "$PKG" SYSTEM_ALERT_WINDOW | cut -d';' -f1)"
 echo "  Instal update  : $(sh appops get "$PKG" REQUEST_INSTALL_PACKAGES | cut -d';' -f1)"
+echo "  Sleep timer    : $(sh dumpsys package "$PKG" | grep -q 'WRITE_SECURE_SETTINGS: granted=true' && echo diizinkan || echo 'tidak (layar gelap saja)')"
 echo
 echo "Uji: matikan lalu nyalakan TV, atau:  $ADB -s $TV reboot"
 echo "Batalkan semua:  ./scripts/siapkan-tv.sh ${TV%:5555} pulihkan"

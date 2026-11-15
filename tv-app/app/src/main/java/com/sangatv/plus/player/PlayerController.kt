@@ -6,6 +6,11 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.OptIn
 import androidx.media3.common.C
+import androidx.media3.common.Format
+import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.common.Tracks
+import androidx.media3.common.text.Cue
+import androidx.media3.common.text.CueGroup
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
@@ -71,6 +76,19 @@ class PlayerController(context: Context, private val onReport: (ChannelDto, Stri
     private val _status = MutableStateFlow(Status.Idle)
     val status: StateFlow<Status> = _status.asStateFlow()
 
+    /** One selectable audio or subtitle track of the current stream. */
+    data class TrackOption(val label: String, val group: Tracks.Group, val index: Int, val selected: Boolean, val language: String?)
+
+    private val _audioTracks = MutableStateFlow<List<TrackOption>>(emptyList())
+    val audioTracks: StateFlow<List<TrackOption>> = _audioTracks.asStateFlow()
+
+    private val _textTracks = MutableStateFlow<List<TrackOption>>(emptyList())
+    val textTracks: StateFlow<List<TrackOption>> = _textTracks.asStateFlow()
+
+    private val _cues = MutableStateFlow<List<Cue>>(emptyList())
+    /** Subtitle cues to draw over the video (PlayerSurface does not render text). */
+    val cues: StateFlow<List<Cue>> = _cues.asStateFlow()
+
     private var current: ChannelDto? = null
     private var usingBackup = false
     private var hadProblem = false
@@ -89,6 +107,15 @@ class PlayerController(context: Context, private val onReport: (ChannelDto, Stri
                     }
                     else -> _status.value
                 }
+            }
+
+            override fun onTracksChanged(tracks: Tracks) {
+                _audioTracks.value = options(tracks, C.TRACK_TYPE_AUDIO)
+                _textTracks.value = options(tracks, C.TRACK_TYPE_TEXT)
+            }
+
+            override fun onCues(cueGroup: CueGroup) {
+                _cues.value = cueGroup.cues
             }
 
             override fun onPlayerError(error: PlaybackException) {
@@ -147,6 +174,48 @@ class PlayerController(context: Context, private val onReport: (ChannelDto, Stri
         player.setMediaItem(builder.build())
         player.prepare()
         player.play()
+    }
+
+    private fun options(tracks: Tracks, type: Int): List<TrackOption> {
+        val out = mutableListOf<TrackOption>()
+        tracks.groups.filter { it.type == type }.forEach { g ->
+            for (i in 0 until g.length) {
+                if (!g.isTrackSupported(i)) continue
+                val f = g.getTrackFormat(i)
+                out += TrackOption(label(f, type, out.size + 1), g, i, g.isTrackSelected(i), f.language)
+            }
+        }
+        return out
+    }
+
+    private fun label(f: Format, type: Int, n: Int): String {
+        val lang = f.language?.takeIf { it != C.LANGUAGE_UNDETERMINED && it.isNotBlank() }
+            ?.let { java.util.Locale.forLanguageTag(it).getDisplayLanguage(java.util.Locale.getDefault()).replaceFirstChar(Char::titlecase) }
+        val base = f.label?.takeIf { it.isNotBlank() } ?: lang ?: (if (type == C.TRACK_TYPE_AUDIO) "Audio $n" else "Subtitle $n")
+        val ch = if (type == C.TRACK_TYPE_AUDIO) when (f.channelCount) { 1 -> " · Mono"; 2 -> " · Stereo"; 6 -> " · 5.1"; 8 -> " · 7.1"; else -> "" } else ""
+        return base + ch
+    }
+
+    /** Choose an audio track; its language is also preferred on the next channels. */
+    fun selectAudio(opt: TrackOption) {
+        player.trackSelectionParameters = player.trackSelectionParameters.buildUpon()
+            .setOverrideForType(TrackSelectionOverride(opt.group.mediaTrackGroup, opt.index))
+            .apply { opt.language?.let { setPreferredAudioLanguage(it) } }
+            .build()
+    }
+
+    /** Choose a subtitle track, or null to turn subtitles off. */
+    fun selectText(opt: TrackOption?) {
+        val b = player.trackSelectionParameters.buildUpon()
+        if (opt == null) {
+            b.clearOverridesOfType(C.TRACK_TYPE_TEXT).setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+            _cues.value = emptyList()
+        } else {
+            b.setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+                .setOverrideForType(TrackSelectionOverride(opt.group.mediaTrackGroup, opt.index))
+            opt.language?.let { b.setPreferredTextLanguage(it) }
+        }
+        player.trackSelectionParameters = b.build()
     }
 
     fun release() {

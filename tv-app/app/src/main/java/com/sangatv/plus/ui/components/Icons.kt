@@ -38,4 +38,11 @@ object SIcons {
     val Lock = icon("lock", 2f, "M6 11h12a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z", "M8 11V7a4 4 0 0 1 8 0v4")
     val Hdmi = icon("hdmi", 1.6f, "M3 8h18v6l-2 3H5l-2-3V8z", "M7 11h10M9 17v2M15 17v2")
     val Offline = icon("offline", 1.8f, "M2 2l20 20", "M8.5 16.5a5 5 0 0 1 7 0", "M5 12.9a10 10 0 0 1 5.2-2.8", "M19 12.9a10 10 0 0 0-2-1.4", "M12 20h.01")
+    val Star = icon("star", 1.8f, "M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z")
+    val Calendar = icon("calendar", 1.6f, "M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z", "M3 10h18M8 3v4M16 3v4")
+    val Speaker = icon("speaker", 1.6f, "M4 9h4l5-4v14l-5-4H4z", "M17 9a4 4 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11")
+    val Subtitles = icon("subtitles", 1.6f, "M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z", "M6 12h4M12 12h6M6 15h8M16 15h2")
+    val Moon = icon("moon", 1.6f, "M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z")
+    val Recall = icon("recall", 1.8f, "M4 9h11a5 5 0 0 1 0 10H8", "M8 5L4 9l4 4")
+    val Megaphone = icon("megaphone", 1.6f, "M3 10v4h3l7 4V6L6 10H3z", "M17 8a5 5 0 0 1 0 8", "M7 14l1 5h2l-1-4")
 }

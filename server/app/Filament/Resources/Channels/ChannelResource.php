@@ -7,10 +7,13 @@ use App\Enums\UserRole;
 use App\Filament\Concerns\RestrictedByRole;
 use App\Filament\Resources\Channels\Pages\ManageChannels;
 use App\Models\Channel;
+use App\Models\Room;
+use App\Services\EpgImporter;
 use BackedEnum;
 use Closure;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
@@ -21,6 +24,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
@@ -46,6 +50,8 @@ class ChannelResource extends Resource
     protected static ?int $navigationSort = 10;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public const LANGUAGES = ['id' => 'Indonesia', 'en' => 'Inggris', 'zh' => 'Mandarin', 'ja' => 'Jepang', 'ko' => 'Korea', 'ar' => 'Arab', 'ms' => 'Melayu', 'hi' => 'Hindi', 'fr' => 'Prancis', 'de' => 'Jerman', 'ru' => 'Rusia'];
 
     protected static function viewRoles(): array
     {
@@ -96,6 +102,22 @@ class ChannelResource extends Resource
                 TextInput::make('backup_url')->label('URL cadangan (failover)')->maxLength(2048)->columnSpanFull()
                     ->rule(fn (Get $get) => self::urlRule($get)),
             ]),
+            Section::make('Jadwal acara & akses')->icon(Heroicon::OutlinedCalendarDays)->description('EPG, paket kamar, bahasa, dan kunci channel dewasa.')->columns(2)->schema([
+                TextInput::make('epg_id')->label('ID EPG (XMLTV)')->maxLength(191)->prefixIcon(Heroicon::OutlinedCalendarDays)
+                    ->datalist(fn () => collect(EpgImporter::catalog())->keys()->sort(SORT_NATURAL | SORT_FLAG_CASE)->values()->all())
+                    ->placeholder('mis. Metro TV.id')
+                    ->helperText(fn () => EpgImporter::catalog() === []
+                        ? 'Isi sumber EPG di Profil Hotel lalu klik "Sinkron EPG" agar daftar ID muncul.'
+                        : 'Ketik untuk mencari ('.count(EpgImporter::catalog()).' channel di sumber EPG).'),
+                Select::make('language')->label('Bahasa siaran')->options(self::LANGUAGES)->placeholder('—')
+                    ->helperText('Untuk tamu asing, channel berbahasa sama tampil paling atas.'),
+                CheckboxList::make('room_types')->label('Paket: hanya untuk tipe kamar')
+                    ->options(fn () => Room::query()->whereNotNull('type')->where('type', '!=', '')->distinct()->orderBy('type')->pluck('type', 'type')->all())
+                    ->columns(3)->gridDirection('row')
+                    ->helperText('Kosongkan = semua kamar. Tipe kamar diatur di menu Kamar.'),
+                Toggle::make('is_adult')->label('Channel dewasa (perlu PIN)')->inline(false)
+                    ->helperText('Tamu memasukkan PIN dari resepsionis. Tanpa PIN di Profil Hotel, channel ini disembunyikan.'),
+            ]),
             Section::make('DRM')->icon(Heroicon::OutlinedLockClosed)->description('Hanya untuk channel penyedia yang memakai Widevine.')->collapsed()->columns(2)
                 ->visible(fn (Get $get) => self::sourceType($get)?->isProvider() ?? false)
                 ->schema([
@@ -116,6 +138,14 @@ class ChannelResource extends Resource
                 TextColumn::make('name')->label('Nama')->searchable()->weight('semibold'),
                 TextColumn::make('provider.name')->label('Penyedia')->placeholder('—')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('category.name')->label('Kategori')->badge()->color('gray')->icon(Heroicon::OutlinedTag),
+                IconColumn::make('epg_id')->label('EPG')->alignCenter()
+                    ->state(fn (Channel $record) => filled($record->epg_id))
+                    ->boolean()->trueIcon(Heroicon::OutlinedCalendarDays)->falseIcon(Heroicon::OutlinedMinus)
+                    ->trueColor('success')->falseColor('gray')
+                    ->tooltip(fn (Channel $record) => $record->epg_id ? 'EPG: '.$record->epg_id : 'Tanpa jadwal acara')
+                    ->toggleable(),
+                TextColumn::make('room_types')->label('Paket')->badge()->color('warning')->placeholder('Semua kamar')->toggleable(),
+                IconColumn::make('is_adult')->label('18+')->boolean()->trueIcon(Heroicon::OutlinedLockClosed)->falseIcon('')->trueColor('danger')->alignCenter()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('source_type')->label('Sumber')->badge()
                     ->color(fn (SourceType $state) => $state->isProvider() ? 'warning' : 'info'),
                 TextColumn::make('health_status')->label('Kesehatan')->badge()

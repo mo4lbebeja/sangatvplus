@@ -38,3 +38,7 @@ Rilis final (`assembleRelease`) butuh: keystore, `sangatv.releaseApiBaseUrl=http
 - Cuaca dimatikan: Open-Meteo gratis hanya untuk non-komersial.
 - Imagick belum terpasang di VPS; pengecil gambar memakai GD (aman dengan `memory_limit` 256M).
   Pasang ekstensi imagick di aaPanel untuk foto kamera sangat besar.
+- **Email laporan uptime mingguan** (Senin 07.00) baru terkirim setelah SMTP diisi di `.env` produksi
+  (`MAIL_MAILER=smtp`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_FROM_ADDRESS`), lalu
+  `php artisan config:cache`. Sampai itu, laporan tetap bisa dilihat di CMS → Statistik & Uptime.
+- **EPG** disinkron cron tiap 6 jam (`sangatv:sync-epg`). Manual: CMS → Channel → *Sinkron EPG*.

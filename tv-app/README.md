@@ -58,3 +58,21 @@ Status dan tombol pengaturannya juga ada di **Menu teknisi**.
 ## Menu teknisi
 Di Beranda tekan **▲ ▲ ▼ ▼ ◀ ▶ ◀ ▶**, lalu masukkan PIN 6 digit (diatur di CMS → Profil Hotel).
 Salah 5× → terkunci 15 menit. Semua percobaan tercatat di Audit Log, termasuk yang dilakukan saat offline.
+
+## Menonton TV (remote)
+| Tombol | Fungsi |
+|---|---|
+| ▲ ▼ / CH+ CH− | Ganti channel (channel dewasa dilewati selama terkunci) |
+| OK / ◀ | Daftar channel (kategori, **★ Favorit**, acara yang sedang tayang) |
+| ▶ / MENU | **Opsi**: jadwal acara, favorit, audio, subtitle, channel sebelumnya, matikan TV otomatis |
+| GUIDE / tombol merah | Jadwal acara (EPG) |
+| INFO | Bar info: acara sekarang + berikutnya |
+| LAST | Channel sebelumnya · tombol kuning: favorit |
+
+- **EPG**: dari sumber XMLTV di CMS → Profil Hotel → Channel TV (sinkron tiap 6 jam).
+- **Channel dewasa**: minta PIN 4 digit (CMS → Profil Hotel). Terbuka sampai TV standby; salah 5× → kunci 10 menit.
+- **Matikan TV otomatis**: perlu izin `WRITE_SECURE_SETTINGS` (`siapkan-tv.sh` memberikannya). Tanpa izin, layar hanya
+  menggelap. Pengaturan tidur asli TV disimpan dan dipulihkan otomatis saat TV menyala lagi.
+- **Pengumuman** dari CMS tampil di semua layar dalam ±1 menit. Tingkat *Darurat* membawa TV kembali ke SangaTV Plus
+  walau tamu sedang di Netflix/YouTube, dan tidak bisa ditutup sampai pengumuman berakhir.
+- Data tontonan (channel + durasi per kamar, tanpa nama tamu) dikirim bersama heartbeat untuk CMS → Statistik & Uptime.

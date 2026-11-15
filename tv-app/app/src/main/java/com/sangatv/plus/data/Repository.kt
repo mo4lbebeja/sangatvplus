@@ -6,6 +6,11 @@ import com.sangatv.plus.data.local.CacheStore
 import com.sangatv.plus.data.local.PinGuard
 import com.sangatv.plus.data.local.SecureStore
 import com.sangatv.plus.data.model.AckRequest
+import com.sangatv.plus.data.model.AnnouncementDto
+import com.sangatv.plus.data.model.EpgResponse
+import com.sangatv.plus.data.model.FavoritesRequest
+import com.sangatv.plus.data.model.ViewDto
+import com.sangatv.plus.data.model.ViewsRequest
 import com.sangatv.plus.data.model.Bootstrap
 import com.sangatv.plus.data.model.ChannelsResponse
 import com.sangatv.plus.data.model.CommandDto
@@ -64,6 +69,23 @@ class Repository(
 
     private val _facilities = MutableStateFlow(load(FACILITIES, FacilitiesResponse.serializer()))
     val facilities: StateFlow<FacilitiesResponse?> = _facilities.asStateFlow()
+
+    private val _epg = MutableStateFlow(load(EPG, EpgResponse.serializer()))
+    val epg: StateFlow<EpgResponse?> = _epg.asStateFlow()
+
+    private val _announcements = MutableStateFlow(_bootstrap.value?.announcements.orEmpty())
+    val announcements: StateFlow<List<AnnouncementDto>> = _announcements.asStateFlow()
+
+    /** Channel number the TV must switch to (announcement with "pindahkan ke channel"); consumed by the UI. */
+    private val _forceChannel = MutableStateFlow<Int?>(null)
+    val forceChannel: StateFlow<Int?> = _forceChannel.asStateFlow()
+
+    private val _favorites = MutableStateFlow(_bootstrap.value?.favorites.orEmpty())
+    val favorites: StateFlow<List<Long>> = _favorites.asStateFlow()
+
+    private val viewer = appContext.getSharedPreferences("viewer", android.content.Context.MODE_PRIVATE)
+    private val pendingViews = java.util.concurrent.ConcurrentLinkedQueue<ViewDto>()
+    private var lastEpgFetch = 0L
 
     private val _online = MutableStateFlow(false)
     val online: StateFlow<Boolean> = _online.asStateFlow()
@@ -129,6 +151,9 @@ class Repository(
         _bootstrap.value = null
         _channels.value = null
         _facilities.value = null
+        _epg.value = null
+        _favorites.value = emptyList()
+        _announcements.value = emptyList()
     }
 
     // ---------------- Content ----------------
@@ -139,6 +164,8 @@ class Repository(
             val b = api.bootstrap()
             _bootstrap.value = b
             save(BOOTSTRAP, Bootstrap.serializer(), b)
+            _favorites.value = b.favorites
+            onAnnouncements(b.announcements)
             kiosk.configure(b.apps.map { it.packageName } + com.sangatv.plus.device.TvDefaults.hdmiHandlerPackages(appContext))
             com.sangatv.plus.device.ScreenTimeout.apply(appContext, b.config.screensaverMinutes)
 
@@ -147,6 +174,8 @@ class Repository(
             val f = api.facilities()
             _facilities.value = f
             save(FACILITIES, FacilitiesResponse.serializer(), f)
+
+            refreshEpgLocked()
 
             _online.value = true
             true
@@ -170,6 +199,67 @@ class Repository(
         save(CHANNELS, ChannelsResponse.serializer(), c)
     }
 
+    /** Programme guide: refetched with the content and at least every hour. */
+    private suspend fun refreshEpgLocked() {
+        runCatching { api.epg(24) }
+            .onSuccess { e ->
+                _epg.value = e
+                save(EPG, EpgResponse.serializer(), e)
+                lastEpgFetch = System.currentTimeMillis()
+            }
+            .onFailure { Log.w(TAG, "epg: ${it.message}") }
+    }
+
+    private suspend fun maybeRefreshEpg() {
+        if (System.currentTimeMillis() - lastEpgFetch > 60 * 60_000L) refreshLock.withLock { refreshEpgLocked() }
+    }
+
+    // ---------------- Favourites, viewing stats, announcements ----------------
+
+    /** Toggle a favourite locally right away and sync it to the guest's stay (409 = no guest: keep it locally). */
+    fun toggleFavorite(channelId: Long) {
+        val now = _favorites.value
+        val next = if (channelId in now) now - channelId else now + channelId
+        _favorites.value = next
+        if (secure.token == null) return
+        scope.launch { runCatching { api.favorites(FavoritesRequest(next)) } }
+    }
+
+    /** One viewing session; sent in batches with the heartbeat. Zapping (< 10 s) is dropped. */
+    fun recordView(channelId: Long, startedAtMs: Long, seconds: Long) {
+        if (seconds < 10) return
+        pendingViews.add(ViewDto(channelId, Instant.ofEpochMilli(startedAtMs).toString(), seconds.coerceAtMost(6 * 3600)))
+        while (pendingViews.size > 300) pendingViews.poll()
+    }
+
+    private suspend fun flushViews() {
+        if (pendingViews.isEmpty()) return
+        val batch = generateSequence { pendingViews.poll() }.take(100).toList()
+        runCatching { api.views(ViewsRequest(batch)) }.onFailure { batch.forEach(pendingViews::add) }
+    }
+
+    private fun onAnnouncements(list: List<AnnouncementDto>) {
+        _announcements.value = list
+        // "Pindahkan ke channel": once per announcement version, only while the screen is on.
+        val screenOn = appContext.getSystemService(android.os.PowerManager::class.java)?.isInteractive ?: true
+        val done = viewer.getStringSet(FORCED, emptySet()).orEmpty()
+        val fresh = list.firstOrNull { it.forceChannelNumber != null && it.version !in done }
+        if (fresh != null && screenOn) {
+            viewer.edit().putStringSet(FORCED, (done + fresh.version).toList().takeLast(50).toSet()).apply()
+            _forceChannel.value = fresh.forceChannelNumber
+        }
+        // Emergency messages and forced channels come to the front even over other apps (Netflix, HDMI).
+        val urgent = fresh != null || list.any { it.isEmergency && it.version !in viewer.getStringSet(SURFACED, emptySet()).orEmpty() }
+        if (urgent && screenOn && !AutoStart.isAppForeground) {
+            viewer.edit().putStringSet(SURFACED, list.filter { it.isEmergency }.map { it.version }.toSet()).apply()
+            AutoStart.openMain(appContext, goHome = false, debounceMs = 0)
+        }
+    }
+
+    fun consumeForceChannel() {
+        _forceChannel.value = null
+    }
+
     private fun handleError(e: Exception) {
         when {
             e is HttpException && (e.code() == 401 || e.code() == 403) -> deprovision()
@@ -187,6 +277,8 @@ class Repository(
             refreshAll()
             while (isActive && secure.token != null) {
                 beat()
+                flushViews()
+                maybeRefreshEpg()
                 maybeRefreshSignedUrls()
                 maybeCheckOta()
                 delay((_bootstrap.value?.config?.heartbeatSeconds ?: 60).coerceIn(15, 600) * 1000L)
@@ -222,6 +314,7 @@ class Repository(
                 ),
             )
             _online.value = true
+            res.announcements?.let { onAnnouncements(it) }
             if (lastContentVersion != null && lastContentVersion != res.contentVersion) refreshAll()
             lastContentVersion = res.contentVersion
             res.commands.forEach { execute(it) }
@@ -330,5 +423,8 @@ class Repository(
         const val BOOTSTRAP = "bootstrap"
         const val CHANNELS = "channels"
         const val FACILITIES = "facilities"
+        const val EPG = "epg"
+        const val FORCED = "forced_announcements"
+        const val SURFACED = "surfaced_announcements"
     }
 }

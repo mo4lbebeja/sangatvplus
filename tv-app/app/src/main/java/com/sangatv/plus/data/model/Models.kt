@@ -33,6 +33,11 @@ data class Bootstrap(
     val apps: List<AppDto> = emptyList(),
     @SerialName("home_music") val homeMusic: HomeMusic? = null,
     @SerialName("technician_pin") val technicianPin: PinHash? = null,
+    /** Hash of the hotel's adult-channel PIN; null = adult channels are not sent at all. */
+    @SerialName("adult_pin") val adultPin: PinHash? = null,
+    /** Current guest's favourite channel ids (cleared by the server at check-out). */
+    val favorites: List<Long> = emptyList(),
+    val announcements: List<AnnouncementDto> = emptyList(),
     val weather: Weather? = null,
     val config: ClientConfig = ClientConfig(),
 )
@@ -131,6 +136,8 @@ data class ChannelDto(
     val drm: Drm? = null,
     @SerialName("logo_url") val logoUrl: String? = null,
     @SerialName("sort_order") val sortOrder: Int = 0,
+    @SerialName("is_adult") val isAdult: Boolean = false,
+    @SerialName("has_epg") val hasEpg: Boolean = false,
 ) {
     val isProvider: Boolean get() = sourceType.startsWith("provider_")
 }
@@ -188,6 +195,66 @@ data class HeartbeatResponse(
     @SerialName("server_time") val serverTime: String,
     @SerialName("content_version") val contentVersion: String,
     val commands: List<CommandDto> = emptyList(),
+    /** null = older server (keep what we have). */
+    val announcements: List<AnnouncementDto>? = null,
+)
+
+@Serializable
+data class AnnouncementDto(
+    val id: Long,
+    /** Changes when the announcement is edited, so a dismissed one shows again. */
+    val version: String,
+    val title: String,
+    val message: String,
+    /** "ticker" | "fullscreen" */
+    val style: String = "ticker",
+    /** "info" | "warning" | "emergency" */
+    val level: String = "info",
+    @SerialName("force_channel_number") val forceChannelNumber: Int? = null,
+    @SerialName("ends_at") val endsAt: String? = null,
+) {
+    val isEmergency: Boolean get() = level == "emergency"
+}
+
+@Serializable
+data class EpgResponse(
+    @SerialName("generated_at") val generatedAt: String? = null,
+    /** channel id (as string) → programmes ordered by start. */
+    val programmes: Map<String, List<ProgrammeDto>> = emptyMap(),
+)
+
+@Serializable
+data class ProgrammeDto(
+    val start: String,
+    val end: String,
+    val title: String,
+    val description: String? = null,
+    val category: String? = null,
+) {
+    @kotlinx.serialization.Transient val startMs: Long = parseMs(start)
+    @kotlinx.serialization.Transient val endMs: Long = parseMs(end)
+
+    fun isOnAt(nowMs: Long) = nowMs in startMs until endMs
+
+    /** 0..1 progress of a running programme. */
+    fun progress(nowMs: Long): Float = if (endMs <= startMs) 0f else ((nowMs - startMs).toFloat() / (endMs - startMs)).coerceIn(0f, 1f)
+
+    private companion object {
+        fun parseMs(v: String): Long = runCatching { java.time.OffsetDateTime.parse(v).toInstant().toEpochMilli() }.getOrDefault(0L)
+    }
+}
+
+@Serializable
+data class FavoritesRequest(@SerialName("channel_ids") val channelIds: List<Long>)
+
+@Serializable
+data class ViewsRequest(val views: List<ViewDto>)
+
+@Serializable
+data class ViewDto(
+    @SerialName("channel_id") val channelId: Long,
+    @SerialName("started_at") val startedAt: String,
+    val seconds: Long,
 )
 
 @Serializable
