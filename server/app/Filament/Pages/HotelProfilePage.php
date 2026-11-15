@@ -69,7 +69,9 @@ class HotelProfilePage extends Page
                 Section::make('Identitas')->icon(Heroicon::OutlinedBuildingOffice2)->description('Nama dan logo tampil di Beranda TV.')->columns(2)->schema([
                     TextInput::make('name')->label('Nama hotel')->required()->maxLength(80),
                     TextInput::make('tagline')->maxLength(120),
-                    FileUpload::make('logo_path')->label('Logo (PNG transparan)')->image()->disk('public')->directory('branding')->maxSize(512),
+                    FileUpload::make('logo_path')->label('Logo (PNG transparan)')->image()->disk('public')->directory('branding')->maxSize(512)
+                        // Fixed small preview height: fits the row, so nothing jumps when the preview loads.
+                        ->imagePreviewHeight('96'),
                     Textarea::make('about')->label('Tentang hotel')->rows(4)->maxLength(2000),
                     TextInput::make('address')->label('Alamat')->maxLength(255)->columnSpanFull(),
                 ]),

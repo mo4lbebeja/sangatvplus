@@ -467,3 +467,10 @@ html { font-size: 14px; }
 .sg-cmd-err { margin-top: 0.3rem; font-size: 0.8rem; color: #be123c; }
 .dark .sg-cmd-err { color: #fda4af; }
 .sg-cmd-info { margin-top: 0.3rem; font-size: 0.8rem; color: var(--sg-muted); }
+
+/* ---------- File upload previews: logos on a light, checker-free ground ---------- */
+.fi-fo-file-upload .filepond--image-preview { background: #eef3f7 !important; }
+.dark .fi-fo-file-upload .filepond--image-preview { background: #12324d !important; }
+.fi-fo-file-upload .filepond--image-preview-overlay-idle { opacity: 0.45 !important; }
+.fi-fo-file-upload .filepond--image-preview-wrapper { border-radius: 0.6rem; }
+.fi-fo-file-upload .filepond--panel-root { border-radius: 0.6rem; }
