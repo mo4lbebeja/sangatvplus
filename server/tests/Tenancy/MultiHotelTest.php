@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AppRelease;
+use App\Models\AuditLog;
 use App\Models\Central\Hotel;
 use App\Models\Central\VendorUser;
 use App\Models\Device;
@@ -9,10 +10,14 @@ use App\Models\PmsIntegration;
 use App\Models\ProvisioningCode;
 use App\Models\Room;
 use App\Models\User;
+use App\Services\Notifier;
 use App\Tenancy\HotelManager;
+use App\Vendor\Impersonation;
 use App\Vendor\Resources\Hotels\Pages\ManageHotels;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -34,7 +39,7 @@ function tenancyOn(): HotelManager
 
 beforeEach(function () {
     $main = DB::connection('pgsql');
-    foreach (['sangatv_test_central', 'sangatv_test_alpha', 'sangatv_test_bravo'] as $db) {
+    foreach (['sangatv_test_central', 'sangatv_test_alpha', 'sangatv_test_bravo', 'sangatv_test_charlie'] as $db) {
         $main->statement("DROP DATABASE IF EXISTS \"{$db}\" WITH (FORCE)");
     }
     $main->statement('CREATE DATABASE "sangatv_test_central"');
@@ -55,11 +60,11 @@ beforeEach(function () {
 afterEach(function () {
     $this->tenancy->end();
     foreach (['alpha', 'bravo', 'charlie'] as $slug) {
-        Illuminate\Support\Facades\File::deleteDirectory(storage_path("app/public/hotels/{$slug}")); // else deploy.sh copies the empty folders
+        File::deleteDirectory(storage_path("app/public/hotels/{$slug}")); // else deploy.sh copies the empty folders
     }
     DB::purge('central');
     $main = DB::connection('pgsql');
-    foreach (['sangatv_test_central', 'sangatv_test_alpha', 'sangatv_test_bravo'] as $db) {
+    foreach (['sangatv_test_central', 'sangatv_test_alpha', 'sangatv_test_bravo', 'sangatv_test_charlie'] as $db) {
         $main->statement("DROP DATABASE IF EXISTS \"{$db}\" WITH (FORCE)");
     }
 });
@@ -186,7 +191,7 @@ it('lets Sijalucom create a hotel with its own database, admin and the current a
         ->assertHasNoActionErrors()->assertNotified('Hotel Hotel Charlie siap');
 
     $c = Hotel::query()->where('slug', 'charlie')->firstOrFail();
-    expect($c->database)->toBe('sangatv_test_charlie')->and($c->service_expires_at->toDateString())->toBe('2027-12-31');
+    expect($c->database)->toBe('sangatv_test_charlie')->and($c->service_expires_at->setTimezone('Asia/Jakarta')->toDateString())->toBe('2027-12-31');
     expect($this->tenancy->run($c, fn () => [User::query()->value('email'), AppRelease::query()->value('version_code')]))->toBe(['gm@charlie.test', 12]);
     $this->tenancy->dropDatabase($c);
 });
@@ -209,4 +214,35 @@ it('suspends a hotel and releases its TVs from the vendor panel', function () {
     expect($this->bravo->fresh()->serviceStatus())->toBe('released')->and($this->alpha->fresh()->status)->toBe('suspended');
     app('auth')->forgetGuards();
     $this->withToken($tv['token'])->withHeader('X-SangaTV-Hotel', 'bravo')->getJson('/api/v1/bootstrap')->assertOk()->assertJsonPath('service.status', 'released');
+});
+
+it('lets Sijalucom open a hotel CMS as its admin, logged in that hotel, and return', function () {
+    $v = vendorLogin();
+    $adminId = $this->tenancy->run($this->bravo, fn () => User::query()->value('id'));
+    Livewire\Livewire::test(ManageHotels::class)
+        ->callTableAction('impersonate', $this->bravo, ['user_id' => $adminId])->assertHasNoTableActionErrors()->assertRedirect(url('/admin'));
+
+    expect(session('hotel_id'))->toBe($this->bravo->id);
+    $this->tenancy->end();
+    $this->get('/admin')->assertOk()->assertSee('Mode dukungan Sijalucom')->assertSee('Hotel Bravo');
+    expect($this->tenancy->run($this->bravo, fn () => AuditLog::query()->where('event', 'vendor.masuk_sebagai')->value('properties')))->toBe(['vendor' => $v->email]);
+
+    $this->tenancy->end();
+    $this->get('/admin/selesai-sijalucom')->assertRedirect('/sijalucom/hotels');
+    expect(session('hotel_id'))->toBeNull()->and(session(Impersonation::SESSION))->toBeNull();
+});
+
+it('reminds Sijalucom about rentals ending soon, labelled per hotel', function () {
+    config(['mail.default' => 'array', 'sangatv.telegram.bot_token' => 'T', 'sangatv.telegram.chat_id' => '1']);
+    Http::fake(['api.telegram.org/*' => fn () => Http::response(['ok' => true])]);
+    $this->alpha->update(['service_expires_at' => now('Asia/Jakarta')->addDays(14)->setTime(23, 0)->utc()]);
+    $this->bravo->update(['service_expires_at' => now('Asia/Jakarta')->addDays(20)]);
+    VendorUser::query()->create(['name' => 'S', 'email' => 'ops@sijalucom.test', 'password' => 'x-very-long-pass']);
+
+    $this->artisan('sangatv:pengingat-sewa')->expectsOutputToContain('Hotel Alpha (alpha): berakhir 14 hari lagi')->assertSuccessful();
+    Http::assertSent(fn ($r) => str_contains($r['text'], '[Sijalucom] 🗓️ Masa sewa hotel') && ! str_contains($r['text'], 'bravo'));
+
+    expect($this->tenancy->run($this->bravo, fn () => app(Notifier::class)->label()))->toBe('Hotel Bravo · bravo')
+        ->and(app(Notifier::class)->label())->toBe('Sijalucom · pusat')
+        ->and(app(Notifier::class)->vendorRecipients())->toContain('ops@sijalucom.test');
 });

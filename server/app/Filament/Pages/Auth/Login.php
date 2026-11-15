@@ -4,6 +4,7 @@ namespace App\Filament\Pages\Auth;
 
 use App\Models\Central\Hotel;
 use App\Tenancy\HotelManager;
+use App\Vendor\Impersonation;
 use Filament\Actions\Action;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Filament\Auth\Pages\Login as BaseLogin;
@@ -50,6 +51,8 @@ class Login extends BaseLogin
     public function authenticate(): ?LoginResponse
     {
         if (! $this->needsHotel()) {
+            session()->forget(Impersonation::SESSION); // a normal staff login ends any support session
+
             return parent::authenticate();
         }
 

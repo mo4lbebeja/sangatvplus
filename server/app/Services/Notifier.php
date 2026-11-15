@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Central\VendorUser;
 use App\Models\HotelProfile;
+use App\Tenancy\HotelManager;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -14,10 +16,45 @@ class Notifier
     /** @return array{telegram: bool, email: bool} what was delivered */
     public function send(string $subject, string $body): array
     {
-        $hotel = HotelProfile::current();
-        $text = "[{$hotel->name}] {$subject}\n{$body}";
+        $label = $this->label();
+        $recipients = $this->forCentral() ? $this->vendorRecipients() : $this->emailRecipients();
 
-        return ['telegram' => $this->telegram($text), 'email' => $this->email("SangaTV Plus · {$hotel->name}: {$subject}", $body)];
+        return ['telegram' => $this->telegram("[{$label}] {$subject}\n{$body}"), 'email' => $this->email("SangaTV Plus · {$label}: {$subject}", $body, $recipients)];
+    }
+
+    /** Messages for Sijalucom only (rental reminders …): Telegram + ALERT_EMAILS + vendor panel accounts. */
+    public function sendToVendor(string $subject, string $body): array
+    {
+        return ['telegram' => $this->telegram("[Sijalucom] {$subject}\n{$body}"), 'email' => $this->email("SangaTV Plus · Sijalucom: {$subject}", $body, $this->vendorRecipients())];
+    }
+
+    /** "Sanga Hotel · sanga" in multi-hotel mode, so alerts of different hotels in one chat are never mixed up. */
+    public function label(): string
+    {
+        if ($this->forCentral()) {
+            return 'Sijalucom · pusat';
+        }
+        $hotel = app(HotelManager::class)->current();
+
+        return HotelProfile::current()->name.($hotel ? " · {$hotel->slug}" : '');
+    }
+
+    /** Multi-hotel job outside any hotel (central backup): no hotel profile applies. */
+    private function forCentral(): bool
+    {
+        $tenancy = app(HotelManager::class);
+
+        return $tenancy->enabled() && ! $tenancy->current();
+    }
+
+    /** @return array<int, string> */
+    public function vendorRecipients(): array
+    {
+        $vendors = app(HotelManager::class)->enabled()
+            ? rescue(fn () => VendorUser::query()->where('is_active', true)->pluck('email')->all(), [], false)
+            : [];
+
+        return array_values(array_unique([...config('sangatv.alerts.emails'), ...$vendors]));
     }
 
     public function telegramConfigured(): bool
@@ -73,13 +110,14 @@ class Notifier
         }
     }
 
-    private function email(string $subject, string $body): bool
+    /** @param  array<int, string>  $recipients */
+    private function email(string $subject, string $body, array $recipients): bool
     {
-        if (! $this->emailConfigured()) {
+        if ($recipients === [] || in_array(config('mail.default'), ['log', 'array'], true)) {
             return false;
         }
         try {
-            Mail::raw($body, fn ($m) => $m->to($this->emailRecipients())->subject($subject));
+            Mail::raw($body, fn ($m) => $m->to($recipients)->subject($subject));
 
             return true;
         } catch (Throwable $e) {

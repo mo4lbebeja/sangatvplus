@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Vendor\Impersonation;
 use Closure;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
@@ -19,7 +20,8 @@ class RequireTwoFactorForAdmins
     public function handle(Request $request, Closure $next): Response
     {
         $user = Filament::auth()->user();
-        if (! $user instanceof User || ! $user->isAdmin() || filled($user->getAppAuthenticationSecret())) {
+        // Sijalucom support sessions ("Masuk sebagai") are already protected by the vendor's own two-factor login.
+        if (! $user instanceof User || ! $user->isAdmin() || filled($user->getAppAuthenticationSecret()) || Impersonation::active()) {
             return $next($request);
         }
 

@@ -20,3 +20,5 @@ Schedule::command('sangatv:semua-hotel sangatv:backup')->dailyAt('02:30')->timez
 Schedule::command('sangatv:semua-hotel sangatv:privasi-tamu')->dailyAt('03:15')->timezone('Asia/Jakarta');
 Schedule::command('sangatv:backup --pusat')->dailyAt('02:20')->timezone('Asia/Jakarta')->withoutOverlapping()
     ->when(fn () => config('tenancy.enabled'));
+Schedule::command('sangatv:pengingat-sewa')->dailyAt('08:00')->timezone('Asia/Jakarta')
+    ->when(fn () => config('tenancy.enabled'));

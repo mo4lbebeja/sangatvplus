@@ -2,14 +2,20 @@
 
 namespace App\Vendor\Resources\Hotels;
 
+use App\Enums\UserRole;
 use App\Models\Central\Hotel;
+use App\Models\User;
+use App\Tenancy\HotelManager;
 use App\Vendor\HotelStats;
+use App\Vendor\Impersonation;
 use App\Vendor\Resources\Hotels\Pages\ManageHotels;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\EditAction;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
@@ -75,6 +81,23 @@ class HotelResource extends Resource
             ->defaultSort('id')
             ->recordActions([
                 EditAction::make(),
+                Action::make('impersonate')->label('Masuk')->tooltip('Masuk ke CMS hotel ini sebagai stafnya (dukungan)')->iconButton()
+                    ->icon(Heroicon::OutlinedArrowRightEndOnRectangle)->color('primary')
+                    ->visible(fn (Hotel $record) => $record->isAccessible())
+                    ->modalHeading(fn (Hotel $record) => "Masuk ke CMS {$record->name}")
+                    ->modalDescription('Tanpa kata sandi staf. Tercatat di riwayat aktivitas hotel; tekan "Selesai" di bilah atas untuk kembali.')
+                    ->schema([
+                        Select::make('user_id')->label('Masuk sebagai')->required()
+                            ->options(fn (Hotel $record) => rescue(fn () => app(HotelManager::class)->run($record, fn () => User::query()->where('is_active', true)
+                                ->orderBy('role')->get()->mapWithKeys(fn (User $u) => [$u->id => "{$u->name} · {$u->email} ({$u->role->value})"])->all()), [], false))
+                            ->default(fn (Hotel $record) => rescue(fn () => app(HotelManager::class)->run($record, fn () => User::query()
+                                ->where('is_active', true)->where('role', UserRole::Admin)->value('id')), null, false)),
+                    ])
+                    ->modalSubmitActionLabel('Masuk')
+                    ->action(function (Hotel $record, array $data, $livewire) {
+                        Impersonation::start($record, (int) $data['user_id'], Filament::auth()->user());
+                        $livewire->redirect(url('/admin'), navigate: false);
+                    }),
                 ActionGroup::make([
                     Action::make('extend')->label('Perpanjang sewa')->icon(Heroicon::OutlinedCalendarDays)
                         ->schema([
@@ -82,7 +105,7 @@ class HotelResource extends Resource
                                 ->default(fn (Hotel $record) => ($record->service_expires_at?->isFuture() ? $record->service_expires_at : now())->addYear()),
                         ])
                         ->action(function (Hotel $record, array $data) {
-                            $record->update(['service_expires_at' => Carbon::parse($data['until'])->endOfDay(), 'service_released_at' => null]);
+                            $record->update(['service_expires_at' => $data['until'], 'service_released_at' => null]);
                             Notification::make()->title("Sewa {$record->name} sampai ".$record->service_expires_at->translatedFormat('d M Y'))->success()->send();
                         }),
                     Action::make('release')->label('Lepas layanan TV (kontrak selesai)')->icon(Heroicon::OutlinedPower)->color('danger')

@@ -2,8 +2,10 @@
 
 namespace App\Models\Central;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 /** A hotel renting SangaTV Plus (central database). Its data lives in its own database ($database). */
@@ -39,6 +41,13 @@ class Hotel extends Model
             $this->service_expires_at !== null && $this->service_expires_at->lte(now()->addDays($warnDays)) => 'expiring',
             default => 'active',
         };
+    }
+
+    /** A rental ends at the end of that day in Indonesia (WIB), whatever time the date picker sends. */
+    protected function serviceExpiresAt(): Attribute
+    {
+        return Attribute::make(set: fn ($value) => blank($value) ? null
+            : Carbon::parse($value instanceof \DateTimeInterface ? $value->format('Y-m-d') : substr((string) $value, 0, 10), 'Asia/Jakarta')->endOfDay()->utc());
     }
 
     public function codes(): HasMany

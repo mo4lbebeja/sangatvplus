@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\HotelExportController;
 use App\Http\Controllers\PmsVendorDocController;
+use App\Http\Middleware\InitializeHotel;
+use App\Vendor\Impersonation;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/admin');
@@ -11,8 +13,15 @@ Route::view('/privasi', 'legal.privasi')->name('privacy');
 
 // Vendor-facing PMS API document (Markdown download) — Admin & IT only.
 Route::get('/admin/integrasi-pms/dokumen-vendor.md', PmsVendorDocController::class)
-    ->middleware(['web', 'auth'])->name('pms.vendor-doc');
+    ->middleware(['web', InitializeHotel::class, 'auth'])->name('pms.vendor-doc');
 
 // Hotel data export (ZIP of CSV) — Admin only.
 Route::get('/admin/hotel-profile/ekspor-data.zip', HotelExportController::class)
-    ->middleware(['web', 'auth'])->name('hotel.export');
+    ->middleware(['web', InitializeHotel::class, 'auth'])->name('hotel.export');
+
+// Sijalucom support session ("Masuk sebagai" from the vendor panel) → back to the vendor panel.
+Route::get('/admin/selesai-sijalucom', function () {
+    Impersonation::stop();
+
+    return redirect('/sijalucom/hotels');
+})->middleware('web')->name('vendor.impersonation.stop');

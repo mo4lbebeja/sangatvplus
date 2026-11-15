@@ -11,7 +11,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
 use Filament\Support\Exceptions\Halt;
-use Illuminate\Support\Carbon;
 use Throwable;
 
 class ManageHotels extends ManageRecords
@@ -48,7 +47,7 @@ class ManageHotels extends ManageRecords
                     }
                     $r['hotel']->update([
                         'contact_name' => $data['contact_name'] ?? null,
-                        'service_expires_at' => filled($data['service_expires_at'] ?? null) ? Carbon::parse($data['service_expires_at'])->endOfDay() : null,
+                        'service_expires_at' => $data['service_expires_at'] ?? null,
                     ]);
                     Notification::make()->title("Hotel {$r['hotel']->name} siap")
                         ->body("Login CMS: Kode Hotel {$r['hotel']->slug} · {$data['admin_email']} · kata sandi sementara: {$r['password']} (catat sekarang; admin wajib aktifkan verifikasi dua langkah).")

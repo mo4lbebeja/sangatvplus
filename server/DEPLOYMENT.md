@@ -46,6 +46,27 @@ Rilis final (`assembleRelease`) butuh: keystore, `sangatv.releaseApiBaseUrl=http
   TV yang menyala mengunduh dalam ±1 menit (tanpa tombol ini: cek otomatis tiap 6 jam). TV tanpa Device Owner menampilkan
   dialog "Update?" yang perlu dikonfirmasi; TV Device Owner memasang diam-diam.
 
+## Multi-hotel (sewa ke banyak hotel) — aktif sejak 16 Nov 2026
+Satu alamat, satu server, **database terpisah per hotel**. Staf mengetik **Kode Hotel** sebelum login (browser mengingatnya).
+- `.env`: `TENANCY_ENABLED=true`, `DB_CENTRAL_DATABASE=sangatv_central` (daftar hotel, kode TV, sesi),
+  `TENANCY_LEGACY_HOTEL=napolin` (TV/PMS lama tanpa kode hotel). User DB `db_sangatvplus` boleh membuat database `sangatv_*`.
+- Hotel: `napolin` → `db_sangatvplus` (berkas di folder utama `storage/app/public`); hotel baru → `sangatv_<kode>`
+  (berkas di `storage/app/public/hotels/<kode>`).
+- **Panel vendor Sijalucom: `/sijalucom`** (akun terpisah di database pusat, wajib 2FA). Hotel baru, perpanjang sewa,
+  lepas/pulihkan layanan TV, nonaktifkan CMS & API, TV online, versi aplikasi, backup terakhir, dan **Masuk** = membuka
+  CMS hotel sebagai stafnya untuk dukungan (tercatat `vendor.masuk_sebagai` di riwayat hotel; bilah ungu → *Selesai*).
+- Akun vendor: `php artisan sangatv:vendor email@x --nama="Nama"` · reset sandi + 2FA: `--reset` · matikan: `--nonaktif`.
+- CLI hotel: `php artisan sangatv:hotel daftar | buat <kode> --nama= --email= | status <kode> --status=suspended | migrasi`.
+- Masa sewa berakhir di akhir hari (WIB) tanggal yang dipilih. **Pengingat sewa** 08.00 WIB ke Sijalucom (Telegram +
+  `ALERT_EMAILS` + akun vendor) pada H-30, 14, 7, 3, 1 dan hari H (`sangatv:pengingat-sewa`).
+- Peringatan berlabel `[Nama Hotel · kode]`; backup database pusat 02.20 WIB berlabel `[Sijalucom · pusat]`.
+- Jadwal per hotel berjalan lewat `sangatv:semua-hotel <perintah>`; backup per hotel di `storage/app/private/backups/<kode>`
+  dan subfolder `<kode>` di Google Drive.
+- Rilis OTA (`rilis-ota.sh`) diterbitkan ke **semua** hotel aktif; hotel baru otomatis mendapat rilis aktif terbaru.
+- TV ≥ 0.4.0 mengirim header `X-SangaTV-Hotel` (didapat saat daftar). Memindah TV ke hotel lain: hapus TV di hotel lama,
+  lalu daftarkan ulang dengan kode dari CMS hotel baru.
+- `deploy.sh` juga menjalankan migrasi database pusat dan semua database hotel.
+
 ## Masa layanan & Mode lepas (akhir kontrak)
 - Atur masa berlaku (oleh Sijalucom, tidak bisa diubah pengguna hotel di CMS):
   `php artisan sangatv:layanan --sampai=2027-12-31` · tanpa batas: `--sampai=tanpa-batas`
