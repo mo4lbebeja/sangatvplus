@@ -2,19 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use App\Filament\Pages\PmsIntegrationPage;
+use App\Models\Central\Hotel;
+use App\Vendor\Guides\PmsGuide;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
-/** Vendor-facing PMS API document (Markdown download) — Admin & IT only. */
-class PmsVendorDocController extends Controller
+/** PMS API document (Markdown) for a hotel's PMS vendor — Sijalucom Console only. */
+class PmsVendorDocController
 {
-    public function __invoke(): Response
+    public function __invoke(Request $request): Response
     {
-        abort_unless(PmsIntegrationPage::canAccess(), 403);
+        abort_unless(Auth::guard('vendor')->user()?->hasAccess('support'), 403);
+        $hotel = Hotel::query()->find($request->integer('hotel'));
+        $name = $hotel?->name ?? 'Hotel';
 
-        return response(PmsIntegrationPage::vendorMarkdown(), 200, [
+        return response(PmsGuide::vendorMarkdown($name), 200, [
             'Content-Type' => 'text/markdown; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="SangaTV-Plus-API-PMS.md"',
+            'Content-Disposition' => 'attachment; filename="integrasi-pms-sangatv-'.Str::slug($name).'.md"',
         ]);
     }
 }

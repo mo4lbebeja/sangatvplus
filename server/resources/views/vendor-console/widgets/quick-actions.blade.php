@@ -14,8 +14,7 @@
         @foreach ($actions as [$title, $desc, $icon, $tone, $url])
             <a href="{{ $url }}" class="vc-action" wire:navigate>
                 <span class="vc-stat-icon vc-tone-{{ $tone }}"><x-filament::icon :icon="$icon" /></span>
-                <strong>{{ $title }}</strong>
-                <small>{{ $desc }}</small>
+                <div><strong>{{ $title }}</strong><small>{{ $desc }}</small></div>
             </a>
         @endforeach
     </div>

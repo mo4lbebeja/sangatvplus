@@ -199,7 +199,7 @@ class HotelResource extends Resource
                     }),
                 TextColumn::make('monthly')->label('Sewa / bulan')->icon(Heroicon::OutlinedBanknotes)->iconColor('success')->weight('semibold')
                     ->state(fn (Hotel $h) => $h->monthlyPrice())->formatStateUsing(fn ($state) => $state ? Billing::rupiah($state) : '–')
-                    ->description(fn (Hotel $h) => 'per '.(Billing::CYCLES[$h->billing_months] ?? "{$h->billing_months} bulan"))
+                    ->description(fn (Hotel $h) => $h->monthlyPrice() ? 'per '.(Billing::CYCLES[$h->billing_months] ?? "{$h->billing_months} bulan") : null)
                     ->visible(fn () => static::allowed('finance')),
                 ViewColumn::make('service_expires_at')->label('Masa sewa')->view('vendor-console.columns.rental')->sortable(),
                 ViewColumn::make('tvs')->label('TV')->view('vendor-console.columns.tvs'),

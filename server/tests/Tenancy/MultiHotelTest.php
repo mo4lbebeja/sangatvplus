@@ -7,6 +7,7 @@ use App\Models\Central\Hotel;
 use App\Models\Central\Invoice;
 use App\Models\Central\Notice;
 use App\Models\Central\Plan;
+use App\Models\Central\Release;
 use App\Models\Central\Ticket;
 use App\Models\Central\VendorActivity;
 use App\Models\Central\VendorSetting;
@@ -22,7 +23,10 @@ use App\Services\Notifier;
 use App\Tenancy\HotelManager;
 use App\Vendor\Billing;
 use App\Vendor\Impersonation;
+use App\Vendor\Pages\Guides;
 use App\Vendor\Resources\Hotels\Pages\ManageHotels;
+use App\Vendor\Resources\Releases\Pages\ManageReleases;
+use App\Vendor\Resources\Releases\ReleaseResource;
 use App\Vendor\Support;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
@@ -390,10 +394,52 @@ it('renders the new console pages', function () {
 
 it('lets hotel staff see their own tickets and Sijalucom notices in the CMS', function () {
     $admin = $this->tenancy->run($this->bravo, fn () => User::query()->first());
-    App\Vendor\Support::open($this->bravo, 'Remote mati', 'x', 'technical', 'normal', 'A', null);
-    App\Vendor\Support::open($this->alpha, 'Rahasia alpha', 'x', 'technical', 'normal', 'B', null);
-    App\Models\Central\Notice::query()->create(['title' => 'Fitur baru: statistik tontonan', 'level' => 'success']);
+    Support::open($this->bravo, 'Remote mati', 'x', 'technical', 'normal', 'A', null);
+    Support::open($this->alpha, 'Rahasia alpha', 'x', 'technical', 'normal', 'B', null);
+    Notice::query()->create(['title' => 'Fitur baru: statistik tontonan', 'level' => 'success']);
 
     $this->withSession(['hotel_id' => $this->bravo->id])->actingAs($admin)
         ->get('/admin/bantuan')->assertOk()->assertSee('Remote mati')->assertDontSee('Rahasia alpha')->assertSee('Fitur baru: statistik tontonan');
+});
+
+it('keeps guides in the console: ADB steps and a PMS checklist saved per hotel', function () {
+    vendorLogin('support');
+    $this->get('/sijalucom/panduan?ip=192.168.101.4')->assertOk()->assertSee('192.168.101.4')->assertSee('add-role-holder android.app.role.HOME');
+    $this->get('/sijalucom/panduan?ip='.urlencode('"><b>xss9</b>'))->assertOk()->assertDontSee('xss9', false);
+    $this->get("/sijalucom/panduan?tab=pms&hotel={$this->bravo->id}")->assertOk()->assertSee('Pertanyaan untuk vendor PMS')->assertSee('X-SangaTV-Signature');
+
+    Livewire\Livewire::test(Guides::class)->set('hotelId', $this->bravo->id)
+        ->set('checklist.rest.done', true)->set('checklist.rest.note', 'VHP bisa webhook REST');
+    expect($this->tenancy->run($this->bravo, fn () => HotelProfile::current()->pms_checklist['rest']))->toBe(['done' => true, 'note' => 'VHP bisa webhook REST'])
+        ->and($this->tenancy->run($this->alpha, fn () => HotelProfile::current()->pms_checklist))->toBeNull();
+
+    config(['app.url' => 'https://sangatvplus.example']);
+    $doc = $this->get("/sijalucom/panduan/dokumen-vendor-pms.md?hotel={$this->bravo->id}")->assertOk()->assertHeader('Content-Type', 'text/markdown; charset=UTF-8');
+    expect($doc->getContent())->toContain('https://sangatvplus.example/api/pms/v1')->toContain('Hotel Bravo');
+    app('auth')->forgetGuards();
+    $this->get('/sijalucom/panduan/dokumen-vendor-pms.md')->assertForbidden();
+});
+
+it('publishes OTA releases only from the console, to the targeted hotels', function () {
+    Storage::disk('local')->put('releases/a.apk', 'apk-bytes');
+    vendorLogin('support');
+    $this->get('/sijalucom/rilis')->assertOk();
+    Livewire\Livewire::test(ManageReleases::class)
+        ->callAction('create', ['apk_path' => ['a' => 'releases/a.apk'], 'package_name' => 'com.sangatv.plus', 'version_code' => 20, 'version_name' => '0.5.0',
+            'hotel_ids' => [(string) $this->bravo->id], 'is_active' => true])
+        ->assertHasNoActionErrors();
+
+    $r = Release::query()->sole();
+    expect($r->sha256)->toBe(hash('sha256', 'apk-bytes'))
+        ->and($this->tenancy->run($this->bravo, fn () => AppRelease::query()->where('version_code', 20)->value('is_active')))->toBeTrue()
+        ->and($this->tenancy->run($this->alpha, fn () => AppRelease::query()->where('version_code', 20)->exists()))->toBeFalse();
+
+    $r->update(['hotel_ids' => null]);
+    ReleaseResource::afterSave($r);
+    expect($this->tenancy->run($this->alpha, fn () => AppRelease::query()->where('version_code', 20)->value('is_active')))->toBeTrue();
+
+    $this->artisan('sangatv:hotel', ['aksi' => 'buat', 'kode' => 'charlie', '--nama' => 'C', '--email' => 'c@c.test'])->assertSuccessful();
+    $c = Hotel::query()->where('slug', 'charlie')->sole();
+    expect($this->tenancy->run($c, fn () => AppRelease::query()->where('version_code', 20)->value('is_active')))->toBeTrue();
+    $this->tenancy->dropDatabase($c);
 });

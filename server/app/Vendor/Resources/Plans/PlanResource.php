@@ -64,12 +64,16 @@ class PlanResource extends Resource
         return $table
             ->reorderable('sort')->defaultSort('sort')
             ->columns([
-                TextColumn::make('name')->label('Paket')->weight('bold')->description(fn (Plan $p) => $p->description),
-                TextColumn::make('base_price')->label('Harga dasar')->formatStateUsing(fn ($state, Plan $p) => Billing::rupiah($state).($p->included_tvs ? " ({$p->included_tvs} TV)" : '')),
-                TextColumn::make('price_per_tv')->label('Per TV tambahan')->formatStateUsing(fn ($state) => Billing::rupiah($state)),
-                TextColumn::make('example')->label('Contoh 20 TV')->state(fn (Plan $p) => Billing::rupiah($p->monthlyFor(20)).'/bln')->color('gray'),
-                TextColumn::make('features')->label('Fitur')->badge()->formatStateUsing(fn ($state) => Plan::FEATURES[$state] ?? $state)->limitList(3)->expandableLimitedList(),
-                TextColumn::make('hotels_count')->label('Hotel')->counts('hotels'),
+                TextColumn::make('name')->label('Paket')->weight('bold')->icon(Heroicon::OutlinedRectangleStack)->iconColor('primary')->wrap()
+                    ->description(fn (Plan $p) => $p->description),
+                TextColumn::make('base_price')->label('Harga dasar / bulan')->icon(Heroicon::OutlinedBanknotes)->iconColor('success')->weight('semibold')
+                    ->formatStateUsing(fn ($state) => Billing::rupiah($state))
+                    ->description(fn (Plan $p) => $p->included_tvs ? "termasuk {$p->included_tvs} TV" : null),
+                TextColumn::make('price_per_tv')->label('Per TV tambahan')->icon(Heroicon::OutlinedTv)->iconColor('info')->formatStateUsing(fn ($state) => Billing::rupiah($state)),
+                TextColumn::make('example')->label('Contoh 20 TV')->icon(Heroicon::OutlinedCalculator)->state(fn (Plan $p) => Billing::rupiah($p->monthlyFor(20)).'/bln')->color('gray'),
+                TextColumn::make('features')->label('Fitur')->formatStateUsing(fn ($state) => Plan::FEATURES[$state] ?? $state)
+                    ->listWithLineBreaks()->bulleted()->size('sm'),
+                TextColumn::make('hotels_count')->label('Hotel')->counts('hotels')->icon(Heroicon::OutlinedBuildingOffice2)->badge()->color('gray'),
                 IconColumn::make('is_active')->label('Aktif')->boolean(),
             ])
             ->recordActions([EditAction::make(), DeleteAction::make()->visible(fn (Plan $p) => $p->hotels()->doesntExist())])

@@ -6,6 +6,7 @@ use App\Enums\GuestStatus;
 use App\Enums\SourceType;
 use App\Enums\UserRole;
 use App\Filament\Pages\HotelProfilePage;
+use App\Filament\Resources\AppReleases\AppReleaseResource;
 use App\Filament\Resources\AppReleases\Pages\ManageAppReleases;
 use App\Filament\Resources\ChannelProviders\Pages\ManageChannelProviders;
 use App\Filament\Resources\Channels\Pages\ManageChannels;
@@ -28,7 +29,7 @@ use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
 const ADMIN_PAGES = [
-    '/admin/panduan-teknisi', '/admin/galeri', '/admin/integrasi-pms', '/admin/pms-kunci-api', '/admin/pms-log',
+    '/admin/galeri', '/admin/pms-kunci-api', '/admin/pms-log',
     '/admin', '/admin/guests', '/admin/rooms', '/admin/slides', '/admin/facilities', '/admin/hotel-profile',
     '/admin/channels', '/admin/channel-categories', '/admin/channel-providers', '/admin/announcements', '/admin/statistik-channel',
     '/admin/devices', '/admin/app-whitelist', '/admin/app-releases', '/admin/users', '/admin/audit-logs',
@@ -65,7 +66,7 @@ it('limits pages by role', function (UserRole $role, array $allowed) {
     }
 })->with([
     'front office' => [UserRole::FrontOffice, ['/admin', '/admin/guests', '/admin/rooms', '/admin/slides', '/admin/facilities', '/admin/galeri', '/admin/announcements']],
-    'it' => [UserRole::It, ['/admin', '/admin/panduan-teknisi', '/admin/integrasi-pms', '/admin/pms-kunci-api', '/admin/pms-log', '/admin/rooms', '/admin/channels', '/admin/channel-categories', '/admin/channel-providers', '/admin/announcements', '/admin/statistik-channel', '/admin/devices', '/admin/app-whitelist', '/admin/app-releases', '/admin/audit-logs']],
+    'it' => [UserRole::It, ['/admin', '/admin/pms-kunci-api', '/admin/pms-log', '/admin/rooms', '/admin/channels', '/admin/channel-categories', '/admin/channel-providers', '/admin/announcements', '/admin/statistik-channel', '/admin/devices', '/admin/app-whitelist', '/admin/app-releases', '/admin/audit-logs']],
 ]);
 
 it('blocks inactive users from the panel', function () {
@@ -190,10 +191,11 @@ it('imports channels from an M3U file, skipping duplicates and keeping them inac
     $this->assertDatabaseHas('audit_logs', ['event' => 'channel.imported']);
 });
 
-it('prefills the technician guide with a valid TV ip only', function () {
-    actingAsRole(UserRole::It);
-    $this->get('/admin/panduan-teknisi?ip=192.168.101.4')->assertOk()->assertSee('192.168.101.4')->assertSee('add-role-holder android.app.role.HOME');
-    $this->get('/admin/panduan-teknisi?ip='.urlencode('"><b>xss9</b>'))->assertOk()->assertDontSee('xss9', false);
+it('no longer shows Sijalucom-only guides or OTA uploads in the hotel CMS', function () {
+    actingAsRole(UserRole::Admin);
+    $this->get('/admin/panduan-teknisi')->assertNotFound();
+    $this->get('/admin/integrasi-pms')->assertNotFound();
+    expect(AppReleaseResource::canCreate())->toBeFalse();
 });
 
 it('sends security headers on CMS and API responses', function () {

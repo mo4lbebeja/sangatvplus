@@ -7,6 +7,8 @@
         'resources.tagihan' => ['heroicon-o-document-currency-dollar', 'emerald'],
         'resources.tiket' => ['heroicon-o-lifebuoy', 'rose'],
         'resources.pengumuman' => ['heroicon-o-megaphone', 'amber'],
+        'resources.rilis' => ['heroicon-o-rocket-launch', 'violet'],
+        'pages.panduan' => ['heroicon-o-book-open', 'cyan'],
         'pages.laporan' => ['heroicon-o-presentation-chart-line', 'sky'],
         'pages.pengaturan' => ['heroicon-o-cog-6-tooth', 'slate'],
         'resources.tim' => ['heroicon-o-user-group', 'cyan'],

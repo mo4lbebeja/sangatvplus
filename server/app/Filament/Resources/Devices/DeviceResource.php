@@ -7,7 +7,6 @@ use App\Enums\CommandType;
 use App\Enums\DeviceStatus;
 use App\Enums\UserRole;
 use App\Filament\Concerns\RestrictedByRole;
-use App\Filament\Pages\TechnicianGuide;
 use App\Filament\Resources\Devices\Pages\ManageDevices;
 use App\Models\AppWhitelist;
 use App\Models\Device;
@@ -187,11 +186,6 @@ class DeviceResource extends Resource
                         Audit::log('device.revoked', $record);
                         Notification::make()->title('Akses TV dicabut')->success()->send();
                     }),
-                Action::make('adbGuide')
-                    ->label('Panduan ADB')
-                    ->icon(Heroicon::OutlinedBookOpen)
-                    ->iconButton()->tooltip('Panduan ADB untuk TV ini')->color('gray')
-                    ->url(fn (Device $r) => TechnicianGuide::getUrl(array_filter(['ip' => $r->last_ip]))),
                 EditAction::make()->label('Pindah kamar')->icon(Heroicon::OutlinedArrowsRightLeft)->tooltip('Pindah kamar'),
                 DeleteAction::make()->before(fn (Device $record) => $record->tokens()->delete()),
             ]);

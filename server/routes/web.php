@@ -15,10 +15,6 @@ Route::redirect('/', '/admin');
 // Public privacy policy (also linked from the Google OAuth consent screen of the backup app).
 Route::view('/privasi', 'legal.privasi')->name('privacy');
 
-// Vendor-facing PMS API document (Markdown download) — Admin & IT only.
-Route::get('/admin/integrasi-pms/dokumen-vendor.md', PmsVendorDocController::class)
-    ->middleware(['web', InitializeHotel::class, 'auth'])->name('pms.vendor-doc');
-
 // Hotel data export (ZIP of CSV) — Admin only.
 Route::get('/admin/hotel-profile/ekspor-data.zip', HotelExportController::class)
     ->middleware(['web', InitializeHotel::class, 'auth'])->name('hotel.export');
@@ -37,6 +33,8 @@ Route::middleware('web')->prefix('sijalucom')->group(function () {
 
         return view('vendor-console.invoice-print', ['invoice' => $invoice->load('hotel')]);
     })->name('vendor.invoice.print');
+
+    Route::get('/panduan/dokumen-vendor-pms.md', PmsVendorDocController::class)->name('vendor.pms-doc');
 
     Route::get('/laporan/tagihan.csv', VendorReportController::class)->name('vendor.report.invoices');
 });

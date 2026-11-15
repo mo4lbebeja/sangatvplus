@@ -1,0 +1,122 @@
+/* Guide components (from the CMS theme), used by the Sijalucom Console guides. */
+:root {
+    --sg-toska-soft: rgba(56, 198, 217, 0.14);
+    --sg-gold: #d6ba80;
+    --sg-gold-soft: rgba(214, 186, 128, 0.16);
+    --sg-bg: #f3f6f9;
+    --sg-surface: #ffffff;
+    --sg-border: #e3e9ef;
+    --sg-text: #0b2c47;
+    --sg-muted: #5d7a92;
+    --sg-row-hover: #f0fafc;
+    --sg-stripe: #f8fafc;
+    --sg-shadow: 0 1px 2px rgba(6, 26, 43, 0.04), 0 6px 18px -8px rgba(6, 26, 43, 0.12);
+    --sg-radius: 14px;
+}
+.dark {
+    --sg-bg: #051522;
+    --sg-surface: #0a2236;
+    --sg-border: #143450;
+    --sg-text: #e8f1f7;
+    --sg-muted: #8fb0c7;
+    --sg-row-hover: rgba(56, 198, 217, 0.07);
+    --sg-stripe: rgba(255, 255, 255, 0.015);
+    --sg-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 24px -12px rgba(0, 0, 0, 0.6);
+}
+/* ---------- Custom widgets ---------- */
+.sg-card {
+    background: var(--sg-surface);
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius);
+    box-shadow: var(--sg-shadow);
+}
+.sg-chip-link {
+    display: inline-flex; align-items: center; gap: 0.45rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 0.65rem;
+    font-size: 0.82rem; font-weight: 600;
+    color: #e8f6fa;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    text-decoration: none;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.sg-chip-link:hover { background: rgba(56, 198, 217, 0.18); border-color: rgba(56, 198, 217, 0.45); }
+.sg-chip-link svg { width: 1rem; height: 1rem; color: var(--sg-toska); }
+/* ---------- Panduan Teknisi ---------- */
+.sg-guide { display: grid; gap: 1rem; }
+.sg-guide-params { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 0.85rem; padding: 1rem; position: sticky; top: 4rem; z-index: 5; }
+.sg-field { display: grid; gap: 0.35rem; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sg-muted); }
+.sg-field input, .sg-field select {
+    font: 600 0.95rem/1.2 'Plus Jakarta Sans', sans-serif; letter-spacing: 0; text-transform: none;
+    color: var(--sg-text); background: var(--sg-bg); border: 1px solid var(--sg-border); border-radius: 0.6rem; padding: 0.6rem 0.75rem;
+}
+.sg-field input:focus, .sg-field select:focus { outline: none; box-shadow: 0 0 0 3px rgba(56, 198, 217, 0.25); border-color: var(--sg-toska); }
+.sg-guide-toc { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.sg-guide-toc a {
+    display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.7rem; border-radius: 999px;
+    font-size: 0.8rem; font-weight: 600; color: var(--sg-text); text-decoration: none;
+    background: var(--sg-surface); border: 1px solid var(--sg-border);
+}
+.sg-guide-toc a b { display: inline-grid; place-items: center; width: 1.25rem; height: 1.25rem; border-radius: 999px; font-size: 0.7rem; color: #04232d; background: var(--sg-toska); }
+.sg-guide-toc a:hover { border-color: var(--sg-toska); }
+.sg-guide-section { padding: 0; overflow: hidden; scroll-margin-top: 9rem; }
+.sg-guide-section header { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.95rem 1.1rem; border-bottom: 1px solid var(--sg-border); background: linear-gradient(90deg, var(--sg-gold-soft), transparent 60%); }
+.sg-step { flex: none; display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 0.6rem; font-weight: 800; color: #04232d; background: linear-gradient(135deg, var(--sg-gold), var(--sg-toska)); }
+.sg-guide-icon { flex: none; width: 1.35rem; height: 1.35rem; margin-top: 0.3rem; color: var(--sg-toska); }
+.sg-guide-section h2 { margin: 0; font-size: 1.02rem; font-weight: 800; letter-spacing: -0.01em; }
+.sg-guide-section header p { margin: 0.2rem 0 0; font-size: 0.85rem; color: var(--sg-muted); }
+.sg-guide-section ol { margin: 0; padding: 0.4rem 1.1rem 1rem; list-style: none; counter-reset: sg; display: grid; gap: 0.7rem; }
+.sg-guide-section li { counter-increment: sg; position: relative; padding-left: 1.7rem; }
+.sg-guide-section li::before { content: counter(sg); position: absolute; left: 0; top: 0.05rem; width: 1.2rem; height: 1.2rem; display: grid; place-items: center; border-radius: 999px; font-size: 0.7rem; font-weight: 700; color: var(--sg-muted); border: 1px solid var(--sg-border); }
+.sg-guide-section li.is-warn { padding: 0.6rem 0.75rem 0.6rem 2.3rem; border-radius: 0.6rem; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); }
+.sg-guide-section li.is-warn::before { content: "!"; left: 0.65rem; top: 0.6rem; color: #b45309; border-color: rgba(245, 158, 11, 0.5); }
+.sg-guide-label { font-size: 0.9rem; line-height: 1.5; }
+.sg-cmd { margin-top: 0.4rem; display: flex; align-items: stretch; border-radius: 0.6rem; overflow: hidden; background: #061a2b; border: 1px solid #143450; }
+.sg-cmd code { flex: 1; min-width: 0; padding: 0.6rem 0.8rem; font: 500 0.82rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #bfeaf1; overflow-x: auto; white-space: pre; }
+.sg-cmd button { flex: none; display: grid; place-items: center; width: 2.6rem; color: #8fb0c7; background: rgba(255, 255, 255, 0.04); border: 0; border-left: 1px solid #143450; cursor: pointer; }
+.sg-cmd button:hover { color: var(--sg-toska); background: rgba(56, 198, 217, 0.12); }
+.sg-cmd button .fi-icon, .sg-cmd button svg { width: 1.1rem; height: 1.1rem; }
+/* ---------- Integrasi PMS ---------- */
+.sg-collapse-head { cursor: pointer; user-select: none; }
+.sg-collapse-head:focus-visible { outline: 2px solid var(--sg-toska); outline-offset: -2px; }
+.sg-progress { flex: none; align-self: center; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 999px; color: #04232d; background: var(--sg-toska-soft); border: 1px solid rgba(56, 198, 217, 0.35); }
+.dark .sg-progress { color: var(--sg-toska); }
+.sg-collapse-btn { flex: none; align-self: center; font-size: 0.8rem; font-weight: 600; color: var(--sg-toska); }
+.sg-checklist li { display: grid; gap: 0.4rem; padding-left: 1.7rem; }
+.sg-checklist li.is-done b { text-decoration: line-through; text-decoration-color: rgba(56, 198, 217, 0.7); color: var(--sg-muted); }
+.sg-check { display: flex; gap: 0.6rem; align-items: flex-start; cursor: pointer; }
+.sg-check input { margin-top: 0.2rem; width: 1.05rem; height: 1.05rem; accent-color: #38c6d9; flex: none; }
+.sg-check b { display: block; font-size: 0.9rem; font-weight: 700; }
+.sg-check small { display: block; font-size: 0.8rem; color: var(--sg-muted); margin-top: 0.1rem; }
+.sg-note { width: 100%; font: 500 0.85rem/1.3 'Plus Jakarta Sans', sans-serif; color: var(--sg-text); background: var(--sg-bg); border: 1px solid var(--sg-border); border-radius: 0.55rem; padding: 0.45rem 0.65rem; margin-left: 1.65rem; max-width: calc(100% - 1.65rem); }
+.sg-note:focus { outline: none; border-color: var(--sg-toska); box-shadow: 0 0 0 3px rgba(56, 198, 217, 0.2); }
+.sg-pms-facts { display: flex; flex-wrap: wrap; gap: 0.9rem; align-items: center; justify-content: space-between; padding: 0.9rem 1.1rem; }
+.sg-pms-facts span { display: block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sg-muted); }
+.sg-pms-facts code { font: 600 0.9rem ui-monospace, Menlo, monospace; color: var(--sg-text); }
+.sg-pms-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.sg-chip-dark { color: var(--sg-text); background: var(--sg-bg); border-color: var(--sg-border); }
+.sg-chip-dark:hover { color: var(--sg-text); }
+.sg-chip-dark .fi-icon, .sg-chip-dark svg { width: 1rem; height: 1rem; color: var(--sg-toska); }
+/* Rendered Markdown (vendor documentation) */
+.sg-prose { padding: 1.4rem 1.6rem; font-size: 0.9rem; line-height: 1.65; overflow-x: auto; }
+.sg-prose h1 { font-size: 1.4rem; font-weight: 800; margin: 0 0 0.6rem; letter-spacing: -0.02em; }
+.sg-prose h2 { font-size: 1.1rem; font-weight: 800; margin: 1.6rem 0 0.6rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--sg-border); }
+.sg-prose h3 { font-size: 0.98rem; font-weight: 700; margin: 1.2rem 0 0.4rem; color: var(--sg-toska); }
+.sg-prose p, .sg-prose ul, .sg-prose ol { margin: 0.5rem 0; }
+.sg-prose ul, .sg-prose ol { padding-left: 1.3rem; list-style: revert; }
+.sg-prose table { width: 100%; border-collapse: collapse; margin: 0.7rem 0; font-size: 0.85rem; }
+.sg-prose th, .sg-prose td { text-align: left; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--sg-border); vertical-align: top; }
+.sg-prose th { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sg-muted); }
+.sg-prose code { font: 500 0.82em ui-monospace, Menlo, monospace; padding: 0.1rem 0.35rem; border-radius: 0.35rem; background: var(--sg-toska-soft); }
+.sg-prose pre { margin: 0.6rem 0; padding: 0.8rem 1rem; border-radius: 0.6rem; background: #061a2b; border: 1px solid #143450; overflow-x: auto; }
+.sg-prose pre code { padding: 0; background: none; color: #bfeaf1; font-size: 0.8rem; line-height: 1.55; }
+.sg-prose blockquote { margin: 0.7rem 0; padding: 0.6rem 0.9rem; border-left: 3px solid var(--sg-gold); background: var(--sg-gold-soft); border-radius: 0 0.5rem 0.5rem 0; }
+/* ---------- Riwayat perintah TV ---------- */
+.sg-cmd-history { display: grid; gap: 0.5rem; }
+.sg-cmd-row { display: flex; gap: 0.75rem; align-items: flex-start; justify-content: space-between; padding: 0.6rem 0.75rem; border: 1px solid var(--sg-border); border-radius: 0.6rem; background: var(--sg-stripe); }
+.sg-cmd-main b { display: block; font-size: 0.9rem; }
+.sg-cmd-main small { color: var(--sg-muted); font-size: 0.75rem; }
+.sg-cmd-err { margin-top: 0.3rem; font-size: 0.8rem; color: #be123c; }
+.dark .sg-cmd-err { color: #fda4af; }
+.sg-cmd-info { margin-top: 0.3rem; font-size: 0.8rem; color: var(--sg-muted); }

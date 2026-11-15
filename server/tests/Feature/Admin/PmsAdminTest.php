@@ -3,7 +3,6 @@
 use App\Enums\CommandStatus;
 use App\Enums\CommandType;
 use App\Enums\UserRole;
-use App\Filament\Pages\PmsIntegrationPage;
 use App\Filament\Resources\Devices\Pages\ManageDevices;
 use App\Filament\Resources\PmsIntegrations\Pages\ManagePmsIntegrations;
 use App\Filament\Resources\PmsIntegrations\PmsIntegrationResource;
@@ -25,27 +24,12 @@ function asRole(UserRole $role): User
 
 it('shows the PMS pages to admin and IT only', function () {
     asRole(UserRole::It);
-    foreach (['/admin/integrasi-pms', '/admin/pms-kunci-api', '/admin/pms-log'] as $url) {
+    foreach (['/admin/pms-kunci-api', '/admin/pms-log'] as $url) {
         $this->get($url)->assertOk();
     }
-    $this->get('/admin/integrasi-pms')->assertSee('Pertanyaan untuk vendor PMS')->assertSee('/api/pms/v1')->assertSee('X-SangaTV-Signature');
 
     asRole(UserRole::FrontOffice);
-    $this->get('/admin/integrasi-pms')->assertForbidden();
     $this->get('/admin/pms-kunci-api')->assertForbidden();
-    $this->get('/admin/integrasi-pms/dokumen-vendor.md')->assertForbidden();
-});
-
-it('auto-saves the vendor checklist', function () {
-    asRole(UserRole::Admin);
-
-    Livewire::test(PmsIntegrationPage::class)
-        ->set('checklist.rest.done', true)
-        ->set('checklist.rest.note', 'VHP bisa webhook REST, kontak Pak Andi');
-
-    $saved = HotelProfile::current()->pms_checklist;
-    expect($saved['rest'])->toBe(['done' => true, 'note' => 'VHP bisa webhook REST, kontak Pak Andi'])
-        ->and($saved)->toHaveKey('sandbox');
 });
 
 it('creates an API key, shows the secret once, and the key really works', function () {
@@ -70,18 +54,6 @@ it('requires an IP whitelist for bearer mode', function () {
     Livewire::test(ManagePmsIntegrations::class)
         ->callAction('create', ['name' => 'X', 'auth_mode' => 'bearer', 'allowed_ips' => [], 'is_active' => true])
         ->assertHasActionErrors(['allowed_ips']);
-});
-
-it('downloads the vendor document with the production base URL', function () {
-    asRole(UserRole::It);
-    config(['app.url' => 'https://sangatvplus.example']);
-
-    $res = $this->get('/admin/integrasi-pms/dokumen-vendor.md')->assertOk()->assertHeader('Content-Type', 'text/markdown; charset=UTF-8');
-    expect($res->getContent())->toContain('https://sangatvplus.example/api/pms/v1')->toContain('POST /checkins');
-});
-
-it('redirects guests to the CMS login for the vendor document', function () {
-    $this->get('/admin/integrasi-pms/dokumen-vendor.md')->assertRedirect(route('filament.admin.auth.login'));
 });
 
 it('only offers restart to Device Owner TVs and shows command history', function () {

@@ -5,7 +5,7 @@
     $end = $h->service_expires_at;
     $pct = ($start && $end && $end->gt($start)) ? max(0, min(100, round(now()->diffInSeconds($start, true) / max(1, $end->diffInSeconds($start, true)) * 100))) : null;
 @endphp
-<div style="min-width:10rem;padding:.35rem 0">
+<div style="min-width:10rem;padding:.1rem 0">
     @if ($h->service_released_at)
         <span class="vc-muted">Layanan dilepas {{ $h->service_released_at->setTimezone('Asia/Jakarta')->translatedFormat('d M Y') }}</span>
     @elseif (! $end)

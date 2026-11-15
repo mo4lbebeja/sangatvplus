@@ -5,8 +5,10 @@ namespace App\Tenancy;
 use App\Enums\UserRole;
 use App\Models\AppRelease;
 use App\Models\Central\Hotel;
+use App\Models\Central\Release;
 use App\Models\HotelProfile;
 use App\Models\User;
+use App\Vendor\ReleaseSync;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cookie;
@@ -227,6 +229,9 @@ class HotelManager
         $releases = $template ? $this->run($template, fn () => AppRelease::query()->where('is_active', true)->get()
             ->map(fn (AppRelease $r) => $r->only(['package_name', 'version_code', 'version_name', 'apk_path', 'sha256', 'notes', 'is_active']))->all()) : [];
 
+        if (Release::query()->exists()) {
+            $releases = []; // central OTA releases are copied below
+        }
         $password = Str::password(16, symbols: false);
         $this->run($hotel, function () use ($name, $adminEmail, $adminName, $password, $releases) {
             foreach ($releases as $release) {
@@ -241,6 +246,10 @@ class HotelManager
                 'is_active' => true,
             ]);
         });
+
+        if (Release::query()->exists()) {
+            ReleaseSync::toHotel($hotel);
+        }
 
         return ['hotel' => $hotel, 'password' => $password];
     }

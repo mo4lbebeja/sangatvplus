@@ -60,6 +60,7 @@ class VendorPanelProvider extends PanelProvider
                 NavigationGroup::make('Klien'),
                 NavigationGroup::make('Keuangan'),
                 NavigationGroup::make('Analisa'),
+                NavigationGroup::make('Operasional'),
                 NavigationGroup::make('Sistem'),
             ])
             ->renderHook(PanelsRenderHook::HEAD_END, fn () => view('vendor-console.head'))

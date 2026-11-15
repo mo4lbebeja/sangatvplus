@@ -1,57 +1,17 @@
 <?php
 
-namespace App\Filament\Pages;
+namespace App\Vendor\Guides;
 
-use App\Enums\UserRole;
-use App\Models\User;
-use BackedEnum;
-use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
-use Illuminate\Support\Facades\Auth;
-use UnitEnum;
 
 /**
- * Step-by-step guide for installing / configuring TVs. Commands are templates:
+ * ADB steps for installing / configuring TVs (Sijalucom technicians). Commands are templates:
  * {s} = "-s <ip>:5555", {ip}, {pkg}, {launcher} are filled in live on the page.
  */
-class TechnicianGuide extends Page
+class TechnicianSteps
 {
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
-
-    protected static string|UnitEnum|null $navigationGroup = 'Perangkat';
-
-    protected static ?string $navigationLabel = 'Panduan Teknisi';
-
-    protected static ?string $title = 'Panduan Teknisi';
-
-    protected static ?string $slug = 'panduan-teknisi';
-
-    protected static ?int $navigationSort = 5;
-
-    protected string $view = 'filament.pages.technician-guide';
-
-    public string $ip = '';
-
-    public static function canAccess(): bool
-    {
-        $user = Auth::user();
-
-        return $user instanceof User && $user->is_active && ($user->isAdmin() || $user->hasRole(UserRole::It));
-    }
-
-    public function mount(): void
-    {
-        $ip = (string) request()->query('ip', '');
-        $this->ip = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) ? $ip : '';
-    }
-
-    public function getSubheading(): ?string
-    {
-        return 'Isi IP TV di bawah, semua perintah ADB otomatis menyesuaikan. Klik ikon salin di tiap perintah.';
-    }
-
     /** @return array<string, string> */
-    public function packages(): array
+    public static function packages(): array
     {
         return [
             'com.sangatv.plus' => 'Rilis (com.sangatv.plus)',
@@ -61,7 +21,7 @@ class TechnicianGuide extends Page
     }
 
     /** @return array<string, string> */
-    public function launchers(): array
+    public static function launchers(): array
     {
         return [
             'com.google.android.tvlauncher' => 'Google TV / Android TV (Sharp, Coocaa, TCL)',
@@ -73,7 +33,7 @@ class TechnicianGuide extends Page
     /**
      * @return list<array{id: string, title: string, icon: Heroicon, intro: string, items: list<array{label: string, cmd?: string, note?: string, warn?: bool}>}>
      */
-    public function sections(): array
+    public static function sections(): array
     {
         return [
             [
@@ -98,7 +58,7 @@ class TechnicianGuide extends Page
             ],
             [
                 'id' => 'pasang', 'title' => 'Pasang & daftarkan aplikasi', 'icon' => Heroicon::OutlinedArrowDownTray,
-                'intro' => 'APK diambil dari tim IT (atau menu Update Aplikasi). Kode pendaftaran: CMS → Kamar → ikon QR "Kode daftar TV".',
+                'intro' => 'APK dari Console → Rilis Aplikasi (OTA). Kode pendaftaran: CMS hotel → Kamar → ikon QR "Kode daftar TV".',
                 'items' => [
                     ['label' => 'Pasang / perbarui APK', 'cmd' => 'adb {s} install -r sangatv-plus.apk'],
                     ['label' => 'Buka aplikasi', 'cmd' => 'adb {s} shell am start -n {pkg}/com.sangatv.plus.MainActivity'],

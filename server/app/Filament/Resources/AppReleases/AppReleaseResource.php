@@ -7,8 +7,6 @@ use App\Filament\Concerns\RestrictedByRole;
 use App\Filament\Resources\AppReleases\Pages\ManageAppReleases;
 use App\Models\AppRelease;
 use BackedEnum;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -20,6 +18,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use UnitEnum;
 
@@ -38,6 +37,22 @@ class AppReleaseResource extends Resource
     protected static ?string $pluralModelLabel = 'Update Aplikasi (OTA)';
 
     protected static ?int $navigationSort = 30;
+
+    /** Releases are uploaded by Sijalucom (Console → Rilis Aplikasi); hotels only use them. */
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return false;
+    }
 
     protected static function viewRoles(): array
     {
@@ -80,13 +95,10 @@ class AppReleaseResource extends Resource
                 TextColumn::make('version_name')->label('Versi'),
                 TextColumn::make('sha256')->label('SHA-256')->limit(16)->copyable(),
                 IconColumn::make('is_active')->label('Aktif')->boolean(),
-                TextColumn::make('created_at')->label('Diunggah')->dateTime('d M Y H:i'),
+                TextColumn::make('notes')->label('Catatan')->limit(60)->placeholder('–'),
+                TextColumn::make('created_at')->label('Diterima')->dateTime('d M Y H:i'),
             ])
-            ->defaultSort('version_code', 'desc')
-            ->recordActions([
-                EditAction::make(),
-                DeleteAction::make()->after(fn (AppRelease $record) => Storage::disk('local')->delete($record->apk_path)),
-            ]);
+            ->defaultSort('version_code', 'desc');
     }
 
     public static function getPages(): array

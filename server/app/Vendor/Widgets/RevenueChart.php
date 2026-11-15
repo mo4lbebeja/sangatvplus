@@ -15,7 +15,7 @@ class RevenueChart extends ChartWidget
 
     protected int|string|array $columnSpan = ['md' => 2, 'xl' => 2];
 
-    protected ?string $maxHeight = '260px';
+    protected ?string $maxHeight = '210px';
 
     protected function getType(): string
     {

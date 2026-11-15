@@ -10,7 +10,6 @@ use App\Models\AppRelease;
 use App\Models\Device;
 use App\Support\Audit;
 use Filament\Actions\Action;
-use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ManageRecords;
 use Filament\Support\Icons\Heroicon;
@@ -18,6 +17,8 @@ use Filament\Support\Icons\Heroicon;
 class ManageAppReleases extends ManageRecords
 {
     protected static string $resource = AppReleaseResource::class;
+
+    protected ?string $subheading = 'Versi aplikasi TV disediakan oleh Sijalucom. TV mengunduh versi aktif otomatis; tombol di kanan meminta semua TV update sekarang.';
 
     protected function getHeaderActions(): array
     {
@@ -27,7 +28,7 @@ class ManageAppReleases extends ManageRecords
                 ->label('Minta semua TV update sekarang')
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->color('gray')
-                ->visible(fn () => AppReleaseResource::canCreate())
+                ->visible(fn () => AppReleaseResource::canViewAny())
                 ->requiresConfirmation()
                 ->modalHeading('Kirim perintah update ke semua TV?')
                 ->modalDescription(fn () => ($r = AppRelease::query()->where('is_active', true)->orderByDesc('version_code')->first())
@@ -42,7 +43,6 @@ class ManageAppReleases extends ManageRecords
                     Audit::log('app_release.push_update', null, ['devices' => $devices->count()]);
                     Notification::make()->title("Perintah update dikirim ke {$devices->count()} TV")->success()->send();
                 }),
-            CreateAction::make()->label('Unggah rilis')->mutateDataUsing(fn (array $data) => AppReleaseResource::withChecksum($data)),
         ];
     }
 }

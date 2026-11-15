@@ -3,7 +3,7 @@
     $s = \App\Vendor\HotelStats::for($h);
     $pct = $h->tv_quota ? min(100, round($s['tvs'] / max(1, $h->tv_quota) * 100)) : null;
 @endphp
-<div style="min-width:9rem;padding:.35rem 0">
+<div style="min-width:9rem;padding:.1rem 0">
     @if (! $s['ok'])
         <span class="text-danger-600" style="font-size:.82rem;display:inline-flex;gap:.3rem;align-items:center"><x-filament::icon icon="heroicon-o-exclamation-triangle" class="vc-ic" style="color:#E11D48" />Database galat</span>
     @else

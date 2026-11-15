@@ -6,10 +6,11 @@ use App\Enums\CommandStatus;
 use App\Enums\CommandType;
 use App\Enums\DeviceStatus;
 use App\Models\AppRelease;
-use App\Models\Central\Hotel;
+use App\Models\Central\Release;
 use App\Models\Device;
 use App\Support\Audit;
 use App\Tenancy\HotelManager;
+use App\Vendor\ReleaseSync;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 
@@ -43,11 +44,19 @@ class PublishReleaseCommand extends Command
             return self::FAILURE;
         }
 
-        // Multi-hotel: the same APK becomes the active release in every active hotel's database.
+        // Multi-hotel: a central release (Console → Rilis Aplikasi), mirrored into every hotel's database.
         if ($tenancy->enabled() && ! $tenancy->current()) {
-            foreach (Hotel::query()->where('status', 'active')->orderBy('id')->get() as $hotel) {
-                $this->line("== {$hotel->slug}");
-                $tenancy->run($hotel, fn () => $this->publish($path, $sha, $package));
+            $release = Release::query()->updateOrCreate(
+                ['package_name' => $package, 'version_code' => (int) $this->option('code')],
+                ['version_name' => (string) $this->option('versi'), 'apk_path' => $path, 'sha256' => $sha, 'notes' => $this->option('catatan'), 'is_active' => true],
+            );
+            foreach (Release::query()->where('package_name', $package)->get() as $r) {
+                ReleaseSync::sync($r);
+            }
+            $this->info("Rilis aktif: {$package} {$release->version_name} (code {$release->version_code}) untuk semua hotel");
+            if ($this->option('kirim')) {
+                [$sent, $held] = ReleaseSync::push($release);
+                $this->info("Perintah update dikirim ke {$sent} TV".($held ? " ({$held} TV ditahan, dilewati)" : ''));
             }
 
             return self::SUCCESS;

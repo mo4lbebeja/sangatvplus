@@ -1,7 +1,7 @@
 <x-filament-panels::page>
     <div style="display:flex;gap:.5rem;flex-wrap:wrap">
         @foreach ($years as $y)
-            <x-filament::button size="sm" :color="$y === $year ? 'primary' : 'gray'" wire:click="$set('year', {{ $y }})">{{ $y }}</x-filament::button>
+            <x-filament::button size="xs" :color="$y === $year ? 'primary' : 'gray'" wire:click="$set('year', {{ $y }})">{{ $y }}</x-filament::button>
         @endforeach
     </div>
 
