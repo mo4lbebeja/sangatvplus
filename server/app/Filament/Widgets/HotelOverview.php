@@ -14,6 +14,9 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class HotelOverview extends StatsOverviewWidget
 {
+    /** Render with the page: no loading placeholder that later changes height (layout jump). */
+    protected static bool $isLazy = false;
+
     protected static ?int $sort = -5;
 
     protected ?string $pollingInterval = '30s';

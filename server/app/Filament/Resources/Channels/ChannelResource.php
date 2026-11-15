@@ -112,7 +112,7 @@ class ChannelResource extends Resource
             ->modifyQueryUsing(fn (Builder $query) => $query->with(['category', 'provider']))
             ->columns([
                 TextColumn::make('number')->label('No')->sortable()->searchable()->weight('bold')->color('primary')->formatStateUsing(fn ($state) => str_pad((string) $state, 3, '0', STR_PAD_LEFT)),
-                ImageColumn::make('logo_path')->label('')->disk('public')->height(28),
+                ImageColumn::make('logo_path')->label('')->disk('public')->imageHeight(28)->imageWidth(44),
                 TextColumn::make('name')->label('Nama')->searchable()->weight('semibold'),
                 TextColumn::make('provider.name')->label('Penyedia')->placeholder('—')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('category.name')->label('Kategori')->badge()->color('gray')->icon(Heroicon::OutlinedTag),

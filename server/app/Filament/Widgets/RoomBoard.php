@@ -9,6 +9,9 @@ use Filament\Widgets\Widget;
 /** Live board of every room per floor: occupancy, guest and TV status at a glance. */
 class RoomBoard extends Widget
 {
+    /** Render with the page: no loading placeholder that later changes height (layout jump). */
+    protected static bool $isLazy = false;
+
     protected static ?int $sort = 0;
 
     protected int|string|array $columnSpan = 'full';

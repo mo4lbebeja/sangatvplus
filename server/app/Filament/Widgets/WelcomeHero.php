@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Auth;
 
 class WelcomeHero extends Widget
 {
+    /** Render with the page: no loading placeholder that later changes height (layout jump). */
+    protected static bool $isLazy = false;
+
     protected static ?int $sort = -10;
 
     protected int|string|array $columnSpan = 'full';

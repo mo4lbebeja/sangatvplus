@@ -67,7 +67,7 @@ class SlideResource extends Resource
     {
         return $table
             ->columns([
-                ImageColumn::make('image_path')->label('')->disk('public')->imageHeight(30),
+                ImageColumn::make('image_path')->label('')->disk('public')->imageHeight(30)->imageWidth(54),
                 TextColumn::make('kicker')->label('Kicker')->toggleable(),
                 TextColumn::make('title')->label('Judul')->searchable()->weight('semibold'),
                 TextColumn::make('description')->label('Deskripsi')->limit(50)->placeholder('—')->toggleable(isToggledHiddenByDefault: true),
