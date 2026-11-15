@@ -224,3 +224,7 @@ it('forces admins without two-factor login to set it up first', function () {
     $this->actingAs(User::factory()->withoutTwoFactor()->create(['role' => UserRole::FrontOffice]));
     $this->get('/admin/guests')->assertOk(); // optional for other roles
 });
+
+it('serves the public privacy policy', function () {
+    $this->get('/privasi')->assertOk()->assertSee('Kebijakan Privasi SangaTV Plus');
+});
