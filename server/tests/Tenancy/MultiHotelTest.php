@@ -54,6 +54,9 @@ beforeEach(function () {
 
 afterEach(function () {
     $this->tenancy->end();
+    foreach (['alpha', 'bravo', 'charlie'] as $slug) {
+        Illuminate\Support\Facades\File::deleteDirectory(storage_path("app/public/hotels/{$slug}")); // else deploy.sh copies the empty folders
+    }
     DB::purge('central');
     $main = DB::connection('pgsql');
     foreach (['sangatv_test_central', 'sangatv_test_alpha', 'sangatv_test_bravo'] as $db) {
