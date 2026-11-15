@@ -48,13 +48,16 @@ import com.sangatv.plus.ui.theme.px
 
 /** Only apps whitelisted in the CMS are shown (and allowed in kiosk mode). */
 @Composable
-fun AppsScreen(apps: List<AppDto>, showHdmi: Boolean = true) {
+fun AppsScreen(allApps: List<AppDto>, showHdmi: Boolean = true) {
     val context = LocalContext.current
     val pm = context.packageManager
     val first = remember { FocusRequester() }
-    LaunchedEffect(apps.isNotEmpty()) { if (apps.isNotEmpty()) runCatching { first.requestFocus() } }
 
     fun launchIntent(pkg: String): Intent? = pm.getLeanbackLaunchIntentForPackage(pkg) ?: pm.getLaunchIntentForPackage(pkg)
+
+    // The CMS whitelist is shared by every TV model; show only the apps this TV actually has.
+    val apps = remember(allApps) { allApps.filter { launchIntent(it.packageName) != null } }
+    LaunchedEffect(apps.isNotEmpty()) { if (apps.isNotEmpty()) runCatching { first.requestFocus() } }
 
     Column(
         Modifier.fillMaxSize().background(Sanga.Background).padding(start = 96.px, top = 72.px, end = 96.px, bottom = 56.px),
