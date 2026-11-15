@@ -15,8 +15,8 @@ else TASK=assembleStaging; APK=app/build/outputs/apk/staging/app-staging.apk; fi
 
 echo "==> Build $VARIANT"
 ./gradlew -q ":app:$TASK" -Psangatv.debugApiBaseUrl=https://sangatvplus.sijalucom.online/
-BADGE=$("$BT/aapt2" dump badging "$APK" | head -1)
-PKG=$(sed -E "s/.*name='([^']+)'.*/\1/" <<<"$BADGE"); CODE=$(sed -E "s/.*versionCode='([0-9]+)'.*/\1/" <<<"$BADGE"); NAME=$(sed -E "s/.*versionName='([^']+)'.*/\1/" <<<"$BADGE")
+BADGE=$("$BT/aapt2" dump badging "$APK" | awk "NR==1")  # awk reads everything: no SIGPIPE under pipefail
+PKG=$(sed -E "s/^package: name='([^']+)'.*/\1/" <<<"$BADGE"); CODE=$(sed -E "s/.*versionCode='([0-9]+)'.*/\1/" <<<"$BADGE"); NAME=$(sed -E "s/.*versionName='([^']+)'.*/\1/" <<<"$BADGE")
 SHA=$(shasum -a 256 "$APK" | cut -d' ' -f1)
 FILE="sangatv-plus-$NAME-$VARIANT.apk"
 echo "    $PKG $NAME (code $CODE) sha256 ${SHA:0:16}"

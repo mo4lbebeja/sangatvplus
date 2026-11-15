@@ -75,7 +75,7 @@ class BootstrapController extends Controller
             'adult_pin' => $hotel->adult_pin,
             'favorites' => array_values(array_map('intval', (array) ($guest?->favorite_channel_ids ?? []))),
             'announcements' => Announcement::payloadFor($room),
-            'weather' => $weather->current($hotel),
+            'weather' => $weather->current($hotel, $guest?->language ?? 'id'),
             'config' => [
                 'heartbeat_seconds' => 60,
                 'slide_interval_seconds' => 6,

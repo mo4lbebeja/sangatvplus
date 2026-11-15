@@ -23,7 +23,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
@@ -46,6 +53,7 @@ import com.sangatv.plus.ui.theme.px
 
 @Composable
 fun ProvisionScreen(state: ProvisionState, deviceUid: String, server: String, onSubmit: (String) -> Unit, onSkip: (() -> Unit)? = null) {
+    val focusManager = LocalFocusManager.current
     var code by remember { mutableStateOf("") }
     var fieldFocused by remember { mutableStateOf(false) }
     val field = remember { FocusRequester() }
@@ -75,6 +83,14 @@ fun ProvisionScreen(state: ProvisionState, deviceUid: String, server: String, on
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(field)
+                    // A text field keeps D-pad focus by default: let ▼ reach "Daftarkan" / "Gunakan TV tanpa …".
+                    .onPreviewKeyEvent { e ->
+                        if (e.type == KeyEventType.KeyDown && e.key == Key.DirectionDown) {
+                            focusManager.moveFocus(FocusDirection.Down)
+                        } else {
+                            false
+                        }
+                    }
                     .onFocusChanged { fieldFocused = it.isFocused }
                     .background(Sanga.Surface2, RoundedCornerShape(20.px))
                     .border(if (fieldFocused) 3.px else 1.px, if (fieldFocused) Sanga.Accent else Sanga.Border, RoundedCornerShape(20.px))

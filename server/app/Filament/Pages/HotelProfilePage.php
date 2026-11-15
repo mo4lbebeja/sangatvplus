@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Channel;
 use App\Models\HotelProfile;
 use App\Models\User;
+use App\Services\WeatherService;
 use App\Support\Audit;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -58,7 +59,7 @@ class HotelProfilePage extends Page
         // wifi_password is a hidden attribute; fill it explicitly. The PIN is write-only.
         $this->form->fill([
             ...$hotel->only(['name', 'tagline', 'about', 'logo_path', 'address', 'reception_phone', 'reception_extension',
-                'wifi_ssid', 'check_in_time', 'check_out_time', 'check_out_info', 'timezone', 'latitude', 'longitude', 'screensaver_minutes', 'tv_start_volume', 'tv_start_channel_id', 'show_hdmi_inputs', 'epg_urls', 'report_emails']),
+                'wifi_ssid', 'check_in_time', 'check_out_time', 'check_out_info', 'timezone', 'latitude', 'longitude', 'screensaver_minutes', 'tv_start_volume', 'tv_start_channel_id', 'show_hdmi_inputs', 'epg_urls', 'report_emails', 'bmkg_adm4']),
             'wifi_password' => $hotel->wifi_password,
         ]);
     }
@@ -119,7 +120,10 @@ class HotelProfilePage extends Page
                         ->placeholder('it@hotel.com, gm@hotel.com')
                         ->helperText('Dikirim tiap Senin 07:00: uptime per channel dan channel paling banyak ditonton.'),
                 ]),
-                Section::make('Lokasi (untuk cuaca)')->icon(Heroicon::OutlinedMapPin)->columns(3)->schema([
+                Section::make('Lokasi & cuaca')->icon(Heroicon::OutlinedMapPin)->description('Cuaca di Beranda TV dari prakiraan resmi BMKG (gratis, sumber "BMKG" selalu dicantumkan).')->columns(3)->schema([
+                    TextInput::make('bmkg_adm4')->label('Kode wilayah BMKG (desa/kelurahan)')->placeholder('mis. 32.05.13.2001')
+                        ->regex('/^\d{2}\.\d{2}\.\d{2}\.\d{4}$/')->columnSpanFull()
+                        ->helperText('Kode wilayah tingkat IV (Kemendagri) lokasi hotel. Cari nama desa/kelurahan di kodewilayah.id lalu salin kodenya. Kosongkan untuk menyembunyikan cuaca.'),
                     Select::make('timezone')->label('Zona waktu')->required()
                         ->options(['Asia/Jakarta' => 'WIB', 'Asia/Makassar' => 'WITA', 'Asia/Jayapura' => 'WIT']),
                     TextInput::make('latitude')->numeric()->minValue(-90)->maxValue(90),
@@ -232,6 +236,13 @@ class HotelProfilePage extends Page
         if (filled($adultPin)) {
             Audit::log($adultPin === 'hapus' ? 'adult_pin.removed' : 'adult_pin.changed', $hotel);
             $this->data['new_adult_pin'] = null;
+        }
+
+        if ($hotel->wasChanged('bmkg_adm4') && filled($hotel->bmkg_adm4)) {
+            $loc = app(WeatherService::class)->bmkgLocation($hotel->bmkg_adm4);
+            Notification::make()->title($loc ? "Cuaca BMKG: {$loc['desa']}, {$loc['kecamatan']}, {$loc['kotkab']}" : 'Kode wilayah BMKG tidak ditemukan')
+                ->body($loc ? 'TV menampilkan cuaca lokasi ini dalam ±1 menit.' : 'Periksa kembali kodenya di kodewilayah.id.')
+                ->{$loc ? 'success' : 'warning'}()->send();
         }
 
         Notification::make()->title('Profil hotel disimpan')->success()->send();
