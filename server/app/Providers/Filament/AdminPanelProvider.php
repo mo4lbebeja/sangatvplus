@@ -30,7 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
-            ->brandName('SangaTV Plus CMS')
+            ->brandName('SangaTV Plus')
             ->brandLogo(fn () => view('filament.brand'))
             ->brandLogoHeight('2.25rem')
             ->favicon(asset('icons/favicon-64.png').'?v='.@filemtime(public_path('icons/favicon-64.png')))

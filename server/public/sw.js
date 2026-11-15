@@ -1,11 +1,11 @@
 /*
- * SangaTV Plus CMS service worker.
+ * SangaTV Plus service worker.
  * - Static assets (Filament JS/CSS, fonts, icons): stale-while-revalidate.
  * - Pages: always from the network (admin data is never stored on the device);
  *   when offline, a branded offline page is shown instead.
  * - API, Livewire and uploads are never touched.
  */
-const VERSION = 'sangatv-cms-v2';
+const VERSION = 'sangatv-cms-v3';
 const PRECACHE = ['/offline.html', '/css/sangatv-admin.css', '/css/sangatv-fonts.css',
     '/fonts/PlusJakartaSans-Variable.ttf', '/fonts/Michroma-Regular.ttf', '/icons/icon-192.png'];
 

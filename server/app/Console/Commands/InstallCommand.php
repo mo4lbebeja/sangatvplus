@@ -30,7 +30,7 @@ class InstallCommand extends Command
             return self::FAILURE;
         }
         if (User::query()->where('email', $email)->exists()) {
-            $this->error("Pengguna {$email} sudah ada. Ubah kata sandi lewat CMS → Pengguna CMS.");
+            $this->error("Pengguna {$email} sudah ada. Ubah kata sandi lewat Sistem → Pengguna.");
 
             return self::FAILURE;
         }
@@ -70,7 +70,7 @@ class InstallCommand extends Command
             ['Kata sandi', $password],
             $pin ? ['PIN menu teknisi TV', $pin] : null,
         ]));
-        $this->warn('Segera ganti kata sandi & PIN setelah login (CMS → Pengguna CMS / Profil Hotel).');
+        $this->warn('Segera ganti kata sandi & PIN setelah login (Sistem → Pengguna / Konten → Profil Hotel).');
 
         return self::SUCCESS;
     }

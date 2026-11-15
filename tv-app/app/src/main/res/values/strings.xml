@@ -53,7 +53,7 @@
     <string name="tech_status">Status perangkat</string>
     <string name="tech_footer">PIN salah 5 kali mengunci menu selama 15 menit, dan setiap percobaan tercatat di log server.</string>
     <string name="provision_title">Daftarkan TV ini</string>
-    <string name="provision_subtitle">Buat kode di SangaTV Plus CMS (Kamar → Kode daftar TV), lalu masukkan di sini.</string>
+    <string name="provision_subtitle">Buat kode di panel SangaTV Plus (Kamar → Kode daftar TV), lalu masukkan di sini.</string>
     <string name="provision_code">Kode pendaftaran</string>
     <string name="provision_submit">Daftarkan</string>
     <string name="provision_failed">Pendaftaran gagal: %1$s</string>

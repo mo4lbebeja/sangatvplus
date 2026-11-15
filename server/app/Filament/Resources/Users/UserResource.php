@@ -35,7 +35,7 @@ class UserResource extends Resource
 
     protected static ?string $modelLabel = 'pengguna';
 
-    protected static ?string $pluralModelLabel = 'Pengguna CMS';
+    protected static ?string $pluralModelLabel = 'Pengguna';
 
     protected static ?int $navigationSort = 10;
 

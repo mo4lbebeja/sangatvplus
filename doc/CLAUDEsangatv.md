@@ -157,5 +157,5 @@ sangatv-plus/
 Penamaan:
 - Nama tampilan aplikasi: **SangaTV Plus**
 - Package Android (usulan): `com.sangatv.plus`
-- Nama panel admin: **SangaTV Plus CMS**
+- Nama panel admin: **SangaTV Plus** (tanpa kata "CMS")
 - Nama hotel tetap diambil dari CMS (layar tamu menampilkan nama hotel, bukan nama produk)
