@@ -76,7 +76,8 @@ fun ChannelScreen(
     onExit: () -> Unit,
 ) {
     val context = LocalContext.current
-    val controller = remember { PlayerController(context) }
+    val repo = (context.applicationContext as com.sangatv.plus.SangaApp).repository
+    val controller = remember { PlayerController(context) { ch, status, msg -> repo.reportChannel(ch.id, status, msg) } }
     val status by controller.status.collectAsState()
 
     // Keep the screen on while watching; release the player when leaving.
@@ -239,7 +240,8 @@ private fun ChannelPanel(
     onBack: () -> Unit,
 ) {
     val now by rememberNow(zone)
-    val cats = remember(data) { listOf(ALL to "") + data?.categories.orEmpty().map { it.slug to it.name } }
+    val used = remember(all) { all.mapNotNull { it.categorySlug }.toSet() }
+    val cats = remember(data, used) { listOf(ALL to "") + data?.categories.orEmpty().filter { it.slug in used }.map { it.slug to it.name } }
     var cat by remember { mutableStateOf(ALL) }
     val list = remember(all, cat) { if (cat == ALL) all else all.filter { it.categorySlug == cat } }
 
@@ -250,7 +252,8 @@ private fun ChannelPanel(
 
     val listState = rememberLazyListState()
     val focusReqs = remember(list) { List(list.size) { FocusRequester() } }
-    LaunchedEffect(list) {
+    val playingKnown = current != null
+    LaunchedEffect(list, playingKnown) {
         val idx = list.indexOfFirst { it.id == current?.id }.coerceAtLeast(0)
         if (list.isNotEmpty()) {
             listState.scrollToItem(idx)
@@ -284,7 +287,11 @@ private fun ChannelPanel(
             Text(now.format(TimeFmt), style = body(30, 700, Sanga.Text2))
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(12.px)) {
+        @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+        androidx.compose.foundation.layout.FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(12.px),
+            verticalArrangement = Arrangement.spacedBy(10.px),
+        ) {
             cats.forEach { (slug, name) ->
                 val on = slug == cat
                 Text(

@@ -41,6 +41,8 @@
     <string name="reception_dial">Tekan %1$s di telepon kamar</string>
     <string name="checkout_time">Check-out paling lambat pukul %1$s</string>
     <string name="apps_title">Aplikasi</string>
+    <string name="inputs_title">Input</string>
+    <string name="input_unavailable">Input tidak tersedia di TV ini.</string>
     <string name="apps_empty">Belum ada aplikasi yang diizinkan.</string>
     <string name="app_not_installed">Aplikasi belum terpasang di TV ini.</string>
     <string name="tech_title">Menu Teknisi</string>

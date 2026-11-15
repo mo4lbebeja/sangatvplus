@@ -7,6 +7,7 @@ use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Channel extends Model
 {
@@ -21,12 +22,24 @@ class Channel extends Model
             'drm' => 'array',
             'is_active' => 'boolean',
             'number' => 'integer',
+            'health_checked_at' => 'datetime',
         ];
     }
 
     public function category(): BelongsTo
     {
         return $this->belongsTo(ChannelCategory::class, 'channel_category_id');
+    }
+
+    public function reports(): HasMany
+    {
+        return $this->hasMany(ChannelReport::class);
+    }
+
+    /** TV problem reports (failover/failed) in the last 24 h. */
+    public function recentProblemCount(): int
+    {
+        return $this->reports()->whereIn('status', ['failover', 'failed'])->where('created_at', '>', now()->subDay())->count();
     }
 
     public function provider(): BelongsTo

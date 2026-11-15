@@ -118,6 +118,30 @@ class ChannelResource extends Resource
                 TextColumn::make('category.name')->label('Kategori')->badge()->color('gray')->icon(Heroicon::OutlinedTag),
                 TextColumn::make('source_type')->label('Sumber')->badge()
                     ->color(fn (SourceType $state) => $state->isProvider() ? 'warning' : 'info'),
+                TextColumn::make('health_status')->label('Kesehatan')->badge()
+                    ->formatStateUsing(fn (string $state) => ['ok' => 'Normal', 'error' => 'Gagal', 'skipped' => 'Tidak dicek', 'unknown' => 'Belum dicek'][$state] ?? $state)
+                    ->color(fn (string $state, Channel $record) => match (true) {
+                        $state === 'error' => 'danger',
+                        $record->recentProblemCount() > 0 => 'warning',
+                        $state === 'ok' => 'success',
+                        default => 'gray',
+                    })
+                    ->icon(fn (string $state) => match ($state) {
+                        'ok' => Heroicon::OutlinedCheckCircle,
+                        'error' => Heroicon::OutlinedExclamationTriangle,
+                        default => Heroicon::OutlinedMinusCircle,
+                    })
+                    ->tooltip(function (Channel $record) {
+                        $parts = [];
+                        $parts[] = $record->health_checked_at ? 'Dicek '.$record->health_checked_at->diffForHumans() : 'Belum pernah dicek server';
+                        if ($record->health_message) {
+                            $parts[] = $record->health_message;
+                        }
+                        $n = $record->recentProblemCount();
+                        $parts[] = $n > 0 ? "{$n} laporan masalah dari TV (24 jam)" : 'Tidak ada laporan masalah dari TV (24 jam)';
+
+                        return implode(' · ', $parts);
+                    }),
                 TextColumn::make('url')->label('URL')->limit(40)->icon(Heroicon::OutlinedLink)->fontFamily('mono')->size('xs')->toggleable(isToggledHiddenByDefault: true),
                 ToggleColumn::make('is_active')->label('Aktif'),
             ])
@@ -125,23 +149,28 @@ class ChannelResource extends Resource
             ->filters([
                 SelectFilter::make('channel_category_id')->label('Kategori')->relationship('category', 'name'),
                 SelectFilter::make('source_type')->label('Sumber')->options(SourceType::class),
+                SelectFilter::make('health_status')->label('Kesehatan')->options(['ok' => 'Normal', 'error' => 'Gagal', 'skipped' => 'Tidak dicek', 'unknown' => 'Belum dicek']),
             ])
             ->recordActions([EditAction::make()->slideOver(), DeleteAction::make()]);
     }
 
     public static function getNavigationBadge(): ?string
     {
-        return (string) Channel::query()->where('is_active', true)->count();
+        $broken = Channel::query()->where('is_active', true)->where('health_status', 'error')->count();
+
+        return (string) ($broken ?: Channel::query()->where('is_active', true)->count());
     }
 
     public static function getNavigationBadgeColor(): string
     {
-        return 'primary';
+        return Channel::query()->where('is_active', true)->where('health_status', 'error')->exists() ? 'danger' : 'primary';
     }
 
     public static function getNavigationBadgeTooltip(): ?string
     {
-        return 'Channel aktif';
+        $broken = Channel::query()->where('is_active', true)->where('health_status', 'error')->count();
+
+        return $broken ? "{$broken} channel gagal (cek kesehatan)" : 'Channel aktif';
     }
 
     public static function getPages(): array

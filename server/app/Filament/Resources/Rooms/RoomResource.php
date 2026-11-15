@@ -17,6 +17,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Support\Facades\FilamentTimezone;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
@@ -91,7 +92,7 @@ class RoomResource extends Resource
                         Audit::log('provisioning_code.issued', $record, ['expires_at' => $code->expires_at->toIso8601String()]);
                         Notification::make()
                             ->title("Kode kamar {$record->number}: {$plain}")
-                            ->body('Masukkan kode ini di layar pendaftaran TV. Berlaku sampai '.$code->expires_at->timezone(config('app.timezone'))->format('H:i').'. Kode tidak akan ditampilkan lagi.')
+                            ->body('Masukkan kode ini di layar pendaftaran TV. Berlaku sampai '.$code->expires_at->timezone(FilamentTimezone::get())->format('H:i').'. Kode tidak akan ditampilkan lagi.')
                             ->success()
                             ->persistent()
                             ->send();

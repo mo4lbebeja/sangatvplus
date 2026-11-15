@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\AppWhitelist;
+use App\Models\Channel;
 use App\Models\Device;
 use App\Models\HotelProfile;
 use App\Models\Slide;
@@ -73,6 +74,9 @@ class BootstrapController extends Controller
                 'heartbeat_seconds' => 60,
                 'slide_interval_seconds' => 6,
                 'screensaver_minutes' => $hotel->screensaver_minutes,
+                'start_volume' => $hotel->tv_start_volume,
+                'start_channel_number' => $hotel->tv_start_channel_id ? Channel::query()->whereKey($hotel->tv_start_channel_id)->where('is_active', true)->value('number') : null,
+                'show_hdmi_inputs' => $hotel->show_hdmi_inputs,
             ],
         ]);
     }

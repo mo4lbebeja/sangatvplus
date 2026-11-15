@@ -32,6 +32,10 @@ class SangaService : Service() {
             startForeground(ID, n)
         }
         (application as SangaApp).repository.start()
+        if (AutoStart.isEarlyBoot()) {
+            TvDefaults.freshSession = true
+            TvDefaults.applyVolume(this, (application as SangaApp).repository.bootstrap.value?.config?.startVolume)
+        }
         bootGuard()
         registerReceiver(wakeReceiver, IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_ON)
@@ -47,8 +51,13 @@ class SangaService : Service() {
     private val wakeReceiver = object : android.content.BroadcastReceiver() {
         override fun onReceive(context: android.content.Context, intent: Intent) {
             // Tell the CMS right away so monitoring shows Menyala / Standby without waiting.
-            (application as SangaApp).repository.beatNow()
+            val repo = (application as SangaApp).repository
+            repo.beatNow()
             if (intent.action == Intent.ACTION_SCREEN_OFF) return
+            if (intent.action == Intent.ACTION_SCREEN_ON) {
+                TvDefaults.freshSession = true
+                TvDefaults.applyVolume(this@SangaService, repo.bootstrap.value?.config?.startVolume)
+            }
             // Small delay: some TVs (MediaTek) push their own app right after the screen turns on.
             handler.postDelayed({ AutoStart.openMain(this@SangaService, debounceMs = 0, goHome = true) }, 700)
             handler.postDelayed({

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Channels\Pages;
 
 use App\Filament\Resources\Channels\ChannelResource;
 use App\Models\ChannelProvider;
+use App\Services\ChannelHealthChecker;
 use App\Services\M3uImporter;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
@@ -26,6 +27,18 @@ class ManageChannels extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('healthCheck')
+                ->label('Cek kesehatan sekarang')
+                ->icon(Heroicon::OutlinedHeart)
+                ->color('gray')
+                ->visible(fn () => ChannelResource::canCreate())
+                ->action(function (ChannelHealthChecker $checker) {
+                    $n = $checker->checkAll();
+                    Notification::make()
+                        ->title($n['error'] ? "{$n['error']} channel gagal" : 'Semua channel normal')
+                        ->body("Normal {$n['ok']} · Gagal {$n['error']} · Tidak dicek (multicast lokal) {$n['skipped']}")
+                        ->{$n['error'] ? 'warning' : 'success'}()->send();
+                }),
             $this->importAction(),
             CreateAction::make()->icon(Heroicon::OutlinedPlus),
         ];

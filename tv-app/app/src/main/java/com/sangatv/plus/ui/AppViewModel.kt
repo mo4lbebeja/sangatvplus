@@ -49,8 +49,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         get() = prefs.getLong("last_channel", -1)
         set(v) = prefs.edit().putLong("last_channel", v).apply()
 
-    fun initialChannel(list: List<ChannelDto>): ChannelDto? =
-        list.firstOrNull { it.id == lastChannelId } ?: list.firstOrNull()
+    /** First open after power-on → hotel's start channel (if set); otherwise the last watched one. */
+    fun initialChannel(list: List<ChannelDto>): ChannelDto? {
+        val start = bootstrap.value?.config?.startChannelNumber
+        if (com.sangatv.plus.device.TvDefaults.freshSession) {
+            com.sangatv.plus.device.TvDefaults.freshSession = false
+            if (start != null) list.firstOrNull { it.number == start }?.let { return it }
+        }
+        return list.firstOrNull { it.id == lastChannelId } ?: list.firstOrNull()
+    }
 
     // ---- Provisioning ----
     private val _provisionState = MutableStateFlow<ProvisionState>(ProvisionState.Idle)

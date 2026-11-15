@@ -27,6 +27,8 @@ class HotelProfile extends Model
             'home_music_volume' => 'integer',
             'screensaver_minutes' => 'integer',
             'pms_checklist' => 'array',
+            'tv_start_volume' => 'integer',
+            'show_hdmi_inputs' => 'boolean',
         ];
     }
 

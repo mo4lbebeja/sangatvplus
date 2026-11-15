@@ -2,6 +2,7 @@ package com.sangatv.plus.data.remote
 
 import com.sangatv.plus.data.model.AckRequest
 import com.sangatv.plus.data.model.Bootstrap
+import com.sangatv.plus.data.model.ChannelReportRequest
 import com.sangatv.plus.data.model.ChannelsResponse
 import com.sangatv.plus.data.model.FacilitiesResponse
 import com.sangatv.plus.data.model.HeartbeatRequest
@@ -32,6 +33,9 @@ interface ApiService {
 
     @GET("api/v1/channels")
     suspend fun channels(): ChannelsResponse
+
+    @POST("api/v1/channels/{id}/report")
+    suspend fun reportChannel(@Path("id") id: Long, @Body body: ChannelReportRequest)
 
     @GET("api/v1/facilities")
     suspend fun facilities(): FacilitiesResponse

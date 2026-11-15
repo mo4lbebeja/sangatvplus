@@ -175,3 +175,25 @@ it('tracks screen on / standby / off for monitoring', function () {
     $d->forceFill(['last_seen_at' => now()->subMinutes(10)])->save();
     expect($d->fresh()->powerState())->toBe('off');
 });
+
+it('records TV playback reports with a 5-minute dedupe', function () {
+    $ch = Channel::factory()->create(['number' => 401]);
+    $this->postJson("/api/v1/channels/{$ch->id}/report", ['status' => 'failover', 'message' => 'Source error'])->assertOk()->assertJsonPath('recorded', true);
+    $this->postJson("/api/v1/channels/{$ch->id}/report", ['status' => 'failover'])->assertOk()->assertJsonPath('recorded', false);
+    $this->postJson("/api/v1/channels/{$ch->id}/report", ['status' => 'nonsense'])->assertStatus(422);
+
+    expect($ch->recentProblemCount())->toBe(1);
+});
+
+it('sends start volume, start channel and HDMI setting to the TV', function () {
+    $ch = Channel::factory()->create(['number' => 111]);
+    HotelProfile::current()->fill(['tv_start_volume' => 20, 'tv_start_channel_id' => $ch->id, 'show_hdmi_inputs' => false])->save();
+
+    $this->getJson('/api/v1/bootstrap')->assertOk()
+        ->assertJsonPath('config.start_volume', 20)
+        ->assertJsonPath('config.start_channel_number', 111)
+        ->assertJsonPath('config.show_hdmi_inputs', false);
+
+    $ch->update(['is_active' => false]);
+    $this->getJson('/api/v1/bootstrap')->assertJsonPath('config.start_channel_number', null);
+});

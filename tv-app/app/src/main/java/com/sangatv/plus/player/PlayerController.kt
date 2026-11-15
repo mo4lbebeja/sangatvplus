@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit
  * opens and released when it closes, to keep memory low on 1.5–2 GB TVs.
  */
 @OptIn(UnstableApi::class)
-class PlayerController(context: Context) {
+class PlayerController(context: Context, private val onReport: (ChannelDto, String, String?) -> Unit = { _, _, _ -> }) {
 
     enum class Status { Idle, Buffering, Playing, FailingOver, Failed }
 
@@ -73,6 +73,7 @@ class PlayerController(context: Context) {
 
     private var current: ChannelDto? = null
     private var usingBackup = false
+    private var hadProblem = false
 
     private val retryPrimary = Runnable { current?.let { play(it, force = true) } }
 
@@ -81,7 +82,11 @@ class PlayerController(context: Context) {
             override fun onPlaybackStateChanged(state: Int) {
                 _status.value = when (state) {
                     Player.STATE_BUFFERING -> if (_status.value == Status.FailingOver) Status.FailingOver else Status.Buffering
-                    Player.STATE_READY -> Status.Playing
+                    Player.STATE_READY -> {
+                        if (hadProblem) current?.let { onReport(it, "recovered", if (usingBackup) "via cadangan" else null) }
+                        hadProblem = false
+                        Status.Playing
+                    }
                     else -> _status.value
                 }
             }
@@ -94,12 +99,15 @@ class PlayerController(context: Context) {
                     player.prepare()
                     return
                 }
+                hadProblem = true
                 if (!usingBackup && !ch.backupUrl.isNullOrBlank()) {
+                    onReport(ch, "failover", error.errorCodeName)
                     usingBackup = true
                     _status.value = Status.FailingOver
                     load(ch, ch.backupUrl)
                 } else {
                     _status.value = Status.Failed
+                    onReport(ch, "failed", error.errorCodeName)
                     usingBackup = false
                     main.removeCallbacks(retryPrimary)
                     main.postDelayed(retryPrimary, 30_000)

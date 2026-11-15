@@ -36,6 +36,9 @@ import coil3.compose.AsyncImage
 import com.sangatv.plus.R
 import com.sangatv.plus.data.model.AppDto
 import com.sangatv.plus.device.AutoStart
+import com.sangatv.plus.device.TvDefaults
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
 import com.sangatv.plus.ui.components.Focusable
 import com.sangatv.plus.ui.components.KeyHint
 import com.sangatv.plus.ui.components.card
@@ -45,7 +48,7 @@ import com.sangatv.plus.ui.theme.px
 
 /** Only apps whitelisted in the CMS are shown (and allowed in kiosk mode). */
 @Composable
-fun AppsScreen(apps: List<AppDto>) {
+fun AppsScreen(apps: List<AppDto>, showHdmi: Boolean = true) {
     val context = LocalContext.current
     val pm = context.packageManager
     val first = remember { FocusRequester() }
@@ -60,6 +63,31 @@ fun AppsScreen(apps: List<AppDto>) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.apps_title), style = body(56, 800), modifier = Modifier.weight(1f))
             KeyHint("BACK", stringResource(R.string.menu_home))
+        }
+        val hdmi = remember(showHdmi) { if (showHdmi) TvDefaults.hdmiInputs(context) else emptyList() }
+        if (hdmi.isNotEmpty()) {
+            Text(stringResource(R.string.inputs_title), style = body(28, 700, Sanga.Text2))
+            Row(horizontalArrangement = Arrangement.spacedBy(24.px)) {
+                hdmi.forEach { input ->
+                    Focusable(onClick = {
+                        AutoStart.markIntentionalExit()
+                        runCatching { context.startActivity(TvDefaults.hdmiIntent(input.id)) }
+                            .onFailure { Toast.makeText(context, R.string.input_unavailable, Toast.LENGTH_SHORT).show() }
+                    }) { focused ->
+                        Row(
+                            Modifier.width(300.px).height(110.px)
+                                .card(RoundedCornerShape(20.px), borderColor = if (focused) Sanga.Accent else Sanga.Border, borderWidth = if (focused) 4.px else 1.px)
+                                .padding(horizontal = 28.px),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(18.px),
+                        ) {
+                            com.sangatv.plus.ui.components.SIcon(com.sangatv.plus.ui.components.SIcons.Hdmi, if (focused) Sanga.Accent else Sanga.Text2, 44.px)
+                            Text(input.label, style = body(26, 700, if (focused) Sanga.Accent else Sanga.Text), maxLines = 1)
+                        }
+                    }
+                }
+            }
+            Text(stringResource(R.string.apps_title), style = body(28, 700, Sanga.Text2))
         }
         if (apps.isEmpty()) {
             Text(stringResource(R.string.apps_empty), style = body(26, 500, Sanga.Text3))

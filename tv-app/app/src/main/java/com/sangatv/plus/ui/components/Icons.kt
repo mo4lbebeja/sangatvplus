@@ -36,5 +36,6 @@ object SIcons {
     val Clock = icon("clock", 1.6f, circle(12f, 12f, 9f), "M12 7v5l3 2")
     val Weather = icon("weather", 1.6f, circle(9f, 9f, 3.5f), "M9 2.5v1.5M3.5 9H2M4.8 4.8l1 1M13.2 4.8l-1 1", "M8 20h9a4 4 0 0 0 0-8 5 5 0 0 0-9.6 1.5A3.3 3.3 0 0 0 8 20z")
     val Lock = icon("lock", 2f, "M6 11h12a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z", "M8 11V7a4 4 0 0 1 8 0v4")
+    val Hdmi = icon("hdmi", 1.6f, "M3 8h18v6l-2 3H5l-2-3V8z", "M7 11h10M9 17v2M15 17v2")
     val Offline = icon("offline", 1.8f, "M2 2l20 20", "M8.5 16.5a5 5 0 0 1 7 0", "M5 12.9a10 10 0 0 1 5.2-2.8", "M19 12.9a10 10 0 0 0-2-1.4", "M12 20h.01")
 }

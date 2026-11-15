@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\Channel;
 use App\Models\HotelProfile;
 use App\Models\User;
 use App\Support\Audit;
@@ -11,6 +12,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
@@ -56,7 +58,7 @@ class HotelProfilePage extends Page
         // wifi_password is a hidden attribute; fill it explicitly. The PIN is write-only.
         $this->form->fill([
             ...$hotel->only(['name', 'tagline', 'about', 'logo_path', 'address', 'reception_phone', 'reception_extension',
-                'wifi_ssid', 'check_in_time', 'check_out_time', 'check_out_info', 'timezone', 'latitude', 'longitude', 'screensaver_minutes']),
+                'wifi_ssid', 'check_in_time', 'check_out_time', 'check_out_info', 'timezone', 'latitude', 'longitude', 'screensaver_minutes', 'tv_start_volume', 'tv_start_channel_id', 'show_hdmi_inputs']),
             'wifi_password' => $hotel->wifi_password,
         ]);
     }
@@ -91,7 +93,17 @@ class HotelProfilePage extends Page
                     Select::make('screensaver_minutes')->label('Screensaver TV muncul setelah')->required()
                         ->options(HotelProfile::SCREENSAVER_OPTIONS)
                         ->helperText('Lama remote tidak disentuh sebelum screensaver bawaan TV tampil. Saat tamu menekan remote, SangaTV Plus kembali ke Beranda.'),
-                ]),
+                    Select::make('tv_start_volume')->label('Volume saat TV dinyalakan')
+                        ->options(collect([10, 15, 20, 25, 30, 40, 50])->mapWithKeys(fn ($v) => [$v => "{$v}%"])->all())
+                        ->placeholder('Tidak diatur (ikuti TV)')
+                        ->helperText('Mencegah TV menyala terlalu keras setelah tamu sebelumnya.'),
+                    Select::make('tv_start_channel_id')->label('Channel pertama saat membuka TV')
+                        ->options(fn () => Channel::query()->where('is_active', true)->orderBy('number')->get()->mapWithKeys(fn ($c) => [$c->id => $c->number.' · '.$c->name])->all())
+                        ->placeholder('Channel terakhir yang ditonton')->searchable()
+                        ->helperText('Berlaku saat menu TV dibuka pertama kali setelah TV dinyalakan.'),
+                    Toggle::make('show_hdmi_inputs')->label('Tampilkan input HDMI di menu Aplikasi')
+                        ->helperText('Tamu bisa menyambung laptop/konsol ke TV.'),
+                ])->columns(2),
                 Section::make('Lokasi (untuk cuaca)')->icon(Heroicon::OutlinedMapPin)->columns(3)->schema([
                     Select::make('timezone')->label('Zona waktu')->required()
                         ->options(['Asia/Jakarta' => 'WIB', 'Asia/Makassar' => 'WITA', 'Asia/Jayapura' => 'WIT']),

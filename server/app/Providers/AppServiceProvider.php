@@ -7,6 +7,7 @@ use App\Models\AppWhitelist;
 use App\Models\Channel;
 use App\Models\ChannelCategory;
 use App\Models\ChannelProvider;
+use App\Models\ChannelReport;
 use App\Models\Device;
 use App\Models\DeviceCommand;
 use App\Models\Facility;
@@ -23,6 +24,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Schemas\Components\Section;
+use Filament\Support\Facades\FilamentTimezone;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -42,6 +44,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::shouldBeStrict(! $this->app->isProduction());
+
+        // Timestamps are stored in UTC; the CMS shows them in the hotel's timezone (WIB/WITA/WIT).
+        FilamentTimezone::set(function (): string {
+            static $tz = null;
+
+            return $tz ??= rescue(fn () => HotelProfile::query()->value('timezone'), null, false) ?: 'Asia/Jakarta';
+        });
 
         // CMS look: dense, striped tables and compact sections everywhere.
         Table::configureUsing(fn (Table $table) => $table
@@ -75,6 +84,7 @@ class AppServiceProvider extends ServiceProvider
             'pms_integration' => PmsIntegration::class,
             'pms_event' => PmsEvent::class,
             'gallery_photo' => GalleryPhoto::class,
+            'channel_report' => ChannelReport::class,
         ]);
 
         // Per-device API budget (≈2 req/s sustained is far above normal use).

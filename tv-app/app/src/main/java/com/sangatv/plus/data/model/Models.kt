@@ -98,7 +98,15 @@ data class ClientConfig(
     @SerialName("slide_interval_seconds") val slideIntervalSeconds: Int = 6,
     /** Idle minutes before the TV's own screensaver; 0 = leave the TV setting alone. */
     @SerialName("screensaver_minutes") val screensaverMinutes: Int = 0,
+    /** Volume % applied when the TV turns on; null = leave the TV's volume. */
+    @SerialName("start_volume") val startVolume: Int? = null,
+    /** Channel shown first when the TV menu opens after power-on; null = last watched. */
+    @SerialName("start_channel_number") val startChannelNumber: Int? = null,
+    @SerialName("show_hdmi_inputs") val showHdmiInputs: Boolean = true,
 )
+
+@Serializable
+data class ChannelReportRequest(val status: String, val message: String? = null)
 
 @Serializable
 data class ChannelsResponse(

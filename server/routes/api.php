@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Pms\PmsController;
 use App\Http\Controllers\Api\V1\AppUpdateController;
 use App\Http\Controllers\Api\V1\BootstrapController;
 use App\Http\Controllers\Api\V1\ChannelController;
+use App\Http\Controllers\Api\V1\ChannelReportController;
 use App\Http\Controllers\Api\V1\FacilityController;
 use App\Http\Controllers\Api\V1\HeartbeatController;
 use App\Http\Controllers\Api\V1\ProvisionController;
@@ -20,6 +21,7 @@ Route::prefix('v1')->name('api.v1.')->group(function () {
     Route::middleware(['auth:sanctum', EnsureActiveDevice::class, 'throttle:device-api'])->group(function () {
         Route::get('bootstrap', BootstrapController::class)->name('bootstrap');
         Route::get('channels', ChannelController::class)->name('channels');
+        Route::post('channels/{channel}/report', [ChannelReportController::class, 'store'])->name('channels.report');
         Route::get('facilities', FacilityController::class)->name('facilities');
         Route::post('heartbeat', [HeartbeatController::class, 'beat'])->name('heartbeat');
         Route::post('commands/{command}/ack', [HeartbeatController::class, 'ack'])->name('commands.ack');

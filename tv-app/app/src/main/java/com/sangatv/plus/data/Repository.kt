@@ -139,7 +139,7 @@ class Repository(
             val b = api.bootstrap()
             _bootstrap.value = b
             save(BOOTSTRAP, Bootstrap.serializer(), b)
-            kiosk.configure(b.apps.map { it.packageName })
+            kiosk.configure(b.apps.map { it.packageName } + com.sangatv.plus.device.TvDefaults.hdmiHandlerPackages(appContext))
             com.sangatv.plus.device.ScreenTimeout.apply(appContext, b.config.screensaverMinutes)
 
             refreshChannelsLocked()
@@ -192,6 +192,12 @@ class Repository(
                 delay((_bootstrap.value?.config?.heartbeatSeconds ?: 60).coerceIn(15, 600) * 1000L)
             }
         }
+    }
+
+    /** Fire-and-forget playback problem report (the server de-duplicates). */
+    fun reportChannel(channelId: Long, status: String, message: String?) {
+        if (secure.token == null) return
+        scope.launch { runCatching { api.reportChannel(channelId, com.sangatv.plus.data.model.ChannelReportRequest(status, message?.take(255))) } }
     }
 
     /** Report immediately (e.g. right after the screen turns off/on) instead of waiting for the next tick. */

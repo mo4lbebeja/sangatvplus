@@ -8,6 +8,7 @@ use App\Filament\Resources\Devices\Pages\ManageDevices;
 use App\Filament\Resources\PmsIntegrations\Pages\ManagePmsIntegrations;
 use App\Filament\Resources\PmsIntegrations\PmsIntegrationResource;
 use App\Models\Device;
+use App\Models\Guest;
 use App\Models\HotelProfile;
 use App\Models\PmsIntegration;
 use App\Models\User;
@@ -105,4 +106,14 @@ it('only offers restart to Device Owner TVs and shows command history', function
 
     $html = view('filament.devices.command-history', ['commands' => $plain->commands()->latest('id')->get()])->render();
     expect($html)->toContain('Uji gagal')->toContain('Gagal');
+});
+
+it('shows CMS times in the hotel timezone while storing UTC', function () {
+    asRole(UserRole::Admin);
+    HotelProfile::current()->fill(['timezone' => 'Asia/Jakarta'])->save();
+    $this->travelTo(Carbon\Carbon::parse('2026-11-15 07:00:00', 'UTC'));
+    Guest::factory()->create(['name' => 'Zona Uji', 'checked_in_at' => now()]);
+
+    $this->get('/admin/guests')->assertOk()->assertSee('15 Nov 2026 14:00')->assertDontSee('15 Nov 2026 07:00');
+    expect(DB::table('guests')->where('name', 'Zona Uji')->value('checked_in_at'))->toStartWith('2026-11-15 07:00');
 });

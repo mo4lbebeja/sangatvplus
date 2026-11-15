@@ -3,7 +3,7 @@
         <div class="sg-cmd-row">
             <div class="sg-cmd-main">
                 <b>{{ $c->type->getLabel() }}</b>
-                <small>{{ $c->created_at->timezone(config('app.timezone'))->format('d M Y H:i') }}
+                <small>{{ $c->created_at->timezone(\Filament\Support\Facades\FilamentTimezone::get())->format('d M Y H:i') }}
                     @if ($c->completed_at) · selesai {{ $c->completed_at->diffForHumans($c->created_at, short: true) }} @endif
                 </small>
                 @if ($c->result['error'] ?? null)
