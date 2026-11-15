@@ -516,3 +516,6 @@ html { font-size: 14px; }
 .fi-ta-record:has(.sg-gallery-col) .fi-ta-record-content-ctn { gap: 0 !important; }
 .fi-ta-record:has(.sg-gallery-col) .fi-ta-stack > .fi-ta-col:first-child,
 .fi-ta-record:has(.sg-gallery-col) .fi-ta-record-content > .fi-grid-col { margin: 0 !important; padding: 0 !important; line-height: 0; }
+
+/* Top bar always stays visible while the page scrolls. */
+.fi-topbar-ctn { position: sticky !important; top: 0; z-index: 30; }
