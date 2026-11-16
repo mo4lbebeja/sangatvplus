@@ -20,6 +20,7 @@ use App\Models\Slide;
 use App\Models\User;
 use App\Services\ChannelStats;
 use App\Services\EpgImporter;
+use Carbon\CarbonImmutable;
 use Filament\Actions\Testing\TestAction;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
@@ -194,6 +195,49 @@ it('lets front office create and stop announcements in the CMS', function () {
 
     Livewire::test(ManageAnnouncements::class)->callAction(TestAction::make('stop')->table($a));
     expect($a->fresh()->state())->toBe('off');
+});
+
+it('shows daily announcements only inside their hours (hotel time), every day again', function () {
+    HotelProfile::current()->update(['timezone' => 'Asia/Jakarta']);
+    $room = Room::factory()->create();
+    $a = Announcement::query()->create(['title' => 'Sarapan', 'message' => 'Restoran buka 06:00-10:00', 'style' => 'fullscreen', 'daily_from' => '06:00', 'daily_until' => '10:00']);
+    $night = Announcement::query()->create(['title' => 'Malam', 'message' => 'Kolam tutup', 'daily_from' => '22:00', 'daily_until' => '02:00', 'days' => [5]]); // Friday night only
+
+    // Mon 16 Nov 2026 07:30 WIB = 00:30 UTC
+    $this->travelTo(CarbonImmutable::parse('2026-11-16 07:30', 'Asia/Jakarta'));
+    tvFor($room);
+    $res = collect($this->postJson('/api/v1/heartbeat', [])->json('announcements'));
+    expect($res->pluck('title')->all())->toBe(['Sarapan'])
+        ->and($res[0]['version'])->toEndWith('-20261116')
+        ->and(CarbonImmutable::parse($res[0]['ends_at'])->setTimezone('Asia/Jakarta')->format('H:i'))->toBe('10:00')
+        ->and($a->fresh()->state())->toBe('live')->and($a->dailyLabel())->toBe('06:00–10:00 · setiap hari');
+
+    $this->travelTo(CarbonImmutable::parse('2026-11-16 11:00', 'Asia/Jakarta'));
+    expect($this->postJson('/api/v1/heartbeat', [])->json('announcements'))->toBe([])->and($a->fresh()->state())->toBe('waiting');
+
+    // next day: new version, so a guest who closed it yesterday sees it again
+    $this->travelTo(CarbonImmutable::parse('2026-11-17 06:00', 'Asia/Jakarta'));
+    expect($this->postJson('/api/v1/heartbeat', [])->json('announcements.0.version'))->toEndWith('-20261117');
+
+    // crosses midnight: Fri 20 Nov 23:00 and Sat 01:00 yes, Sat 23:00 no
+    $this->travelTo(CarbonImmutable::parse('2026-11-20 23:00', 'Asia/Jakarta'));
+    expect($night->fresh()->state())->toBe('live');
+    $this->travelTo(CarbonImmutable::parse('2026-11-21 01:00', 'Asia/Jakarta'));
+    expect($night->fresh()->state())->toBe('live');
+    $this->travelTo(CarbonImmutable::parse('2026-11-21 23:00', 'Asia/Jakarta'));
+    expect($night->fresh()->state())->toBe('waiting');
+});
+
+it('creates a daily announcement in the CMS', function () {
+    $this->actingAs(User::factory()->create(['role' => UserRole::FrontOffice]));
+
+    Livewire::test(ManageAnnouncements::class)
+        ->callAction('create', data: ['title' => 'Happy hour', 'message' => 'Bar diskon 50%', 'style' => 'ticker', 'level' => 'info', 'target' => 'all', 'is_active' => true,
+            'daily' => true, 'daily_from' => '17:00', 'daily_until' => '19:00', 'days' => [1, 2, 3, 4, 5, 6, 7]])
+        ->assertHasNoActionErrors();
+
+    $a = Announcement::query()->sole();
+    expect(substr($a->daily_from, 0, 5))->toBe('17:00')->and(substr($a->daily_until, 0, 5))->toBe('19:00')->and($a->days)->toBeNull();
 });
 
 it('saves EPG sources, adult PIN and report e-mails from the hotel profile', function () {

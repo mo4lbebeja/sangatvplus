@@ -43,6 +43,13 @@ class AnnouncementOverlay(private val context: Context, private val repo: Reposi
     private var modal: View? = null
     private var modalKey: String? = null
 
+    /** Same language as the app UI (guest's language from the CMS, Indonesian by default), not the TV's system language. */
+    private fun text(id: Int): String {
+        val lang = if (repo.bootstrap.value?.guest?.language == "en") "en" else "id"
+        val cfg = android.content.res.Configuration(context.resources.configuration).apply { setLocale(java.util.Locale.forLanguageTag(lang)) }
+        return context.createConfigurationContext(cfg).getString(id)
+    }
+
     private val font: Typeface? by lazy { runCatching { ResourcesCompat.getFont(context, R.font.plus_jakarta_sans) }.getOrNull() }
 
     private val loop = object : Runnable {
@@ -104,7 +111,7 @@ class AnnouncementOverlay(private val context: Context, private val repo: Reposi
             setPadding(0, (9 * s).toInt(), 0, (9 * s).toInt())
         }
         val badge = label(
-            context.getString(if (top.isEmergency) R.string.announcement_emergency else R.string.announcement_label),
+            text(if (top.isEmergency) R.string.announcement_emergency else R.string.announcement_label),
             17, 800, onColor(color),
         ).apply {
             background = rounded(color, 10 * s)
@@ -192,14 +199,14 @@ class AnnouncementOverlay(private val context: Context, private val repo: Reposi
         }
         fun gap(v: View, top: Int) = card.addView(v, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = (top * s).toInt() })
 
-        gap(label(context.getString(if (a.isEmergency) R.string.announcement_emergency else R.string.announcement_label), 20, 800, onColor(color)).apply {
+        gap(label(text(if (a.isEmergency) R.string.announcement_emergency else R.string.announcement_label), 20, 800, onColor(color)).apply {
             background = rounded(color, 12 * s)
             setPadding((22 * s).toInt(), (8 * s).toInt(), (22 * s).toInt(), (8 * s).toInt())
         }, 0)
         gap(label(a.title, 46, 800, Color.parseColor("#F2F8FB")).apply { gravity = Gravity.CENTER }, 26)
         gap(label(a.message, 28, 500, Color.parseColor("#CFE0EC")).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.15f) }, 18)
         if (!a.isEmergency) {
-            gap(label("OK  ·  " + context.getString(R.string.announcement_ok), 20, 600, Color.parseColor("#8FB3C9")), 30)
+            gap(label("OK  ·  " + text(R.string.announcement_ok), 20, 600, Color.parseColor("#8FB3C9")), 30)
         }
 
         root.addView(card, FrameLayout.LayoutParams((1200 * s).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER))
