@@ -46,15 +46,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     fun goHome() = open(Screen.Home)
 
-    // ---- Announcements: full-screen ones the guest closed (shown as ticker afterwards) ----
-    private val _dismissed = MutableStateFlow(prefs.getStringSet("dismissed_announcements", emptySet()).orEmpty())
-    val dismissed: StateFlow<Set<String>> = _dismissed.asStateFlow()
+    // ---- Announcements: full-screen ones the guest closed (state lives in the repository, shared with the overlay) ----
+    val dismissed: StateFlow<Set<String>> get() = repo.dismissed
 
-    fun dismissAnnouncement(version: String) {
-        val next = (_dismissed.value + version).toList().takeLast(50).toSet()
-        _dismissed.value = next
-        prefs.edit().putStringSet("dismissed_announcements", next).apply()
-    }
+    fun dismissAnnouncement(version: String) = repo.dismissAnnouncement(version)
 
     // ---- Channels ----
     var lastChannelId: Long

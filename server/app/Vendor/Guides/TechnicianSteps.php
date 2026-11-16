@@ -71,7 +71,7 @@ class TechnicianSteps
                 'intro' => 'Agar SangaTV Plus langsung tampil saat TV dinyalakan (TV tanpa Device Owner). Jalankan berurutan.',
                 'items' => [
                     ['label' => 'Jadikan launcher utama (HOME)', 'cmd' => 'adb {s} shell cmd role add-role-holder android.app.role.HOME {pkg} 0'],
-                    ['label' => 'Izin tampil di atas aplikasi lain (cadangan auto-start)', 'cmd' => 'adb {s} shell appops set {pkg} SYSTEM_ALERT_WINDOW allow'],
+                    ['label' => 'Izin tampil di atas aplikasi lain (auto-start + pengumuman di atas YouTube/Netflix)', 'cmd' => 'adb {s} shell appops set {pkg} SYSTEM_ALERT_WINDOW allow'],
                     ['label' => 'Izin instal update (OTA)', 'cmd' => 'adb {s} shell appops set {pkg} REQUEST_INSTALL_PACKAGES allow'],
                     ['label' => 'Izin notifikasi layanan latar', 'cmd' => 'adb {s} shell pm grant {pkg} android.permission.POST_NOTIFICATIONS'],
                     ['label' => 'Izin ubah pengaturan sistem (durasi screensaver dari CMS → Profil Hotel)', 'cmd' => 'adb {s} shell appops set {pkg} WRITE_SETTINGS allow'],

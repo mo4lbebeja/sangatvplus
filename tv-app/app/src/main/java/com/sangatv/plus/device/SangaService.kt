@@ -38,6 +38,7 @@ class SangaService : Service() {
             TvDefaults.applyVolume(this, (application as SangaApp).repository.bootstrap.value?.config?.startVolume)
         }
         bootGuard()
+        overlay = AnnouncementOverlay(this, (application as SangaApp).repository).also { it.start() }
         registerReceiver(wakeReceiver, IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_SCREEN_OFF)
@@ -91,7 +92,11 @@ class SangaService : Service() {
         })
     }
 
+    /** Announcements on top of YouTube / Netflix / HDMI while SangaTV Plus is not on screen. */
+    private var overlay: AnnouncementOverlay? = null
+
     override fun onDestroy() {
+        overlay?.stop()
         runCatching { unregisterReceiver(wakeReceiver) }
         handler.removeCallbacksAndMessages(null)
         super.onDestroy()

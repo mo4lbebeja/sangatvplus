@@ -179,9 +179,7 @@ private fun Root(vm: AppViewModel) {
         }
     }
 
-    val live = announcements.filter { a -> a.endsAt == null || runCatching { java.time.OffsetDateTime.parse(a.endsAt).toInstant().isAfter(java.time.Instant.now()) }.getOrDefault(true) }
-    val modal = live.firstOrNull { it.style == "fullscreen" && (it.isEmergency || it.version !in dismissed) }
-    val tickers = live.filter { it != modal && (it.style != "fullscreen" || it.version in dismissed) }
+    val (modal, tickers) = com.sangatv.plus.data.model.AnnouncementDto.split(com.sangatv.plus.data.model.AnnouncementDto.live(announcements), dismissed)
 
     Box(
         Modifier.fillMaxSize().background(Sanga.Deepest).onPreviewKeyEvent { e ->

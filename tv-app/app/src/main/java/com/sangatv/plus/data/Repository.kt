@@ -85,6 +85,16 @@ class Repository(
     val favorites: StateFlow<List<Long>> = _favorites.asStateFlow()
 
     private val viewer = appContext.getSharedPreferences("viewer", android.content.Context.MODE_PRIVATE)
+
+    /** Full-screen announcements the guest closed (shown as ticker afterwards). Shared by the app UI and the over-apps overlay. */
+    private val _dismissed = MutableStateFlow(viewer.getStringSet("dismissed_announcements", emptySet()).orEmpty())
+    val dismissed: StateFlow<Set<String>> = _dismissed.asStateFlow()
+
+    fun dismissAnnouncement(version: String) {
+        val next = (_dismissed.value + version).toList().takeLast(50).toSet()
+        _dismissed.value = next
+        viewer.edit().putStringSet("dismissed_announcements", next).apply()
+    }
     private val pendingViews = java.util.concurrent.ConcurrentLinkedQueue<ViewDto>()
     private var lastEpgFetch = 0L
 
@@ -295,7 +305,10 @@ class Repository(
                 maybeRefreshEpg()
                 maybeRefreshSignedUrls()
                 maybeCheckOta()
-                delay((_bootstrap.value?.config?.heartbeatSeconds ?: 60).coerceIn(15, 600) * 1000L)
+                // While an emergency announcement is on, check every 15 s so updates / the end arrive quickly.
+                val emergency = AnnouncementDto.live(_announcements.value).any { it.isEmergency }
+                val every = if (emergency) 15 else (_bootstrap.value?.config?.heartbeatSeconds ?: 60).coerceIn(15, 600)
+                delay(every * 1000L)
             }
         }
     }

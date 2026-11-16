@@ -228,6 +228,19 @@ data class AnnouncementDto(
     @SerialName("ends_at") val endsAt: String? = null,
 ) {
     val isEmergency: Boolean get() = level == "emergency"
+
+    companion object {
+        /** Announcements that have not ended yet. */
+        fun live(list: List<AnnouncementDto>): List<AnnouncementDto> = list.filter { a ->
+            a.endsAt == null || runCatching { java.time.OffsetDateTime.parse(a.endsAt).toInstant().isAfter(java.time.Instant.now()) }.getOrDefault(true)
+        }
+
+        /** The full-screen one to show now (emergencies can't be closed), and the rest as ticker lines. */
+        fun split(live: List<AnnouncementDto>, dismissed: Set<String>): Pair<AnnouncementDto?, List<AnnouncementDto>> {
+            val modal = live.firstOrNull { it.style == "fullscreen" && (it.isEmergency || it.version !in dismissed) }
+            return modal to live.filter { it != modal && (it.style != "fullscreen" || it.version in dismissed) }
+        }
+    }
 }
 
 @Serializable
