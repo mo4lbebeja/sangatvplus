@@ -74,6 +74,7 @@ import com.sangatv.plus.ui.components.SIcon
 import com.sangatv.plus.ui.components.SIcons
 import com.sangatv.plus.ui.components.TimeFmt
 import com.sangatv.plus.ui.components.zoneLabel
+import com.sangatv.plus.ui.theme.HomeLayout
 import com.sangatv.plus.ui.theme.Sanga
 import com.sangatv.plus.ui.theme.body
 import com.sangatv.plus.ui.theme.display
@@ -130,7 +131,13 @@ private fun roomText(data: Bootstrap?): String? = data?.room?.number?.let {
 private fun HotelMark(data: Bootstrap?, color: Color, size: Int, modifier: Modifier = Modifier) {
     val logo = data?.hotel?.logoUrl
     if (logo != null) {
-        AsyncImage(logo, data.hotel.name, modifier = modifier.height((size * 2.6f).toInt().px).widthIn(max = 300.px))
+        val plate = Sanga.theme.layout != HomeLayout.Editorial
+        AsyncImage(
+            logo, data.hotel.name,
+            modifier = modifier
+                .then(if (plate) Modifier.background(Sanga.BarLight, RoundedCornerShape(12.px)).padding(horizontal = 18.px, vertical = 10.px) else Modifier)
+                .height((size * 2.6f).toInt().px).widthIn(max = 300.px),
+        )
     } else {
         Text((data?.hotel?.name ?: "").uppercase(), style = display(size, 0.14f, color), maxLines = 2, modifier = modifier)
     }
@@ -169,7 +176,7 @@ internal fun BoxScope.RoyalHome(ui: HomeUi) {
 
     SlidePhoto(ui.slide?.imageUrl, Modifier.matchParentSize().padding(start = 600.px))
     Box(Modifier.matchParentSize().padding(start = 600.px).background(Brush.horizontalGradient(0f to Sanga.Deepest, 0.42f to Sanga.Deepest.copy(alpha = 0.2f), 1f to Color.Transparent)))
-    Box(Modifier.matchParentSize().padding(start = 600.px).background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Sanga.Deepest.copy(alpha = 0.92f))))
+    Box(Modifier.matchParentSize().padding(start = 600.px).background(Brush.verticalGradient(0f to Sanga.Deepest.copy(alpha = 0.72f), 0.34f to Color.Transparent, 0.5f to Color.Transparent, 1f to Sanga.Deepest.copy(alpha = 0.92f))))
     // Double gold frame around the photo.
     Box(Modifier.matchParentSize().padding(start = 628.px, top = 28.px, end = 28.px, bottom = 28.px).border(1.px, Sanga.Accent.copy(alpha = 0.75f)))
     Box(Modifier.matchParentSize().padding(start = 640.px, top = 40.px, end = 40.px, bottom = 40.px).border(1.px, Sanga.Accent.copy(alpha = 0.3f)))
@@ -201,8 +208,12 @@ internal fun BoxScope.RoyalHome(ui: HomeUi) {
         roomText(ui.data)?.let { Text(it.uppercase(), style = body(20, 700, Sanga.Accent)) }
     }
 
-    Column(Modifier.align(Alignment.TopEnd).padding(top = 76.px, end = 92.px), horizontalAlignment = Alignment.End) {
-        Text(ui.now.format(TimeFmt), style = display(104, 0f))
+    Column(
+        Modifier.align(Alignment.TopEnd).padding(top = 72.px, end = 76.px)
+            .background(Sanga.Deepest.copy(alpha = 0.72f), RoundedCornerShape(8.px)).padding(horizontal = 30.px, vertical = 16.px),
+        horizontalAlignment = Alignment.End,
+    ) {
+        Text(ui.now.format(TimeFmt), style = display(92, 0f))
         Text(ui.now.format(DateFmt), style = body(24, 400, Sanga.Text2))
         temperature(ui.data)?.let { Text("$it · ${ui.data?.weather?.description.orEmpty()}", style = body(22, 500, Sanga.Accent), modifier = Modifier.padding(top = 8.px)) }
     }
@@ -230,7 +241,7 @@ internal fun BoxScope.TropicalHome(ui: HomeUi) {
     var active by remember { mutableIntStateOf(0) }
 
     SlidePhoto(ui.slide?.imageUrl, Modifier.matchParentSize())
-    Box(Modifier.matchParentSize().background(Brush.verticalGradient(0f to Sanga.Deepest.copy(alpha = 0.55f), 0.32f to Color.Transparent, 0.58f to Color.Transparent, 1f to Sanga.Deepest.copy(alpha = 0.95f))))
+    Box(Modifier.matchParentSize().background(Brush.verticalGradient(0f to Sanga.Deepest.copy(alpha = 0.55f), 0.26f to Color.Transparent, 0.42f to Sanga.Deepest.copy(alpha = 0.2f), 0.62f to Sanga.Deepest.copy(alpha = 0.82f), 1f to Sanga.Deepest)))
 
     Row(Modifier.fillMaxWidth().padding(start = 80.px, end = 80.px, top = 60.px), verticalAlignment = Alignment.CenterVertically) {
         HotelMark(ui.data, Sanga.Text, 30)
@@ -249,7 +260,7 @@ internal fun BoxScope.TropicalHome(ui: HomeUi) {
     }
 
     Column(Modifier.align(Alignment.BottomStart).padding(start = 80.px, bottom = 340.px).widthIn(max = 1100.px), verticalArrangement = Arrangement.spacedBy(10.px)) {
-        Greeting(ui.data, Sanga.Accent, Sanga.Text, bigSize = 60)
+        Greeting(ui.data, Sanga.Text, Sanga.Text, bigSize = 60)
         ui.slide?.let { Text(listOfNotNull(it.kicker, it.title).joinToString(" · "), style = body(28, 500, Sanga.Text2), maxLines = 1, overflow = TextOverflow.Ellipsis) }
     }
     roomText(ui.data)?.let {
@@ -290,7 +301,7 @@ internal fun BoxScope.SunsetHome(ui: HomeUi) {
     val current = MENU[target.mod(n)]
 
     SlidePhoto(ui.slide?.imageUrl, Modifier.matchParentSize())
-    Box(Modifier.matchParentSize().background(Brush.verticalGradient(0f to Sanga.Deepest.copy(alpha = 0.72f), 0.42f to Sanga.Deepest.copy(alpha = 0.3f), 0.7f to Sanga.Deepest.copy(alpha = 0.82f), 1f to Sanga.Deepest)))
+    Box(Modifier.matchParentSize().background(Brush.verticalGradient(0f to Sanga.Deepest.copy(alpha = 0.82f), 0.46f to Sanga.Deepest.copy(alpha = 0.62f), 0.68f to Sanga.Deepest.copy(alpha = 0.88f), 1f to Sanga.Deepest)))
 
     Box(Modifier.fillMaxWidth().padding(start = 80.px, end = 80.px, top = 60.px)) {
         HotelMark(ui.data, Sanga.Text, 28, Modifier.align(Alignment.CenterStart))
@@ -319,7 +330,7 @@ internal fun BoxScope.SunsetHome(ui: HomeUi) {
                 when {
                     e.type == KeyEventType.KeyDown && e.key == Key.DirectionLeft -> { target -= 1; true }
                     e.type == KeyEventType.KeyDown && e.key == Key.DirectionRight -> { target += 1; true }
-                    e.type == KeyEventType.KeyUp && (e.key == Key.DirectionCenter || e.key == Key.Enter || e.key == Key.NumPadEnter) -> { ui.onOpen(current.target); true }
+                    e.type == KeyEventType.KeyDown && (e.key == Key.DirectionCenter || e.key == Key.Enter || e.key == Key.NumPadEnter) -> { ui.onOpen(current.target); true }
                     else -> false
                 }
             },
@@ -346,15 +357,14 @@ internal fun BoxScope.SunsetHome(ui: HomeUi) {
         }
         AnimatedContent(target.mod(n), transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(120)) }, modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 44.px), label = "wheel-label") { i ->
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.px)) {
-                Text(stringResource(MENU[i].label), style = body(44, 700), textAlign = TextAlign.Center)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(26.px)) {
+                    SIcon(SIcons.ChevronLeft, Sanga.Accent, 34.px)
+                    Text(stringResource(MENU[i].label), style = body(44, 700), textAlign = TextAlign.Center)
+                    SIcon(SIcons.ChevronRight, Sanga.Accent, 34.px)
+                }
                 Text(stringResource(MENU[i].desc), style = body(24, 400, Sanga.Text2), textAlign = TextAlign.Center)
             }
         }
-    }
-    Row(Modifier.align(Alignment.BottomStart).padding(start = 80.px, bottom = 60.px), horizontalArrangement = Arrangement.spacedBy(10.px), verticalAlignment = Alignment.CenterVertically) {
-        SIcon(SIcons.ChevronLeft, Sanga.Accent, 26.px)
-        Text(stringResource(R.string.menu_choose), style = body(20, 500, Sanga.Text3))
-        SIcon(SIcons.ChevronRight, Sanga.Accent, 26.px)
     }
 }
 
@@ -396,7 +406,7 @@ private fun MosaicTile(ui: HomeUi, i: Int, active: Boolean, width: Dp, height: D
         Box(Modifier.fillMaxSize().clip(shape).background(base).border(if (focused) 4.px else 1.px, if (focused) Sanga.Accent else Sanga.Border2, shape)) {
             if (photo) {
                 SlidePhoto(ui.slide?.imageUrl, Modifier.matchParentSize())
-                Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.3f to Color.Transparent, 1f to Sanga.Deepest.copy(alpha = 0.92f))))
+                Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.15f to Color.Transparent, 0.62f to Sanga.Deepest.copy(alpha = 0.72f), 1f to Sanga.Deepest.copy(alpha = 0.96f))))
             }
             // Diamond ornament in the corner.
             Box(Modifier.align(Alignment.TopEnd).padding(22.px).size(20.px).graphicsLayer { rotationZ = 45f }.background(if (focused) Sanga.Accent else Sanga.Border2))
