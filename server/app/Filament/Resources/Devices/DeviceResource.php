@@ -69,6 +69,7 @@ class DeviceResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('room.number')->label('Kamar')->sortable()->searchable()->icon(Heroicon::OutlinedHomeModern)->iconColor('primary')->weight('bold'),
+                TextColumn::make('local_ip')->label('IP lokal')->searchable()->copyable()->copyMessage('IP disalin')->icon(Heroicon::OutlinedGlobeAlt)->placeholder('Menunggu update TV')->fontFamily('mono'),
                 TextColumn::make('model')->label('Model')->searchable()->toggleable()->icon(Heroicon::OutlinedTv),
                 TextColumn::make('android_version')->label('Android')->placeholder('—')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('device_uid')->label('ID perangkat')->limit(14)->copyable()->toggleable(isToggledHiddenByDefault: true),
@@ -119,7 +120,7 @@ class DeviceResource extends Resource
                     ->color(fn (Device $r) => $r->availableRelease() ? 'warning' : 'success')
                     ->description(fn (Device $r) => static::updateNote($r)),
                 TextColumn::make('last_seen_at')->label('Terakhir aktif')->since()->sortable()->icon(Heroicon::OutlinedClock)->color('gray'),
-                TextColumn::make('last_ip')->label('IP')->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('last_ip')->label('IP publik')->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('last_seen_at', 'desc')
             ->poll('30s')

@@ -37,7 +37,13 @@ class HeartbeatController extends Controller
             'screen_on' => ['nullable', 'boolean'],
             'service_released' => ['nullable', 'boolean'],
             'app_package' => ['nullable', 'string', 'max:100'],
+            'local_ip' => ['nullable', 'string', 'max:45'],
         ]);
+
+        // Informational only: a malformed address is dropped, it must never fail the heartbeat.
+        if (filter_var($data['local_ip'] ?? null, FILTER_VALIDATE_IP) === false) {
+            unset($data['local_ip']);
+        }
 
         if (array_key_exists('screen_on', $data) && $data['screen_on'] !== null && $data['screen_on'] !== $device->screen_on) {
             $device->screen_changed_at = now();

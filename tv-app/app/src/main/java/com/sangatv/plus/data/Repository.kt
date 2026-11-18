@@ -325,6 +325,15 @@ class Repository(
         scope.launch { beat() }
     }
 
+    /** IPv4 address of the active network (Wi-Fi or Ethernet), null while disconnected. */
+    private fun localIp(): String? = runCatching {
+        val cm = appContext.getSystemService(android.net.ConnectivityManager::class.java)
+        cm.getLinkProperties(cm.activeNetwork)?.linkAddresses.orEmpty()
+            .map { it.address }
+            .firstOrNull { it is java.net.Inet4Address && !it.isLoopbackAddress }
+            ?.hostAddress
+    }.getOrNull()
+
     private suspend fun beat() {
         try {
             val res = api.heartbeat(
@@ -340,6 +349,7 @@ class Repository(
                     screenOn = appContext.getSystemService(android.os.PowerManager::class.java)?.isInteractive ?: true,
                     serviceReleased = ServiceState.isReleased,
                     appPackage = BuildConfig.APPLICATION_ID,
+                    localIp = localIp(),
                 ),
             )
             _online.value = true

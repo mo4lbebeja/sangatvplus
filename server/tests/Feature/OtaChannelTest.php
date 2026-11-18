@@ -81,3 +81,14 @@ it('updates all outdated TVs of the right package from the TV list', function ()
 
     expect($legacy->commands()->count())->toBe(1)->and($otherPackage->commands()->count())->toBe(0);
 });
+
+it('stores the local IP the TV reports and ignores a malformed one', function () {
+    $device = Device::factory()->create();
+    $this->withToken($device->createToken('tv', ['tv'])->plainTextToken);
+
+    $this->postJson('/api/v1/heartbeat', ['local_ip' => '10.10.80.28'])->assertOk();
+    expect($device->fresh()->local_ip)->toBe('10.10.80.28');
+
+    $this->postJson('/api/v1/heartbeat', ['local_ip' => 'bukan-ip'])->assertOk();
+    expect($device->fresh()->local_ip)->toBe('10.10.80.28');
+});

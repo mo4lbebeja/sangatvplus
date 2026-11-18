@@ -20,7 +20,7 @@ class Device extends Model
     protected $guarded = ['id'];
 
     /** Heartbeat fields change constantly; don't flood the audit log. */
-    protected array $auditExclude = ['last_seen_at', 'last_ip'];
+    protected array $auditExclude = ['last_seen_at', 'last_ip', 'local_ip'];
 
     protected function casts(): array
     {

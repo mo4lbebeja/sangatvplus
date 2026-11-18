@@ -197,6 +197,8 @@ data class HeartbeatRequest(
     @SerialName("service_released") val serviceReleased: Boolean,
     /** Installed package (staging/release): the server only offers OTA builds of the same package. */
     @SerialName("app_package") val appPackage: String,
+    /** Address on the hotel network, shown in CMS → TV Terdaftar. */
+    @SerialName("local_ip") val localIp: String? = null,
 )
 
 @Serializable
