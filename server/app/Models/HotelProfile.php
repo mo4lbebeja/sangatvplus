@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\Auditable;
 use App\Tenancy\HotelManager;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 
 class HotelProfile extends Model
@@ -103,11 +104,15 @@ class HotelProfile extends Model
     }
 
     /** Payload sent to TVs in bootstrap and every heartbeat. */
+    /** End of the service period: the central rental record (multi-hotel), else this hotel's own date. */
+    public function serviceExpiry(): ?CarbonInterface
+    {
+        return app(HotelManager::class)->current()?->service_expires_at ?? $this->service_expires_at;
+    }
+
     public function servicePayload(): array
     {
-        $expires = app(HotelManager::class)->current()?->service_expires_at ?? $this->service_expires_at;
-
-        return ['status' => $this->serviceStatus(), 'expires_at' => $expires?->toIso8601String()];
+        return ['status' => $this->serviceStatus(), 'expires_at' => $this->serviceExpiry()?->toIso8601String()];
     }
 
     /** XMLTV sources, one per line. */

@@ -605,3 +605,12 @@ it('exports console lists to CSV with their related data', function () {
 
     Livewire\Livewire::test(ManageHotels::class)->callAction('csv')->assertFileDownloaded();
 });
+
+it('opens the CMS of a hotel whose rental is about to end', function () {
+    $this->alpha->update(['service_expires_at' => now('Asia/Jakarta')->addDays(5)]);
+    $user = $this->tenancy->run($this->alpha, fn () => User::query()->first());
+
+    $this->tenancy->initialize($this->alpha->fresh());
+    $this->actingAs($user)->withSession(['hotel_id' => $this->alpha->id])->get('/admin')
+        ->assertOk()->assertSee('Layanan SangaTV Plus segera berakhir pada');
+});

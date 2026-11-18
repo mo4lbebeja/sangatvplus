@@ -34,7 +34,7 @@ class HotelDataExport
         $hotel = HotelProfile::current();
         $zip->addFromString('hotel.csv', $this->csv(['nama', 'tagline', 'alamat', 'telepon', 'ext', 'ssid_wifi', 'check_in', 'check_out', 'zona_waktu', 'layanan_sampai'], [[
             $hotel->name, $hotel->tagline, $hotel->address, $hotel->reception_phone, $hotel->reception_extension, $hotel->wifi_ssid,
-            $hotel->check_in_time, $hotel->check_out_time, $hotel->timezone, $hotel->service_expires_at?->toDateString(),
+            $hotel->check_in_time, $hotel->check_out_time, $hotel->timezone, $hotel->serviceExpiry()?->toDateString(),
         ]]));
 
         $zip->addFromString('kamar.csv', $this->csv(['nomor', 'lantai', 'tipe', 'aktif'],

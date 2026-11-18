@@ -142,7 +142,7 @@ class HotelProfilePage extends Page
     public function getSubheading(): ?string
     {
         $h = HotelProfile::current();
-        $until = $h->service_expires_at?->setTimezone($h->timezone ?: 'Asia/Jakarta')->translatedFormat('d F Y');
+        $until = $h->serviceExpiry()?->copy()->setTimezone($h->timezone ?: 'Asia/Jakarta')->translatedFormat('d F Y');
 
         return match ($h->serviceStatus()) {
             'released' => 'Layanan dilepas: TV sudah kembali ke layar utama bawaan.',
