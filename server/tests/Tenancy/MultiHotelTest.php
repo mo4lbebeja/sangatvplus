@@ -612,5 +612,5 @@ it('opens the CMS of a hotel whose rental is about to end', function () {
 
     $this->tenancy->initialize($this->alpha->fresh());
     $this->actingAs($user)->withSession(['hotel_id' => $this->alpha->id])->get('/admin')
-        ->assertOk()->assertSee('Layanan SangaTV Plus segera berakhir pada');
+        ->assertOk()->assertSee('Layanan SangaTV Plus berakhir');
 });

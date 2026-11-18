@@ -11,7 +11,7 @@
                 <strong>Layanan SangaTV Plus dilepas.</strong>
                 Semua TV sudah kembali ke layar utama bawaan TV. Data masih bisa diekspor di Profil Hotel.
             @else
-                <strong>Layanan SangaTV Plus segera berakhir{{ $until ? ' pada '.$until->translatedFormat('d F Y') : '' }}</strong>{{ $until ? ' ('.$until->diffForHumans().')' : '' }}. Setelah itu TV kembali ke layar utama bawaan TV. Hubungi Sijalucom untuk perpanjangan.
+                <strong>Layanan SangaTV Plus {{ $until ? 'berakhir '.$until->translatedFormat('d F Y') : 'segera berakhir' }}</strong>{{ $until ? ' ('.max(0, (int) ceil(now()->diffInDays($until))).' hari lagi)' : '' }}. Setelah itu TV kembali ke layar utama bawaan TV. Hubungi Sijalucom untuk perpanjangan.
             @endif
         </div>
     </div>
