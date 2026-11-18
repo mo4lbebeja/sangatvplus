@@ -111,4 +111,11 @@
     <string name="register_tv">Daftarkan TV</string>
     <string name="uninstall_app">Hapus SangaTV Plus</string>
     <string name="use_without">Gunakan TV tanpa SangaTV Plus</string>
+    <string name="menu_desc_tv">Siaran langsung dan jadwal acara</string>
+    <string name="menu_desc_info">Tentang hotel, Wi-Fi, dan kontak</string>
+    <string name="menu_desc_room_service">Menu makanan dan minuman ke kamar</string>
+    <string name="menu_desc_facilities">Kolam, kebugaran, dan ruang pertemuan</string>
+    <string name="menu_desc_gallery">Suasana hotel dalam foto</string>
+    <string name="menu_desc_apps">YouTube, Netflix, dan aplikasi lainnya</string>
+    <string name="menu_choose">Pilih menu</string>
 </resources>

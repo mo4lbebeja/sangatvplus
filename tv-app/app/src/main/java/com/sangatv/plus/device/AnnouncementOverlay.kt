@@ -21,6 +21,7 @@ import android.view.animation.LinearInterpolator
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.compose.ui.graphics.toArgb
 import androidx.core.content.res.ResourcesCompat
 import com.sangatv.plus.R
 import com.sangatv.plus.data.Repository
@@ -49,6 +50,9 @@ class AnnouncementOverlay(private val context: Context, private val repo: Reposi
         val cfg = android.content.res.Configuration(context.resources.configuration).apply { setLocale(java.util.Locale.forLanguageTag(lang)) }
         return context.createConfigurationContext(cfg).getString(id)
     }
+
+    /** The hotel's TV theme (the overlay runs without the app UI, so it reads the synced bootstrap). */
+    private fun palette() = com.sangatv.plus.ui.theme.TvThemes.of(repo.bootstrap.value?.config?.theme).palette
 
     private val font: Typeface? by lazy { runCatching { ResourcesCompat.getFont(context, R.font.plus_jakarta_sans) }.getOrNull() }
 
@@ -105,7 +109,7 @@ class AnnouncementOverlay(private val context: Context, private val repo: Reposi
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             background = GradientDrawable().apply {
-                setColor(Color.argb(235, 3, 18, 32))
+                setColor(palette().deepest.copy(alpha = 0.92f).toArgb())
                 setStroke((1 * s).toInt().coerceAtLeast(1), (color and 0x00FFFFFF) or 0x99000000.toInt())
             }
             setPadding(0, (9 * s).toInt(), 0, (9 * s).toInt())
@@ -123,7 +127,7 @@ class AnnouncementOverlay(private val context: Context, private val repo: Reposi
         })
 
         val clip = FrameLayout(context)
-        val running = label(text, 24, 600, Color.parseColor("#F2F8FB")).apply { maxLines = 1; isSingleLine = true }
+        val running = label(text, 24, 600, palette().text.toArgb()).apply { maxLines = 1; isSingleLine = true }
         val textW = running.paint.measureText(text) + 8 * s
         clip.addView(running, FrameLayout.LayoutParams(textW.toInt(), ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER_VERTICAL or Gravity.START))
         bar.addView(clip, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { marginEnd = (40 * s).toInt() })
@@ -182,7 +186,7 @@ class AnnouncementOverlay(private val context: Context, private val repo: Reposi
                 return true // nothing reaches the app underneath while the announcement is up
             }
         }.apply {
-            setBackgroundColor(Color.argb(230, 3, 18, 32))
+            setBackgroundColor(palette().deepest.copy(alpha = 0.9f).toArgb())
             isFocusable = true
             isFocusableInTouchMode = true
         }
@@ -191,7 +195,7 @@ class AnnouncementOverlay(private val context: Context, private val repo: Reposi
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
             background = GradientDrawable().apply {
-                setColor(Color.parseColor("#0B2338"))
+                setColor(palette().card.toArgb())
                 cornerRadius = 32 * s
                 setStroke((3 * s).toInt().coerceAtLeast(1), color)
             }
@@ -203,10 +207,10 @@ class AnnouncementOverlay(private val context: Context, private val repo: Reposi
             background = rounded(color, 12 * s)
             setPadding((22 * s).toInt(), (8 * s).toInt(), (22 * s).toInt(), (8 * s).toInt())
         }, 0)
-        gap(label(a.title, 46, 800, Color.parseColor("#F2F8FB")).apply { gravity = Gravity.CENTER }, 26)
-        gap(label(a.message, 28, 500, Color.parseColor("#CFE0EC")).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.15f) }, 18)
+        gap(label(a.title, 46, 800, palette().text.toArgb()).apply { gravity = Gravity.CENTER }, 26)
+        gap(label(a.message, 28, 500, palette().text2.toArgb()).apply { gravity = Gravity.CENTER; setLineSpacing(0f, 1.15f) }, 18)
         if (!a.isEmergency) {
-            gap(label("OK  ·  " + text(R.string.announcement_ok), 20, 600, Color.parseColor("#8FB3C9")), 30)
+            gap(label(text(R.string.announcement_ok), 20, 600, palette().text3.toArgb()), 30)
         }
 
         root.addView(card, FrameLayout.LayoutParams((1200 * s).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER))
@@ -241,8 +245,8 @@ class AnnouncementOverlay(private val context: Context, private val repo: Reposi
     private fun levelColor(a: AnnouncementDto): Int = when (a.level) {
         "emergency" -> Color.parseColor("#C62828")
         "warning" -> Color.parseColor("#B7791F")
-        else -> Color.parseColor("#38C6D9")
+        else -> palette().accent.toArgb()
     }
 
-    private fun onColor(color: Int): Int = if (color == Color.parseColor("#38C6D9")) Color.parseColor("#04232D") else Color.WHITE
+    private fun onColor(color: Int): Int = if (color == palette().accent.toArgb()) palette().onAccent.toArgb() else Color.WHITE
 }

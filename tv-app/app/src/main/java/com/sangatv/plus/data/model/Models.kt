@@ -113,6 +113,8 @@ data class ClientConfig(
     /** Channel shown first when the TV menu opens after power-on; null = last watched. */
     @SerialName("start_channel_number") val startChannelNumber: Int? = null,
     @SerialName("show_hdmi_inputs") val showHdmiInputs: Boolean = true,
+    /** TV theme chosen in CMS → Profil Hotel → Tema TV. */
+    val theme: String = "ocean",
 )
 
 @Serializable

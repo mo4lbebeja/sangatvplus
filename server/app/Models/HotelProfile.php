@@ -12,6 +12,16 @@ class HotelProfile extends Model
     /** Idle time before the TV screensaver (minutes). 0 = keep each TV's own setting. */
     public const SCREENSAVER_OPTIONS = [5 => '5 menit', 10 => '10 menit', 15 => '15 menit', 30 => '30 menit', 60 => '1 jam', 120 => '2 jam', 0 => 'Ikuti pengaturan TV'];
 
+    /** TV designs (keys match TvThemes in the TV app). */
+    public const TV_THEMES = [
+        'ocean' => ['name' => 'Samudra', 'style' => 'Sinematik', 'desc' => 'Foto penuh dengan bilah menu di bawah. Desain bawaan.', 'colors' => ['#061A2B', '#38C6D9', '#F2F8FB']],
+        'royal' => ['name' => 'Emas Klasik', 'style' => 'Grand Lobby', 'desc' => 'Menu samping berlapis emas, judul besar mengikuti pilihan tamu.', 'colors' => ['#0B0906', '#D9B56A', '#F7F1E3']],
+        'tropical' => ['name' => 'Tropis', 'style' => 'Kartu Daun', 'desc' => 'Kartu berbentuk daun yang melebar saat dipilih remote.', 'colors' => ['#0A1F18', '#8FD694', '#F3F8EF']],
+        'sunset' => ['name' => 'Senja', 'style' => 'Roda Panorama', 'desc' => 'Jam besar di tengah, menu berputar seperti roda di cakrawala.', 'colors' => ['#221110', '#F2A65A', '#FBF2E8']],
+        'heritage' => ['name' => 'Nusantara', 'style' => 'Mosaik Batik', 'desc' => 'Ubin mosaik di atas motif kawung yang ikut bergerak.', 'colors' => ['#1C1614', '#C98A3D', '#2C2E5E']],
+        'editorial' => ['name' => 'Terang', 'style' => 'Majalah', 'desc' => 'Halaman terang bergaya majalah dengan judul raksasa.', 'colors' => ['#FAF8F4', '#FF6B4A', '#1A1C1F']],
+    ];
+
     use Auditable;
 
     protected $guarded = ['id'];

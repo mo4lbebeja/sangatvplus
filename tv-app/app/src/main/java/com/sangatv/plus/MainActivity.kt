@@ -257,7 +257,7 @@ private fun Root(vm: AppViewModel) {
 
         if (screen != Screen.Technician && screen !is Screen.Sleep) {
             // Home: sit on top of the bottom menu bar (150 px) instead of covering it.
-            AnnouncementTicker(tickers, Modifier.align(Alignment.BottomCenter).padding(bottom = if (screen == Screen.Home) 150.px else 0.px))
+            AnnouncementTicker(tickers, Modifier.align(Alignment.BottomCenter).padding(bottom = if (screen == Screen.Home) com.sangatv.plus.ui.theme.Sanga.theme.homeInset.px else 0.px))
             modal?.let { AnnouncementModal(it) }
             if (sleepSecs >= 0) SleepWarning(sleepSecs, Modifier.align(Alignment.Center))
         }

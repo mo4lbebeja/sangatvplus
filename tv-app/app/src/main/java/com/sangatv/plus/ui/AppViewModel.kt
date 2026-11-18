@@ -40,6 +40,12 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private val prefs = app.getSharedPreferences("viewer", Context.MODE_PRIVATE)
 
+    init {
+        // Before the first frame (cached bootstrap), then whenever the hotel picks another theme.
+        com.sangatv.plus.ui.theme.Sanga.use(repo.bootstrap.value?.config?.theme)
+        viewModelScope.launch { repo.bootstrap.collect { com.sangatv.plus.ui.theme.Sanga.use(it?.config?.theme) } }
+    }
+
     fun open(s: Screen) {
         _screen.value = s
     }

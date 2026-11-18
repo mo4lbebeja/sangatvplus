@@ -62,6 +62,7 @@ import com.sangatv.plus.ui.components.ShortDateFmt
 import com.sangatv.plus.ui.components.TimeFmt
 import com.sangatv.plus.ui.components.rememberNow
 import com.sangatv.plus.ui.components.zoneLabel
+import com.sangatv.plus.ui.theme.HomeLayout
 import com.sangatv.plus.ui.theme.Sanga
 import com.sangatv.plus.ui.theme.body
 import com.sangatv.plus.ui.theme.display
@@ -120,6 +121,19 @@ fun HomeScreen(data: Bootstrap?, online: Boolean, onOpen: (Screen) -> Unit) {
             },
     ) {
         HomeMusicPlayer(data?.homeMusic)
+        val layout = Sanga.theme.layout
+        if (layout != HomeLayout.Ocean) {
+            val ui = HomeUi(data, now, slides, slide, index, onOpen)
+            when (layout) {
+                HomeLayout.Royal -> RoyalHome(ui)
+                HomeLayout.Tropical -> TropicalHome(ui)
+                HomeLayout.Sunset -> SunsetHome(ui)
+                HomeLayout.Heritage -> HeritageHome(ui)
+                else -> EditorialHome(ui)
+            }
+            if (!online) OfflineBadge(Modifier.align(Alignment.TopCenter).padding(top = 28.px))
+            return@Box
+        }
         SlideBackground(slide)
 
         // Hotel name
@@ -185,11 +199,11 @@ private fun BoxScope.SlideBackground(slide: SlideDto?) {
     Box(
         Modifier.matchParentSize().background(
             Brush.horizontalGradient(
-                0f to Color(0xE0031220), 0.4f to Color(0x8C031220), 0.75f to Color(0x1A031220), 1f to Color(0x1A031220),
+                0f to Sanga.Deepest.copy(alpha = 0.88f), 0.4f to Sanga.Deepest.copy(alpha = 0.55f), 0.75f to Sanga.Deepest.copy(alpha = 0.1f), 1f to Sanga.Deepest.copy(alpha = 0.1f),
             ),
         ),
     )
-    Box(Modifier.fillMaxWidth().height(260.px).background(Brush.verticalGradient(listOf(Color(0x99031220), Color(0x00031220)))))
+    Box(Modifier.fillMaxWidth().height(260.px).background(Brush.verticalGradient(listOf(Sanga.Deepest.copy(alpha = 0.6f), Color.Transparent))))
 }
 
 @Composable

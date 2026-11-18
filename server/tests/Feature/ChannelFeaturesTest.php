@@ -251,6 +251,18 @@ it('keeps every day ticked when editing a daily announcement', function () {
     expect($a->fresh()->title)->toBe('Sarapan pagi')->and($a->fresh()->days)->toBeNull()->and(substr($a->fresh()->daily_from, 0, 5))->toBe('06:00');
 });
 
+it('lets the hotel choose a TV theme and sends it to the TVs', function () {
+    $this->actingAs(User::factory()->create(['role' => UserRole::Admin]));
+
+    Livewire::test(HotelProfilePage::class)->assertSee('Emas Klasik')
+        ->fillForm(['tv_theme' => 'tidak-ada'])->call('save')->assertHasFormErrors(['tv_theme']);
+    Livewire::test(HotelProfilePage::class)->fillForm(['tv_theme' => 'heritage'])->call('save')->assertHasNoFormErrors();
+    expect(HotelProfile::current()->tv_theme)->toBe('heritage');
+
+    tvFor(Room::factory()->create());
+    $this->getJson('/api/v1/bootstrap')->assertOk()->assertJsonPath('config.theme', 'heritage');
+});
+
 it('saves EPG sources, adult PIN and report e-mails from the hotel profile', function () {
     $this->actingAs(User::factory()->create(['role' => UserRole::Admin]));
 

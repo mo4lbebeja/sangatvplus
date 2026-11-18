@@ -86,6 +86,7 @@ class BootstrapController extends Controller
                 'start_volume' => $hotel->tv_start_volume,
                 'start_channel_number' => $hotel->tv_start_channel_id ? Channel::query()->whereKey($hotel->tv_start_channel_id)->where('is_active', true)->value('number') : null,
                 'show_hdmi_inputs' => $hotel->show_hdmi_inputs,
+                'theme' => $hotel->tv_theme ?: 'ocean',
             ],
         ]);
     }

@@ -4,9 +4,11 @@ namespace App\Filament\Pages;
 
 use App\Models\Channel;
 use App\Models\HotelProfile;
+use App\Models\Slide;
 use App\Models\User;
 use App\Services\WeatherService;
 use App\Support\Audit;
+use App\Support\MediaUrl;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
@@ -14,6 +16,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\ViewField;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\Actions;
@@ -59,7 +62,7 @@ class HotelProfilePage extends Page
         // wifi_password is a hidden attribute; fill it explicitly. The PIN is write-only.
         $this->form->fill([
             ...$hotel->only(['name', 'tagline', 'about', 'logo_path', 'address', 'reception_phone', 'reception_extension',
-                'wifi_ssid', 'check_in_time', 'check_out_time', 'check_out_info', 'timezone', 'latitude', 'longitude', 'screensaver_minutes', 'tv_start_volume', 'tv_start_channel_id', 'show_hdmi_inputs', 'epg_urls', 'report_emails', 'bmkg_adm4']),
+                'wifi_ssid', 'check_in_time', 'check_out_time', 'check_out_info', 'timezone', 'latitude', 'longitude', 'screensaver_minutes', 'tv_start_volume', 'tv_start_channel_id', 'show_hdmi_inputs', 'epg_urls', 'report_emails', 'bmkg_adm4', 'tv_theme']),
             'wifi_password' => $hotel->wifi_password,
         ]);
     }
@@ -69,6 +72,15 @@ class HotelProfilePage extends Page
         return $schema
             ->statePath('data')
             ->components([
+                Section::make('Tema TV')->icon(Heroicon::OutlinedSwatch)->description('Pilih desain layar TV. Coba langsung dengan tombol panah, lalu tekan Simpan perubahan.')->schema([
+                    ViewField::make('tv_theme')->hiddenLabel()->view('filament.forms.tv-theme-picker')->required()
+                        ->in(array_keys(HotelProfile::TV_THEMES))
+                        ->viewData(fn () => [
+                            'themes' => HotelProfile::TV_THEMES,
+                            'hotelName' => HotelProfile::current()->name,
+                            'photo' => MediaUrl::of(Slide::query()->visible()->orderBy('sort_order')->value('image_path')),
+                        ]),
+                ]),
                 Section::make('Identitas')->icon(Heroicon::OutlinedBuildingOffice2)->description('Nama dan logo tampil di Beranda TV.')->columns(2)->schema([
                     TextInput::make('name')->label('Nama hotel')->required()->maxLength(80),
                     TextInput::make('tagline')->maxLength(120),
@@ -243,6 +255,10 @@ class HotelProfilePage extends Page
             Notification::make()->title($loc ? "Cuaca BMKG: {$loc['desa']}, {$loc['kecamatan']}, {$loc['kotkab']}" : 'Kode wilayah BMKG tidak ditemukan')
                 ->body($loc ? 'TV menampilkan cuaca lokasi ini dalam ±1 menit.' : 'Periksa kembali kodenya di kodewilayah.id.')
                 ->{$loc ? 'success' : 'warning'}()->send();
+        }
+
+        if ($hotel->wasChanged('tv_theme')) {
+            Notification::make()->title('Tema TV: '.HotelProfile::TV_THEMES[$hotel->tv_theme]['name'])->body('Semua TV berganti tema dalam ±1 menit (aplikasi TV versi 0.6.0 atau lebih baru).')->success()->send();
         }
 
         Notification::make()->title('Profil hotel disimpan')->success()->send();

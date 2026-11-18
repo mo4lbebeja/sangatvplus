@@ -111,4 +111,11 @@
     <string name="register_tv">Register TV</string>
     <string name="uninstall_app">Remove SangaTV Plus</string>
     <string name="use_without">Use the TV without SangaTV Plus</string>
+    <string name="menu_desc_tv">Live channels and TV guide</string>
+    <string name="menu_desc_info">About the hotel, Wi-Fi, and contacts</string>
+    <string name="menu_desc_room_service">Food and drinks to your room</string>
+    <string name="menu_desc_facilities">Pool, fitness, and meeting rooms</string>
+    <string name="menu_desc_gallery">The hotel in pictures</string>
+    <string name="menu_desc_apps">YouTube, Netflix, and more apps</string>
+    <string name="menu_choose">Choose a menu</string>
 </resources>
