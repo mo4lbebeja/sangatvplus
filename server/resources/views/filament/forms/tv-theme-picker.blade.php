@@ -36,11 +36,18 @@
 /* Sunset */
 .s-w{position:absolute;left:50%;top:0;width:7.8cqw;height:7.8cqw;margin-left:-3.9cqw;border-radius:50%;display:grid;place-items:center;font-size:3.5cqw;border:1px solid rgba(242,166,90,.7);background:#3b201b;color:#f2a65a;transition:transform .34s ease,opacity .34s ease,background .2s}.s-w.on{background:#f2a65a;color:#2b1405}
 /* Heritage */
-.h-gate{clip-path:polygon(0 100%,0 15%,2.5% 15%,2.5% 10%,5% 10%,5% 5%,7.5% 5%,7.5% 0,92.5% 0,92.5% 5%,95% 5%,95% 10%,97.5% 10%,97.5% 15%,100% 15%,100% 100%);background:#e0a93f}
-.h-tile{flex:1;height:14.6cqw;padding-top:3.2cqw;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8cqw;font-size:1.55cqw;background:#262a63;color:#f6eee2;clip-path:polygon(0 100%,0 21%,7% 21%,7% 14%,14% 14%,14% 7%,21% 7%,21% 0,79% 0,79% 7%,86% 7%,86% 14%,93% 14%,93% 21%,100% 21%,100% 100%)}.h-tile svg{font-size:3.3cqw;color:#e0a93f}
-.h-tile.on{background:#e0a93f;color:#241407;transform:translateY(-1.2cqw)}.h-tile.on svg{color:#241407}
+.n-zoom{animation:n-zoom 18s linear infinite alternate}@keyframes n-zoom{to{transform:scale(1.1)}}
+.n-drift{animation:n-drift 16s linear infinite}@keyframes n-drift{to{transform:translateX(-62px)}}
+.n-spin{position:absolute;left:50%;bottom:-18%;width:118%;margin-left:-59%;animation:n-spin 120s linear infinite}@keyframes n-spin{to{transform:rotate(360deg)}}
+.n-tumpal{position:absolute;top:0;bottom:0;left:29.200%;width:2.400%;background:conic-gradient(from 56deg at 0 50%,#e0a93f 0 68deg,transparent 0) 0 0/100% 2.400cqw,#7a2e1d;clip-path:none}
+.n-line{height:.22cqw;width:13.500cqw;margin-top:.7cqw;background:#e0a93f;transform-origin:0 50%;animation:n-line .42s ease-out}@keyframes n-line{from{transform:scaleX(0)}}
+.n-progress{position:absolute;left:0;top:0;height:.22cqw;width:100%;background:#e0a93f;transform-origin:0 50%;animation:n-progress 6s linear infinite}@keyframes n-progress{from{transform:scaleX(0)}}
+.n-plaque{position:absolute;left:0;bottom:0;width:16.666%;height:92%;background:#e0a93f;overflow:hidden;transition:left .28s ease;clip-path:polygon(0 100%,0 21%,7% 21%,7% 14%,14% 14%,14% 7%,21% 7%,21% 0,79% 0,79% 7%,86% 7%,86% 14%,93% 14%,93% 21%,100% 21%,100% 100%)}
+.n-plaque i{position:absolute;inset:0 auto 0 0;width:40%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);animation:n-shine 2.600s linear infinite}@keyframes n-shine{from{transform:translateX(-120%)}to{transform:translateX(280%)}}
+.n-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5cqw;padding-top:1cqw;font-size:1.050cqw;font-weight:700;color:#f6eee2;white-space:nowrap}.n-item svg{font-size:2.700cqw;color:#e0a93f}.n-item.on,.n-item.on svg{color:#241407}
+@media (prefers-reduced-motion:reduce){.n-zoom,.n-drift,.n-spin,.n-progress,.n-plaque i{animation:none}}
 /* Daerah */
-.tvt-i svg.s-ang{display:block;width:72%;height:auto;margin:0 auto .4cqw;color:#c39a5f;transform-origin:50% 100%}.tvt-i svg.s-ang.on{color:#e2b04a;animation:tvt-shake .26s linear infinite}
+.tvt-i svg.s-ang{display:block;width:40%;height:auto;margin:0 auto .4cqw;color:#c39a5f;transform-origin:50% 100%}.tvt-i svg.s-ang.on{color:#e2b04a;animation:tvt-shake .26s linear infinite}
 @keyframes tvt-shake{0%,100%{transform:rotate(-3.5deg)}50%{transform:rotate(3.5deg)}}
 .s-base{display:flex;align-items:center;justify-content:center;gap:.5cqw;height:3.4cqw;border-radius:.6cqw;background:rgba(26,16,9,.86);border:1px solid rgba(226,176,74,.55);font-size:1cqw;font-weight:800;white-space:nowrap}.s-base svg{font-size:1.5cqw;color:#e2b04a}.s-base.on{background:#e2b04a;color:#2a1705}.s-base.on svg{color:#2a1705}
 @media (prefers-reduced-motion:reduce){.tvt-i svg.s-ang.on{animation:none}}
@@ -118,16 +125,24 @@
             </div>
 
             {{-- Nusantara --}}
-            <div class="tvt-l" x-show="theme === 'heritage'" x-cloak style="background-color:#171a45">
-                <svg class="tvt-l" width="100%" height="100%" aria-hidden="true"><defs><pattern id="tvt-kawung" width="62" height="62" patternUnits="userSpaceOnUse" :patternTransform="`translate(${active * 11} 0)`"><g fill="none" stroke="#e0a93f" stroke-opacity=".24" stroke-width="1.2"><circle cx="15.5" cy="31" r="15.5"/><circle cx="46.5" cy="31" r="15.5"/><circle cx="31" cy="15.5" r="15.5"/><circle cx="31" cy="46.5" r="15.5"/></g></pattern></defs><rect width="100%" height="100%" fill="url(#tvt-kawung)"/></svg>
-                <div class="tvt-l" style="background:linear-gradient(90deg,rgba(13,14,43,.9),rgba(13,14,43,.2) 32%,transparent)"></div>
-                <div style="position:absolute;left:4%;top:6%;width:24%"><div class="tvt-serif" style="color:#e0a93f;font-size:1.8cqw">{{ $hotelName }}</div><div style="font-size:1cqw;color:#e0a93f;margin-top:1.8cqw">Selamat datang</div><div class="tvt-serif" style="font-size:2.3cqw">Bapak Tamu</div><div style="width:.8cqw;height:.8cqw;background:#e0a93f;transform:rotate(45deg);margin:1.3cqw 0"></div><div class="tvt-serif" style="font-size:5.6cqw;line-height:1" x-text="time"></div></div>
-                <div class="h-gate" style="position:absolute;right:4%;top:4%;width:66%;height:62%"><div class="tvt-photo h-gate" style="inset:.6cqw;{{ $bg }}"></div><div class="h-gate" style="position:absolute;inset:.6cqw;background:linear-gradient(180deg,transparent 45%,rgba(13,14,43,.94))"></div><div style="position:absolute;left:3.5cqw;bottom:2.2cqw"><div class="tvt-serif" style="font-size:3.8cqw;line-height:1.1" x-text="menu[active].label"></div><div style="font-size:1.35cqw;color:#dad6e6" x-text="menu[active].desc"></div></div></div>
-                <div style="position:absolute;left:4%;right:4%;bottom:3.4%;display:flex;gap:1cqw;align-items:flex-end">
-                    @foreach ($menu as $i => $m)
-                        <div class="tvt-i h-tile" :class="active === {{ $i }} && 'on'" @mouseenter="pick({{ $i }})"><x-filament::icon :icon="$m[2]" /><span class="tvt-serif">{{ $m[0] }}</span></div>
-                    @endforeach
+            <div class="tvt-l" x-show="theme === 'heritage'" x-cloak style="background:#0d0e2b;overflow:hidden">
+                <div style="position:absolute;inset:0 0 0 29%;overflow:hidden"><div class="tvt-photo n-zoom" style="{{ $bg }}"></div><div class="tvt-l" style="background:linear-gradient(180deg,rgba(13,14,43,.45),transparent 26%,transparent 48%,rgba(13,14,43,.86) 78%,#0d0e2b)"></div></div>
+                <div style="position:absolute;left:35.400%;bottom:24.500%"><div class="tvt-serif" style="font-size:4.600cqw;line-height:1.1" x-text="menu[active].label"></div><div style="font-size:1.500cqw;color:#dad6e6" x-text="menu[active].desc"></div><div :key="active" class="n-line"></div></div>
+                <div style="position:absolute;left:31.600%;right:0;bottom:0;height:17.600%;background:rgba(23,26,69,.92)">
+                    <div class="n-progress"></div>
+                    <div class="n-plaque" :style="{left: (active * 16.666) + '%'}"><i></i></div>
+                    <div style="position:relative;display:flex;height:100%">
+                        @foreach ($menu as $i => $m)
+                            <div class="tvt-i n-item" :class="active === {{ $i }} && 'on'" @mouseenter="pick({{ $i }})"><x-filament::icon :icon="$m[2]" /><span>{{ $m[0] }}</span></div>
+                        @endforeach
+                    </div>
                 </div>
+                <div style="position:absolute;inset:0 auto 0 0;width:29.200%;background:linear-gradient(180deg,#171a45,#0d0e2b);overflow:hidden">
+                    <svg class="tvt-l n-drift" style="width:calc(100% + 62px)" height="100%" aria-hidden="true"><defs><pattern id="tvt-kawung" width="62" height="62" patternUnits="userSpaceOnUse"><g fill="none" stroke="#e0a93f" stroke-opacity=".22" stroke-width="1.2"><circle cx="15.500" cy="31" r="15.500"/><circle cx="46.500" cy="31" r="15.500"/><circle cx="31" cy="15.500" r="15.500"/><circle cx="31" cy="46.500" r="15.500"/></g></pattern></defs><rect width="100%" height="100%" fill="url(#tvt-kawung)"/></svg>
+                    <svg viewBox="-100 -100 200 200" class="n-spin" aria-hidden="true"><g fill="none" stroke="#e0a93f" stroke-opacity=".4"><circle r="98"/><circle r="14"/>@for ($d = 0; $d < 16; $d++)<circle cy="-68" r="30" transform="rotate({{ $d * 22.5 }})"/>@endfor</g></svg>
+                    <div style="position:absolute;left:11%;top:6%;right:6%"><div class="tvt-serif" style="color:#e0a93f;font-size:1.700cqw">{{ $hotelName }}</div><div style="font-size:1.050cqw;color:#e0a93f;margin-top:2.400cqw">Selamat datang</div><div class="tvt-serif" style="font-size:2.600cqw">Bapak Tamu</div><div style="width:6cqw;height:2px;background:#e0a93f;margin:1.500cqw 0"></div><div class="tvt-serif" style="font-size:6.600cqw;line-height:1" x-text="time"></div></div>
+                </div>
+                <div class="n-tumpal"></div>
             </div>
 
             {{-- Daerah (Pasundan) --}}
@@ -142,8 +157,8 @@
                     </div>
                     <div class="tvt-serif" style="font-size:4.6cqw;margin-top:.8cqw;line-height:1.1" x-text="time"></div>
                 </div>
-                <div style="position:absolute;right:2.3%;top:1.8%;width:67.2%;height:62%">
-                    <div style="position:absolute;left:5.600%;right:5.600%;bottom:0;height:80%;border:2px solid #e2b04a;padding:.5cqw"><div style="position:relative;width:100%;height:100%;overflow:hidden"><div class="tvt-photo" style="{{ $bg }}"></div><div class="tvt-l" style="background:linear-gradient(180deg,transparent 42%,rgba(26,16,9,.95))"></div><div style="position:absolute;left:2.200cqw;bottom:1.300cqw"><div class="tvt-serif" style="font-size:3.300cqw;line-height:1.1" x-text="menu[active].label"></div><div style="font-size:1.250cqw;color:#e6d6b8" x-text="menu[active].desc"></div></div></div></div>
+                <div style="position:absolute;right:2%;top:1.3%;width:67.700%;height:74%">
+                    <div style="position:absolute;left:4.300%;right:4.300%;bottom:0;height:83%;border:2px solid #e2b04a;padding:.5cqw"><div style="position:relative;width:100%;height:100%;overflow:hidden"><div class="tvt-photo" style="{{ $bg }}"></div><div class="tvt-l" style="background:linear-gradient(180deg,transparent 42%,rgba(26,16,9,.95))"></div><div style="position:absolute;left:2.200cqw;bottom:1.300cqw"><div class="tvt-serif" style="font-size:3.300cqw;line-height:1.1" x-text="menu[active].label"></div><div style="font-size:1.250cqw;color:#e6d6b8" x-text="menu[active].desc"></div></div></div></div>
                     <svg viewBox="0 0 1290 190" preserveAspectRatio="none" style="position:absolute;left:0;top:0;width:100%;height:27.500%" aria-hidden="true"><path d="M0 190l80-46 88-79h954l88 79 80 46-90-19H90z" fill="#1a1009" stroke="#e2b04a" stroke-width="4"/><g stroke="#e2b04a" stroke-width="9" stroke-linecap="round"><path d="M111 8l100 100M225 8L125 108M1065 8l100 100M1179 8l-100 100"/></g></svg>
                 </div>
                 <div style="position:absolute;left:2.300%;right:2.300%;bottom:2%;display:flex;gap:1cqw">

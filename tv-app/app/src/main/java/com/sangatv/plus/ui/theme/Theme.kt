@@ -121,14 +121,14 @@ object TvThemes {
         c(0xFF0D0E2B), c(0xFF171A45), c(0xFF1E2152), c(0xFF262A63), c(0xFF323676), c(0xFF3F4388), c(0xFF5A5FA8),
         c(0xFFE0A93F), c(0xFF241407), c(0xFF7A2E1D), c(0xFFF4EBDD), c(0xFF2E2119), c(0xFF72604F),
         c(0xFFF6EEE2), c(0xFFDAD6E6), c(0xFFA9A8C8),
-    ), Playfair, 340)
+    ), Playfair, 190)
 
     /** Daerah: Pasundan (West Java). Soga brown, bamboo gold and the ivory "gumading" of batik Garutan. */
     val Sunda = TvTheme("sunda", HomeLayout.Sunda, Palette(
         c(0xFF1A1009), c(0xFF2A1A0E), c(0xFF352212), c(0xFF432C17), c(0xFF54381E), c(0xFF6A4A28), c(0xFF8A6638),
         c(0xFFE2B04A), c(0xFF2A1705), c(0xFF4F7A3A), c(0xFFF3E6C8), c(0xFF2E1C0C), c(0xFF7A6040),
         c(0xFFF8EFDC), c(0xFFE6D6B8), c(0xFFBBA482),
-    ), Playfair, 370)
+    ), Playfair, 232)
 
     private val all = listOf(Ocean, Royal, Tropical, Sunset, Heritage, Sunda)
 
