@@ -18,8 +18,8 @@ class HotelProfile extends Model
         'royal' => ['name' => 'Emas Klasik', 'style' => 'Grand Lobby', 'desc' => 'Menu samping berlapis emas, judul besar mengikuti pilihan tamu.', 'colors' => ['#0B0906', '#D9B56A', '#F7F1E3']],
         'tropical' => ['name' => 'Tropis', 'style' => 'Kartu Daun', 'desc' => 'Kartu berbentuk daun yang melebar saat dipilih remote.', 'colors' => ['#0A1F18', '#8FD694', '#F3F8EF']],
         'sunset' => ['name' => 'Senja', 'style' => 'Roda Panorama', 'desc' => 'Jam besar di tengah, menu berputar seperti roda di cakrawala.', 'colors' => ['#221110', '#F2A65A', '#FBF2E8']],
-        'heritage' => ['name' => 'Nusantara', 'style' => 'Mosaik Batik', 'desc' => 'Ubin mosaik di atas motif kawung yang ikut bergerak.', 'colors' => ['#1C1614', '#C98A3D', '#2C2E5E']],
-        'editorial' => ['name' => 'Terang', 'style' => 'Majalah', 'desc' => 'Halaman terang bergaya majalah dengan judul raksasa.', 'colors' => ['#FAF8F4', '#FF6B4A', '#1A1C1F']],
+        'heritage' => ['name' => 'Nusantara', 'style' => 'Gapura Batik', 'desc' => 'Jendela foto berbentuk gapura di atas batik nila, menu seperti candi.', 'colors' => ['#171A45', '#E0A93F', '#F6EEE2']],
+        'sunda' => ['name' => 'Daerah', 'style' => 'Pasundan', 'desc' => 'Budaya Sunda: atap Julang Ngapak, kujang, bilik bambu, dan angklung yang bergetar saat dipilih.', 'colors' => ['#2A1A0E', '#E2B04A', '#4F7A3A']],
     ];
 
     use Auditable;

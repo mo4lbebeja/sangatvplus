@@ -129,7 +129,7 @@ fun HomeScreen(data: Bootstrap?, online: Boolean, onOpen: (Screen) -> Unit) {
                 HomeLayout.Tropical -> TropicalHome(ui)
                 HomeLayout.Sunset -> SunsetHome(ui)
                 HomeLayout.Heritage -> HeritageHome(ui)
-                else -> EditorialHome(ui)
+                else -> SundaHome(ui)
             }
             if (!online) OfflineBadge(Modifier.align(Alignment.TopCenter).padding(top = 28.px))
             return@Box

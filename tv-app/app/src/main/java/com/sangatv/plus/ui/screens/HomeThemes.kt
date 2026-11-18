@@ -3,7 +3,11 @@ package com.sangatv.plus.ui.screens
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -30,6 +34,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,10 +49,14 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -74,7 +83,6 @@ import com.sangatv.plus.ui.components.SIcon
 import com.sangatv.plus.ui.components.SIcons
 import com.sangatv.plus.ui.components.TimeFmt
 import com.sangatv.plus.ui.components.zoneLabel
-import com.sangatv.plus.ui.theme.HomeLayout
 import com.sangatv.plus.ui.theme.Sanga
 import com.sangatv.plus.ui.theme.body
 import com.sangatv.plus.ui.theme.display
@@ -131,11 +139,10 @@ private fun roomText(data: Bootstrap?): String? = data?.room?.number?.let {
 private fun HotelMark(data: Bootstrap?, color: Color, size: Int, modifier: Modifier = Modifier) {
     val logo = data?.hotel?.logoUrl
     if (logo != null) {
-        val plate = Sanga.theme.layout != HomeLayout.Editorial
         AsyncImage(
             logo, data.hotel.name,
             modifier = modifier
-                .then(if (plate) Modifier.background(Sanga.BarLight, RoundedCornerShape(12.px)).padding(horizontal = 18.px, vertical = 10.px) else Modifier)
+                .background(Sanga.BarLight, RoundedCornerShape(12.px)).padding(horizontal = 18.px, vertical = 10.px)
                 .height((size * 2.6f).toInt().px).widthIn(max = 300.px),
         )
     } else {
@@ -368,23 +375,46 @@ internal fun BoxScope.SunsetHome(ui: HomeUi) {
     }
 }
 
-// ---------------- Nusantara: a mosaic of tiles on a living kawung batik ----------------
+// ---------------- Nusantara: a temple gate of photos on indigo batik ----------------
+
+/** Stepped silhouette of a candi gate; [k] is the size of one step relative to the height. */
+private fun gapura(k: Float) = GenericShape { size, _ ->
+    val st = size.height * k
+    moveTo(0f, size.height)
+    lineTo(0f, st * 3)
+    lineTo(st, st * 3)
+    lineTo(st, st * 2)
+    lineTo(st * 2, st * 2)
+    lineTo(st * 2, st)
+    lineTo(st * 3, st)
+    lineTo(st * 3, 0f)
+    lineTo(size.width - st * 3, 0f)
+    lineTo(size.width - st * 3, st)
+    lineTo(size.width - st * 2, st)
+    lineTo(size.width - st * 2, st * 2)
+    lineTo(size.width - st, st * 2)
+    lineTo(size.width - st, st * 3)
+    lineTo(size.width, st * 3)
+    lineTo(size.width, size.height)
+    close()
+}
+
+private val GateWindow = gapura(0.05f)
+private val GateTile = gapura(0.07f)
 
 @Composable
 private fun Kawung(shift: Float, modifier: Modifier) {
-    val tile = 132.px
-    val line = Sanga.Accent.copy(alpha = 0.13f)
+    val tile = 124.px
+    val line = Sanga.Accent.copy(alpha = 0.2f)
     Canvas(modifier) {
         val s = tile.toPx()
-        val r = s * 0.36f
-        var y = -s * 2
+        val r = s * 0.25f
+        var y = -s
         while (y < size.height + s) {
             var x = -s * 2 + shift * s
             while (x < size.width + s) {
-                for ((dx, dy) in listOf(-r to 0f, r to 0f, 0f to -r, 0f to r)) {
-                    drawCircle(line, r * 0.72f, Offset(x + dx, y + dy), style = Stroke(2f))
-                }
-                drawCircle(line, r * 0.14f, Offset(x, y))
+                for ((dx, dy) in listOf(-r to 0f, r to 0f, 0f to -r, 0f to r)) drawCircle(line, r, Offset(x + dx, y + dy), style = Stroke(2f))
+                drawCircle(line, r * 0.2f, Offset(x, y))
                 x += s
             }
             y += s
@@ -393,120 +423,236 @@ private fun Kawung(shift: Float, modifier: Modifier) {
 }
 
 @Composable
-private fun MosaicTile(ui: HomeUi, i: Int, active: Boolean, width: Dp, height: Dp, photo: Boolean, onFocus: () -> Unit, first: FocusRequester?) {
-    val m = MENU[i]
-    val lift by animateFloatAsState(if (active) 1.05f else 1f, tween(200), label = "lift")
-    val base = if (i % 2 == 0) Sanga.NavyActive else Sanga.Card
-    Focusable(
-        onClick = { ui.onOpen(m.target) },
-        scaleOnFocus = false,
-        modifier = Modifier.width(width).height(height).scale(lift).onFocusChanged { if (it.hasFocus) onFocus() }.then(first?.let { Modifier.focusRequester(it) } ?: Modifier),
-    ) { focused ->
-        val shape = RoundedCornerShape(10.px)
-        Box(Modifier.fillMaxSize().clip(shape).background(base).border(if (focused) 4.px else 1.px, if (focused) Sanga.Accent else Sanga.Border2, shape)) {
-            if (photo) {
-                SlidePhoto(ui.slide?.imageUrl, Modifier.matchParentSize())
-                Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.15f to Color.Transparent, 0.62f to Sanga.Deepest.copy(alpha = 0.72f), 1f to Sanga.Deepest.copy(alpha = 0.96f))))
-            }
-            // Diamond ornament in the corner.
-            Box(Modifier.align(Alignment.TopEnd).padding(22.px).size(20.px).graphicsLayer { rotationZ = 45f }.background(if (focused) Sanga.Accent else Sanga.Border2))
-            Column(Modifier.align(Alignment.BottomStart).padding(28.px), verticalArrangement = Arrangement.spacedBy(8.px)) {
-                SIcon(m.icon, Sanga.Accent, 50.px)
-                Text(stringResource(m.label), style = display(34, 0f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (focused) Text(stringResource(m.desc), style = body(20, 400, Sanga.Text2), maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
-        }
-    }
-}
-
-@Composable
 internal fun BoxScope.HeritageHome(ui: HomeUi) {
     val first = rememberFirstFocus()
     var active by remember { mutableIntStateOf(0) }
-    val shift by animateFloatAsState(active * 0.16f, tween(500), label = "batik")
+    val shift by animateFloatAsState(active * 0.18f, tween(500), label = "batik")
 
     Box(Modifier.matchParentSize().background(Sanga.Background))
     Kawung(shift, Modifier.matchParentSize())
+    Box(Modifier.matchParentSize().background(Brush.horizontalGradient(0f to Sanga.Deepest.copy(alpha = 0.9f), 0.3f to Sanga.Deepest.copy(alpha = 0.25f), 1f to Color.Transparent)))
 
-    Column(Modifier.align(Alignment.CenterStart).padding(start = 88.px).width(590.px)) {
-        HotelMark(ui.data, Sanga.Accent, 32)
-        Box(Modifier.padding(vertical = 30.px).width(120.px).height(3.px).background(Sanga.Accent))
-        Greeting(ui.data, Sanga.Text3, Sanga.Text, bigSize = 52)
-        Spacer(Modifier.height(50.px))
-        Text(ui.now.format(TimeFmt), style = display(124, 0f))
-        Text(ui.now.format(DateFmt), style = body(26, 400, Sanga.Text2))
-        temperature(ui.data)?.let { Text("$it · ${ui.data?.weather?.description.orEmpty()}", style = body(24, 500, Sanga.Accent), modifier = Modifier.padding(top = 10.px)) }
-        roomText(ui.data)?.let {
-            Text(it, style = body(22, 800, Sanga.OnAccent), modifier = Modifier.padding(top = 34.px).background(Sanga.Accent, RoundedCornerShape(6.px)).padding(horizontal = 22.px, vertical = 8.px))
+    Column(Modifier.padding(start = 76.px, top = 56.px).width(470.px)) {
+        HotelMark(ui.data, Sanga.Accent, 30)
+        Spacer(Modifier.height(36.px))
+        Greeting(ui.data, Sanga.Accent, Sanga.Text, bigSize = 46)
+        Box(Modifier.padding(vertical = 26.px).size(16.px).graphicsLayer { rotationZ = 45f }.background(Sanga.Accent))
+        Text(ui.now.format(TimeFmt), style = display(112, 0f))
+        Text(ui.now.format(DateFmt), style = body(25, 500, Sanga.Text2))
+        temperature(ui.data)?.let { Text("$it · ${ui.data?.weather?.description.orEmpty()}", style = body(22, 500, Sanga.Accent), modifier = Modifier.padding(top = 8.px)) }
+        roomText(ui.data)?.let { Text(it.uppercase(), style = body(21, 800, Sanga.Accent), modifier = Modifier.padding(top = 18.px)) }
+    }
+
+    // The gate: a stepped window onto the hotel's photos.
+    Box(Modifier.align(Alignment.TopEnd).padding(top = 44.px, end = 76.px).width(1270.px).height(668.px).border(3.px, Sanga.Accent, GateWindow).padding(12.px).clip(GateWindow)) {
+        SlidePhoto(ui.slide?.imageUrl, Modifier.matchParentSize())
+        Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.45f to Color.Transparent, 1f to Sanga.Deepest.copy(alpha = 0.94f))))
+        AnimatedContent(
+            active,
+            transitionSpec = { (fadeIn(tween(260)) + slideInVertically(tween(260)) { it / 4 }) togetherWith fadeOut(tween(150)) },
+            modifier = Modifier.align(Alignment.BottomStart).padding(start = 56.px, bottom = 40.px),
+            label = "gate-title",
+        ) { i ->
+            Column(verticalArrangement = Arrangement.spacedBy(4.px)) {
+                Text(stringResource(MENU[i].label), style = display(72, 0f))
+                Text(stringResource(MENU[i].desc), style = body(27, 400, Sanga.Text2))
+            }
         }
     }
 
-    Column(Modifier.align(Alignment.CenterEnd).padding(end = 80.px), verticalArrangement = Arrangement.spacedBy(22.px)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(22.px)) {
-            MosaicTile(ui, 0, active == 0, 620.px, 400.px, true, { active = 0 }, first)
-            MosaicTile(ui, 1, active == 1, 290.px, 400.px, false, { active = 1 }, null)
-            MosaicTile(ui, 5, active == 5, 290.px, 400.px, false, { active = 5 }, null)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(22.px)) {
-            MosaicTile(ui, 2, active == 2, 385.px, 300.px, false, { active = 2 }, null)
-            MosaicTile(ui, 3, active == 3, 385.px, 300.px, false, { active = 3 }, null)
-            MosaicTile(ui, 4, active == 4, 386.px, 300.px, false, { active = 4 }, null)
+    Row(Modifier.align(Alignment.BottomCenter).padding(bottom = 36.px), horizontalArrangement = Arrangement.spacedBy(20.px), verticalAlignment = Alignment.Bottom) {
+        MENU.forEachIndexed { i, m ->
+            val rise by animateDpAsState(if (active == i) (-24).px else 0.px, tween(220), label = "rise")
+            Focusable(
+                onClick = { ui.onOpen(m.target) },
+                scaleOnFocus = false,
+                modifier = Modifier.offset(y = rise).width(278.px).height(290.px).onFocusChanged { if (it.hasFocus) active = i }.then(if (i == 0) Modifier.focusRequester(first) else Modifier),
+            ) { focused ->
+                Column(
+                    Modifier.fillMaxSize().clip(GateTile).background(if (focused) Sanga.Accent else Sanga.Card).border(2.px, Sanga.Accent.copy(alpha = if (focused) 1f else 0.6f), GateTile).padding(top = 76.px, bottom = 28.px),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(18.px, Alignment.CenterVertically),
+                ) {
+                    SIcon(m.icon, if (focused) Sanga.OnAccent else Sanga.Accent, 66.px)
+                    Text(stringResource(m.label), style = display(31, 0f, if (focused) Sanga.OnAccent else Sanga.Text), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
         }
     }
 }
 
-// ---------------- Terang: a magazine page; the headline follows the remote ----------------
+// ---------------- Daerah: Pasundan, under a Julang Ngapak roof with a set of angklung ----------------
 
+/** Bilik: the woven bamboo walls of a Sundanese house. */
 @Composable
-internal fun BoxScope.EditorialHome(ui: HomeUi) {
-    val first = rememberFirstFocus()
-    var active by remember { mutableIntStateOf(0) }
-    val ink = Sanga.BarText
-    val muted = Sanga.BarMuted
-    val panel by animateDpAsState(760.px + 34.px * active, tween(380), label = "panel")
-
-    Box(Modifier.matchParentSize().background(Sanga.BarLight))
-
-    Box(Modifier.align(Alignment.CenterEnd).width(panel).fillMaxHeight()) {
-        SlidePhoto(ui.slide?.imageUrl, Modifier.matchParentSize())
-        Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.6f to Color.Transparent, 1f to Color.Black.copy(alpha = 0.72f))))
-        Column(Modifier.align(Alignment.BottomEnd).padding(end = 64.px, bottom = 64.px), horizontalAlignment = Alignment.End) {
-            Text(ui.now.format(TimeFmt), style = display(112, 0f, Color.White))
-            Text(ui.now.format(DateFmt), style = body(24, 500, Color.White))
-            temperature(ui.data)?.let { Text("$it · ${ui.data?.weather?.description.orEmpty()}", style = body(22, 500, Color.White)) }
+private fun Bilik(modifier: Modifier) {
+    val strip = Sanga.Accent.copy(alpha = 0.1f)
+    val cell = 56.px
+    Canvas(modifier) {
+        val s = cell.toPx()
+        var row = 0
+        var y = 0f
+        while (y < size.height) {
+            var col = 0
+            var x = 0f
+            while (x < size.width) {
+                for (k in 1..3) {
+                    val o = s * k / 4f
+                    if ((row + col) % 2 == 0) drawLine(strip, Offset(x, y + o), Offset(x + s, y + o), 3f)
+                    else drawLine(strip, Offset(x + o, y), Offset(x + o, y + s), 3f)
+                }
+                x += s
+                col++
+            }
+            y += s
+            row++
         }
     }
+}
 
-    Column(Modifier.fillMaxHeight().width(1040.px).padding(start = 88.px, top = 72.px, bottom = 96.px)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(28.px)) {
-            HotelMark(ui.data, ink, 26)
-            roomText(ui.data)?.let { Text(it.uppercase(), style = body(20, 800, Sanga.Accent)) }
+/** Kujang, the emblem of West Java. */
+@Composable
+private fun Kujang(color: Color, hole: Color, modifier: Modifier) {
+    Canvas(modifier) {
+        val u = size.height / 220f
+        val blade = Path().apply {
+            moveTo(46 * u, 216 * u)
+            lineTo(62 * u, 216 * u)
+            lineTo(59 * u, 152 * u)
+            cubicTo(92 * u, 132 * u, 102 * u, 92 * u, 72 * u, 62 * u)
+            cubicTo(61 * u, 46 * u, 63 * u, 22 * u, 80 * u, 2 * u)
+            cubicTo(46 * u, 15 * u, 28 * u, 40 * u, 32 * u, 68 * u)
+            lineTo(14 * u, 60 * u)
+            lineTo(29 * u, 92 * u)
+            cubicTo(27 * u, 116 * u, 37 * u, 136 * u, 47 * u, 152 * u)
+            close()
         }
-        Spacer(Modifier.weight(1f))
-        Text("0${active + 1} / 0${MENU.size}", style = body(24, 700, Sanga.Accent))
-        AnimatedContent(
-            active,
-            transitionSpec = { (slideInVertically(tween(300)) { it / 2 } + fadeIn(tween(300))) togetherWith (slideOutVertically(tween(200)) { -it / 2 } + fadeOut(tween(200))) },
-            label = "headline",
-        ) { i ->
-            Column(verticalArrangement = Arrangement.spacedBy(10.px)) {
-                Text(stringResource(MENU[i].label), style = display(136, -0.01f, ink), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(stringResource(MENU[i].desc), style = body(30, 400, muted), maxLines = 1)
+        drawPath(blade, color)
+        for ((x, y) in listOf(52f to 72f, 58f to 96f, 58f to 120f)) drawCircle(hole, 5.5f * u, Offset(x * u, y * u))
+    }
+}
+
+/** Julang Ngapak: a roof spread like a bird's wings, with the crossed "capit gunting" at both ends. */
+@Composable
+private fun JulangNgapak(modifier: Modifier) {
+    val gold = Sanga.Accent
+    val thatch = Sanga.Deepest
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val ridge = h * 0.34f
+        val inset = w * 0.13f
+        val roof = Path().apply {
+            moveTo(0f, h)
+            lineTo(inset * 0.48f, h * 0.76f)
+            lineTo(inset, ridge)
+            lineTo(w - inset, ridge)
+            lineTo(w - inset * 0.48f, h * 0.76f)
+            lineTo(w, h)
+            lineTo(w - inset * 0.55f, h * 0.9f)
+            lineTo(inset * 0.55f, h * 0.9f)
+            close()
+        }
+        drawPath(roof, thatch)
+        var x = inset
+        while (x < w - inset) {
+            drawLine(gold.copy(alpha = 0.3f), Offset(x, ridge + 8f), Offset(x, h * 0.86f), 2f)
+            x += w / 64f
+        }
+        drawPath(roof, gold, style = Stroke(4f))
+        for (cx in listOf(inset, w - inset)) {
+            val r = h * 0.3f
+            drawLine(gold, Offset(cx - r, ridge - r), Offset(cx + r * 0.7f, ridge + r * 0.7f), 9f, StrokeCap.Round)
+            drawLine(gold, Offset(cx + r, ridge - r), Offset(cx - r * 0.7f, ridge + r * 0.7f), 9f, StrokeCap.Round)
+        }
+    }
+}
+
+/** One angklung of the set: taller to the right, like the notes of a scale. */
+@Composable
+private fun Angklung(step: Int, on: Boolean, modifier: Modifier) {
+    val bamboo = if (on) Sanga.Accent else Color(0xFFC39A5F)
+    val dark = Sanga.Deepest
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val grow = 0.62f + step * 0.06f
+        for (x in listOf(0.16f, 0.81f)) drawRect(bamboo, Offset(w * x, h * 0.02f), Size(w * 0.035f, h * 0.92f))
+        for (y in listOf(0.14f, 0.58f)) drawRect(bamboo, Offset(w * 0.12f, h * y), Size(w * 0.76f, h * 0.03f))
+        listOf(0.27f to grow, 0.44f to grow * 0.86f, 0.61f to grow * 0.72f).forEach { (x, tall) ->
+            val top = h * (0.94f - tall * 0.88f)
+            val tube = Size(w * 0.13f, h * 0.94f - top)
+            drawRoundRect(bamboo, Offset(w * x, top), tube, CornerRadius(w * 0.03f))
+            drawLine(dark, Offset(w * x, top + tube.height * 0.5f), Offset(w * (x + 0.13f), top + tube.height * 0.5f), 3f)
+            drawLine(dark, Offset(w * (x + 0.065f), top + 6f), Offset(w * (x + 0.065f), top + tube.height * 0.3f), 3f)
+        }
+        drawRoundRect(bamboo, Offset(w * 0.08f, h * 0.92f), Size(w * 0.84f, h * 0.08f), CornerRadius(h * 0.03f))
+    }
+}
+
+@Composable
+internal fun BoxScope.SundaHome(ui: HomeUi) {
+    val first = rememberFirstFocus()
+    var active by remember { mutableIntStateOf(0) }
+    // The chosen angklung trembles as if it were being played.
+    val shake by rememberInfiniteTransition(label = "angklung").animateFloat(-3.5f, 3.5f, infiniteRepeatable(tween(130), RepeatMode.Reverse), label = "shake")
+
+    Box(Modifier.matchParentSize().background(Sanga.Background))
+    Bilik(Modifier.matchParentSize())
+    Box(Modifier.matchParentSize().background(Brush.horizontalGradient(0f to Sanga.Deepest.copy(alpha = 0.86f), 0.34f to Sanga.Deepest.copy(alpha = 0.3f), 1f to Color.Transparent)))
+
+    Column(Modifier.padding(start = 72.px, top = 44.px).width(510.px)) {
+        HotelMark(ui.data, Sanga.Accent, 26)
+        Row(Modifier.padding(top = 26.px), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.px)) {
+            Kujang(Sanga.Accent, Sanga.Background, Modifier.width(92.px).height(202.px))
+            Column {
+                Text("Wilujeng", style = display(58, 0f, Sanga.Accent))
+                Text("Sumping", style = display(58, 0f, Sanga.Accent))
+                ui.data?.guest?.let { Text(it.displayName, style = body(30, 700), maxLines = 1, overflow = TextOverflow.Ellipsis) }
             }
         }
-        Spacer(Modifier.weight(1f))
-        Greeting(ui.data, muted, ink, bigSize = 36)
-        Spacer(Modifier.height(36.px))
-        Row(horizontalArrangement = Arrangement.spacedBy(30.px)) {
-            MENU.forEachIndexed { i, m ->
-                Focusable(
-                    onClick = { ui.onOpen(m.target) },
-                    scaleOnFocus = false,
-                    modifier = Modifier.onFocusChanged { if (it.hasFocus) active = i }.then(if (i == 0) Modifier.focusRequester(first) else Modifier),
-                ) { focused ->
-                    Column(verticalArrangement = Arrangement.spacedBy(10.px)) {
-                        Text(stringResource(m.label), style = body(23, if (focused) 800 else 500, if (focused) ink else muted), maxLines = 1)
-                        Box(Modifier.width(if (focused) 64.px else 0.px).height(5.px).background(Sanga.Accent))
+        Text(ui.now.format(TimeFmt), style = display(92, 0f), modifier = Modifier.padding(top = 18.px))
+        Text(ui.now.format(DateFmt), style = body(24, 500, Sanga.Text2))
+        temperature(ui.data)?.let { Text("$it · ${ui.data?.weather?.description.orEmpty()}", style = body(21, 500, Sanga.Accent)) }
+        roomText(ui.data)?.let { Text(it.uppercase(), style = body(20, 800, Sanga.Accent), modifier = Modifier.padding(top = 8.px)) }
+    }
+
+    // The house: photo under the roof.
+    Box(Modifier.align(Alignment.TopEnd).padding(top = 20.px, end = 44.px).width(1290.px).height(690.px)) {
+        Box(Modifier.align(Alignment.BottomCenter).padding(horizontal = 72.px).fillMaxWidth().height(548.px).border(3.px, Sanga.Accent).padding(10.px)) {
+            SlidePhoto(ui.slide?.imageUrl, Modifier.matchParentSize())
+            Box(Modifier.matchParentSize().background(Brush.verticalGradient(0.42f to Color.Transparent, 1f to Sanga.Deepest.copy(alpha = 0.95f))))
+            AnimatedContent(
+                active,
+                transitionSpec = { (fadeIn(tween(240)) + slideInVertically(tween(240)) { it / 4 }) togetherWith fadeOut(tween(140)) },
+                modifier = Modifier.align(Alignment.BottomStart).padding(start = 44.px, bottom = 28.px),
+                label = "sunda-title",
+            ) { i ->
+                Column {
+                    Text(stringResource(MENU[i].label), style = display(66, 0f))
+                    Text(stringResource(MENU[i].desc), style = body(26, 400, Sanga.Text2))
+                }
+            }
+        }
+        JulangNgapak(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(190.px))
+    }
+
+    Row(Modifier.align(Alignment.BottomCenter).padding(bottom = 22.px), horizontalArrangement = Arrangement.spacedBy(20.px), verticalAlignment = Alignment.Bottom) {
+        MENU.forEachIndexed { i, m ->
+            Focusable(
+                onClick = { ui.onOpen(m.target) },
+                scaleOnFocus = false,
+                modifier = Modifier.width(284.px).height(340.px).onFocusChanged { if (it.hasFocus) active = i }.then(if (i == 0) Modifier.focusRequester(first) else Modifier),
+            ) { focused ->
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Bottom, modifier = Modifier.fillMaxSize()) {
+                    Angklung(i, focused, Modifier.width(214.px).height(232.px).graphicsLayer { rotationZ = if (focused) shake else 0f; transformOrigin = TransformOrigin(0.5f, 1f) })
+                    Row(
+                        Modifier.padding(top = 10.px).fillMaxWidth().height(84.px).background(if (focused) Sanga.Accent else Sanga.Deepest.copy(alpha = 0.86f), RoundedCornerShape(14.px)).border(2.px, Sanga.Accent.copy(alpha = if (focused) 1f else 0.55f), RoundedCornerShape(14.px)).padding(horizontal = 18.px),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.px, Alignment.CenterHorizontally),
+                    ) {
+                        SIcon(m.icon, if (focused) Sanga.OnAccent else Sanga.Accent, 36.px)
+                        Text(stringResource(m.label), style = body(26, 800, if (focused) Sanga.OnAccent else Sanga.Text), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }

@@ -36,11 +36,14 @@
 /* Sunset */
 .s-w{position:absolute;left:50%;top:0;width:7.8cqw;height:7.8cqw;margin-left:-3.9cqw;border-radius:50%;display:grid;place-items:center;font-size:3.5cqw;border:1px solid rgba(242,166,90,.7);background:#3b201b;color:#f2a65a;transition:transform .34s ease,opacity .34s ease,background .2s}.s-w.on{background:#f2a65a;color:#2b1405}
 /* Heritage */
-.h-tile{position:relative;border:1px solid #6e5a4b;border-radius:.5cqw;padding:1.3cqw;display:flex;flex-direction:column;justify-content:flex-end;gap:.3cqw;font-size:1.75cqw;overflow:hidden;background:#322823;background-size:cover;background-position:center}.h-tile svg{font-size:2.5cqw;color:#c98a3d}
-.h-tile.alt{background-color:#2c2e5e}.h-tile.on{transform:scale(1.04);border:.2cqw solid #c98a3d;z-index:2}
-.h-tile::after{content:"";position:absolute;right:1.1cqw;top:1.1cqw;width:1cqw;height:1cqw;transform:rotate(45deg);background:#6e5a4b}.h-tile.on::after{background:#c98a3d}
-/* Editorial */
-.e-m{font-size:1.2cqw;color:#6b6f76;padding-bottom:.6cqw;border-bottom:.26cqw solid transparent;white-space:nowrap}.e-m.on{color:#1a1c1f;font-weight:800;border-color:#ff6b4a}
+.h-gate{clip-path:polygon(0 100%,0 15%,2.5% 15%,2.5% 10%,5% 10%,5% 5%,7.5% 5%,7.5% 0,92.5% 0,92.5% 5%,95% 5%,95% 10%,97.5% 10%,97.5% 15%,100% 15%,100% 100%);background:#e0a93f}
+.h-tile{flex:1;height:14.6cqw;padding-top:3.2cqw;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8cqw;font-size:1.55cqw;background:#262a63;color:#f6eee2;clip-path:polygon(0 100%,0 21%,7% 21%,7% 14%,14% 14%,14% 7%,21% 7%,21% 0,79% 0,79% 7%,86% 7%,86% 14%,93% 14%,93% 21%,100% 21%,100% 100%)}.h-tile svg{font-size:3.3cqw;color:#e0a93f}
+.h-tile.on{background:#e0a93f;color:#241407;transform:translateY(-1.2cqw)}.h-tile.on svg{color:#241407}
+/* Daerah */
+.tvt-i svg.s-ang{display:block;width:72%;height:auto;margin:0 auto .4cqw;color:#c39a5f;transform-origin:50% 100%}.tvt-i svg.s-ang.on{color:#e2b04a;animation:tvt-shake .26s linear infinite}
+@keyframes tvt-shake{0%,100%{transform:rotate(-3.5deg)}50%{transform:rotate(3.5deg)}}
+.s-base{display:flex;align-items:center;justify-content:center;gap:.5cqw;height:3.4cqw;border-radius:.6cqw;background:rgba(26,16,9,.86);border:1px solid rgba(226,176,74,.55);font-size:1cqw;font-weight:800;white-space:nowrap}.s-base svg{font-size:1.5cqw;color:#e2b04a}.s-base.on{background:#e2b04a;color:#2a1705}.s-base.on svg{color:#2a1705}
+@media (prefers-reduced-motion:reduce){.tvt-i svg.s-ang.on{animation:none}}
 </style>
 <div x-data="{
         theme: $wire.$entangle('{{ $getStatePath() }}'), active: 0, wheel: 0, n: 6,
@@ -115,24 +118,40 @@
             </div>
 
             {{-- Nusantara --}}
-            <div class="tvt-l" x-show="theme === 'heritage'" x-cloak style="background-color:#1c1614">
-                <svg class="tvt-l" width="100%" height="100%" aria-hidden="true"><defs><pattern id="tvt-kawung" width="68" height="68" patternUnits="userSpaceOnUse" :patternTransform="`translate(${active * 11} 0)`"><g fill="none" stroke="#c98a3d" stroke-opacity=".17" stroke-width="1.2"><circle cx="17" cy="34" r="17"/><circle cx="51" cy="34" r="17"/><circle cx="34" cy="17" r="17"/><circle cx="34" cy="51" r="17"/></g></pattern></defs><rect width="100%" height="100%" fill="url(#tvt-kawung)"/></svg>
-                <div style="position:absolute;left:4.5%;top:17%;width:29%"><div class="tvt-serif" style="color:#c98a3d;font-size:1.9cqw">{{ $hotelName }}</div><div style="width:6cqw;height:2px;background:#c98a3d;margin:1.4cqw 0"></div><div style="font-size:1.1cqw;color:#b5a48f">Selamat datang</div><div class="tvt-serif" style="font-size:2.8cqw">Bapak Tamu</div><div class="tvt-serif" style="font-size:6.2cqw;margin-top:1.5cqw" x-text="time"></div></div>
-                <div style="position:absolute;right:4%;top:13%;bottom:13%;width:61%;display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:4fr 3fr;gap:1.1cqw">
-                    @foreach ([0, 1, 5, 2, 3, 4] as $i)
-                        <div class="tvt-i h-tile {{ $i % 2 ? '' : 'alt' }}" :class="active === {{ $i }} && 'on'" @mouseenter="pick({{ $i }})" style="grid-column:{{ $i === 0 ? 'span 4' : ($i === 1 || $i === 5 ? 'span 1' : 'span 2') }};{{ $i === 0 ? $bg : '' }}"><x-filament::icon :icon="$menu[$i][2]" /><span class="tvt-serif">{{ $menu[$i][0] }}</span></div>
+            <div class="tvt-l" x-show="theme === 'heritage'" x-cloak style="background-color:#171a45">
+                <svg class="tvt-l" width="100%" height="100%" aria-hidden="true"><defs><pattern id="tvt-kawung" width="62" height="62" patternUnits="userSpaceOnUse" :patternTransform="`translate(${active * 11} 0)`"><g fill="none" stroke="#e0a93f" stroke-opacity=".24" stroke-width="1.2"><circle cx="15.5" cy="31" r="15.5"/><circle cx="46.5" cy="31" r="15.5"/><circle cx="31" cy="15.5" r="15.5"/><circle cx="31" cy="46.5" r="15.5"/></g></pattern></defs><rect width="100%" height="100%" fill="url(#tvt-kawung)"/></svg>
+                <div class="tvt-l" style="background:linear-gradient(90deg,rgba(13,14,43,.9),rgba(13,14,43,.2) 32%,transparent)"></div>
+                <div style="position:absolute;left:4%;top:6%;width:24%"><div class="tvt-serif" style="color:#e0a93f;font-size:1.8cqw">{{ $hotelName }}</div><div style="font-size:1cqw;color:#e0a93f;margin-top:1.8cqw">Selamat datang</div><div class="tvt-serif" style="font-size:2.3cqw">Bapak Tamu</div><div style="width:.8cqw;height:.8cqw;background:#e0a93f;transform:rotate(45deg);margin:1.3cqw 0"></div><div class="tvt-serif" style="font-size:5.6cqw;line-height:1" x-text="time"></div></div>
+                <div class="h-gate" style="position:absolute;right:4%;top:4%;width:66%;height:62%"><div class="tvt-photo h-gate" style="inset:.6cqw;{{ $bg }}"></div><div class="h-gate" style="position:absolute;inset:.6cqw;background:linear-gradient(180deg,transparent 45%,rgba(13,14,43,.94))"></div><div style="position:absolute;left:3.5cqw;bottom:2.2cqw"><div class="tvt-serif" style="font-size:3.8cqw;line-height:1.1" x-text="menu[active].label"></div><div style="font-size:1.35cqw;color:#dad6e6" x-text="menu[active].desc"></div></div></div>
+                <div style="position:absolute;left:4%;right:4%;bottom:3.4%;display:flex;gap:1cqw;align-items:flex-end">
+                    @foreach ($menu as $i => $m)
+                        <div class="tvt-i h-tile" :class="active === {{ $i }} && 'on'" @mouseenter="pick({{ $i }})"><x-filament::icon :icon="$m[2]" /><span class="tvt-serif">{{ $m[0] }}</span></div>
                     @endforeach
                 </div>
             </div>
 
-            {{-- Terang --}}
-            <div class="tvt-l" x-show="theme === 'editorial'" x-cloak style="background:#faf8f4;color:#1a1c1f">
-                <div class="tvt-i" :style="`position:absolute;top:0;bottom:0;right:0;width:${39.5 + active * 1.8}%`"><div class="tvt-photo" style="{{ $bg }}"></div><div class="tvt-l" style="background:linear-gradient(180deg,transparent 60%,rgba(0,0,0,.7))"></div><div class="tvt-serif" style="position:absolute;right:7%;bottom:7%;font-size:5.8cqw;color:#fff" x-text="time"></div></div>
-                <div style="position:absolute;left:4.5%;top:7%;font-size:1.4cqw;font-weight:800">{{ $hotelName }}</div>
-                <div style="position:absolute;left:4.5%;top:29%;width:52%"><div style="color:#ff6b4a;font-weight:700;font-size:1.3cqw" x-text="`0${active + 1} / 06`"></div><div class="tvt-serif" style="font-size:7cqw;line-height:1.15;white-space:nowrap" x-text="menu[active].label"></div><div style="font-size:1.55cqw;color:#6b6f76" x-text="menu[active].desc"></div></div>
-                <div style="position:absolute;left:4.5%;bottom:9%;display:flex;gap:1.6cqw">
+            {{-- Daerah (Pasundan) --}}
+            <div class="tvt-l" x-show="theme === 'sunda'" x-cloak style="background:#2a1a0e">
+                <svg class="tvt-l" width="100%" height="100%" aria-hidden="true"><defs><pattern id="tvt-bilik" width="36" height="36" patternUnits="userSpaceOnUse"><g stroke="#e2b04a" stroke-opacity=".13" stroke-width="1.4"><path d="M0 4.5h18M0 9h18M0 13.5h18M18 22.5h18M18 27h18M18 31.500h18M22.500 0v18M27 0v18M31.500 0v18M4.500 18v18M9 18v18M13.500 18v18"/></g></pattern></defs><rect width="100%" height="100%" fill="url(#tvt-bilik)"/></svg>
+                <div class="tvt-l" style="background:linear-gradient(90deg,rgba(26,16,9,.86),rgba(26,16,9,.3) 34%,transparent)"></div>
+                <div style="position:absolute;left:3.7%;top:5%;width:27%">
+                    <div style="font-size:1.3cqw;color:#e2b04a;font-weight:800">{{ $hotelName }}</div>
+                    <div style="display:flex;gap:.8cqw;align-items:center;margin-top:1.2cqw">
+                        <svg viewBox="0 0 110 220" style="width:4.4cqw;flex:none" aria-hidden="true"><path fill="#e2b04a" d="M46 216h16l-3-64c33-20 43-60 13-90C61 46 63 22 80 2 46 15 28 40 32 68l-18-8 15 32c-2 24 8 44 18 60z"/><g fill="#2a1a0e"><circle cx="52" cy="72" r="5.500"/><circle cx="58" cy="96" r="5.500"/><circle cx="58" cy="120" r="5.500"/></g></svg>
+                        <div><div class="tvt-serif" style="font-size:2.8cqw;line-height:1.08;color:#e2b04a">Wilujeng<br>Sumping</div><div style="font-size:1.25cqw;font-weight:700;margin-top:.3cqw">Bapak Tamu</div></div>
+                    </div>
+                    <div class="tvt-serif" style="font-size:4.6cqw;margin-top:.8cqw;line-height:1.1" x-text="time"></div>
+                </div>
+                <div style="position:absolute;right:2.3%;top:1.8%;width:67.2%;height:62%">
+                    <div style="position:absolute;left:5.600%;right:5.600%;bottom:0;height:80%;border:2px solid #e2b04a;padding:.5cqw"><div style="position:relative;width:100%;height:100%;overflow:hidden"><div class="tvt-photo" style="{{ $bg }}"></div><div class="tvt-l" style="background:linear-gradient(180deg,transparent 42%,rgba(26,16,9,.95))"></div><div style="position:absolute;left:2.200cqw;bottom:1.300cqw"><div class="tvt-serif" style="font-size:3.300cqw;line-height:1.1" x-text="menu[active].label"></div><div style="font-size:1.250cqw;color:#e6d6b8" x-text="menu[active].desc"></div></div></div></div>
+                    <svg viewBox="0 0 1290 190" preserveAspectRatio="none" style="position:absolute;left:0;top:0;width:100%;height:27.500%" aria-hidden="true"><path d="M0 190l80-46 88-79h954l88 79 80 46-90-19H90z" fill="#1a1009" stroke="#e2b04a" stroke-width="4"/><g stroke="#e2b04a" stroke-width="9" stroke-linecap="round"><path d="M111 8l100 100M225 8L125 108M1065 8l100 100M1179 8l-100 100"/></g></svg>
+                </div>
+                <div style="position:absolute;left:2.300%;right:2.300%;bottom:2%;display:flex;gap:1cqw">
                     @foreach ($menu as $i => $m)
-                        <div class="tvt-i e-m" :class="active === {{ $i }} && 'on'" @mouseenter="pick({{ $i }})">{{ $m[0] }}</div>
+                        <div class="tvt-i" style="flex:1" @mouseenter="pick({{ $i }})">
+                            <svg viewBox="0 0 100 108" class="s-ang" :class="active === {{ $i }} && 'on'" aria-hidden="true"><g fill="currentColor"><rect x="16" y="2" width="4" height="100"/><rect x="80" y="2" width="4" height="100"/><rect x="12" y="15" width="76" height="3"/><rect x="12" y="62" width="76" height="3"/><rect x="27" y="{{ 34 - $i * 5 }}" width="13" height="{{ 68 + $i * 5 }}" rx="3"/><rect x="44" y="{{ 44 - $i * 4 }}" width="13" height="{{ 58 + $i * 4 }}" rx="3"/><rect x="61" y="{{ 54 - $i * 3 }}" width="13" height="{{ 48 + $i * 3 }}" rx="3"/><rect x="8" y="100" width="84" height="8" rx="3"/></g></svg>
+                            <div class="s-base" :class="active === {{ $i }} && 'on'"><x-filament::icon :icon="$m[2]" /><span>{{ $m[0] }}</span></div>
+                        </div>
                     @endforeach
                 </div>
             </div>

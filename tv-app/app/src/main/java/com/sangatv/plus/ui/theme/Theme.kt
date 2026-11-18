@@ -33,7 +33,7 @@ data class Palette(
 )
 
 /** Beranda design of a theme. */
-enum class HomeLayout { Ocean, Royal, Tropical, Sunset, Heritage, Editorial }
+enum class HomeLayout { Ocean, Royal, Tropical, Sunset, Heritage, Sunda }
 
 /**
  * A theme chosen per hotel in CMS → Profil Hotel → Tema TV (config.theme in the bootstrap).
@@ -118,19 +118,19 @@ object TvThemes {
     ), Jakarta, 350)
 
     val Heritage = TvTheme("heritage", HomeLayout.Heritage, Palette(
-        c(0xFF14100F), c(0xFF1C1614), c(0xFF27201C), c(0xFF322823), c(0xFF40332C), c(0xFF4F4036), c(0xFF6E5A4B),
-        c(0xFFC98A3D), c(0xFF241407), c(0xFF2C2E5E), c(0xFFF4EBDD), c(0xFF2E2119), c(0xFF72604F),
-        c(0xFFF6EEE2), c(0xFFE0D2BF), c(0xFFB5A48F),
-    ), Playfair, 0)
+        c(0xFF0D0E2B), c(0xFF171A45), c(0xFF1E2152), c(0xFF262A63), c(0xFF323676), c(0xFF3F4388), c(0xFF5A5FA8),
+        c(0xFFE0A93F), c(0xFF241407), c(0xFF7A2E1D), c(0xFFF4EBDD), c(0xFF2E2119), c(0xFF72604F),
+        c(0xFFF6EEE2), c(0xFFDAD6E6), c(0xFFA9A8C8),
+    ), Playfair, 340)
 
-    /** Light Beranda; the inner screens stay graphite so video and panels remain comfortable in a dark room. */
-    val Editorial = TvTheme("editorial", HomeLayout.Editorial, Palette(
-        c(0xFF0E1013), c(0xFF15181C), c(0xFF1C2025), c(0xFF23282E), c(0xFF2D333A), c(0xFF3A4149), c(0xFF525B65),
-        c(0xFFFF6B4A), c(0xFF2A0C04), c(0xFF22262C), c(0xFFFAF8F4), c(0xFF1A1C1F), c(0xFF6B6F76),
-        c(0xFFF5F4F0), c(0xFFD8D8D4), c(0xFFA5A8AC),
-    ), Playfair, 0)
+    /** Daerah: Pasundan (West Java). Soga brown, bamboo gold and the ivory "gumading" of batik Garutan. */
+    val Sunda = TvTheme("sunda", HomeLayout.Sunda, Palette(
+        c(0xFF1A1009), c(0xFF2A1A0E), c(0xFF352212), c(0xFF432C17), c(0xFF54381E), c(0xFF6A4A28), c(0xFF8A6638),
+        c(0xFFE2B04A), c(0xFF2A1705), c(0xFF4F7A3A), c(0xFFF3E6C8), c(0xFF2E1C0C), c(0xFF7A6040),
+        c(0xFFF8EFDC), c(0xFFE6D6B8), c(0xFFBBA482),
+    ), Playfair, 370)
 
-    private val all = listOf(Ocean, Royal, Tropical, Sunset, Heritage, Editorial)
+    private val all = listOf(Ocean, Royal, Tropical, Sunset, Heritage, Sunda)
 
     /** Unknown keys (a newer server) fall back to the original design. */
     fun of(key: String?): TvTheme = all.firstOrNull { it.key == key } ?: Ocean

@@ -23,6 +23,8 @@ use Filament\Schemas\Components\Actions;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Form;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Tabs;
+use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\Auth;
@@ -72,82 +74,96 @@ class HotelProfilePage extends Page
         return $schema
             ->statePath('data')
             ->components([
-                Section::make('Tema TV')->icon(Heroicon::OutlinedSwatch)->description('Pilih desain layar TV. Coba langsung dengan tombol panah, lalu tekan Simpan perubahan.')->schema([
-                    ViewField::make('tv_theme')->hiddenLabel()->view('filament.forms.tv-theme-picker')->required()
-                        ->in(array_keys(HotelProfile::TV_THEMES))
-                        ->viewData(fn () => [
-                            'themes' => HotelProfile::TV_THEMES,
-                            'hotelName' => HotelProfile::current()->name,
-                            'photo' => MediaUrl::of(Slide::query()->visible()->orderBy('sort_order')->value('image_path')),
+                Tabs::make('Profil hotel')->persistTabInQueryString('tab')->tabs([
+                    Tab::make('Tema TV')->icon(Heroicon::OutlinedSwatch)->schema([
+                        Section::make('Tema TV')->icon(Heroicon::OutlinedSwatch)->description('Pilih desain layar TV. Coba langsung dengan tombol panah, lalu tekan Simpan perubahan.')->schema([
+                            ViewField::make('tv_theme')->hiddenLabel()->view('filament.forms.tv-theme-picker')->required()
+                                ->in(array_keys(HotelProfile::TV_THEMES))
+                                ->viewData(fn () => [
+                                    'themes' => HotelProfile::TV_THEMES,
+                                    'hotelName' => HotelProfile::current()->name,
+                                    'photo' => MediaUrl::of(Slide::query()->visible()->orderBy('sort_order')->value('image_path')),
+                                ]),
                         ]),
-                ]),
-                Section::make('Identitas')->icon(Heroicon::OutlinedBuildingOffice2)->description('Nama dan logo tampil di Beranda TV.')->columns(2)->schema([
-                    TextInput::make('name')->label('Nama hotel')->required()->maxLength(80),
-                    TextInput::make('tagline')->maxLength(120),
-                    FileUpload::make('logo_path')->label('Logo (PNG transparan)')->image()->disk('public')->directory('branding')->maxSize(512)
-                        // Fixed small preview height: fits the row, so nothing jumps when the preview loads.
-                        ->imagePreviewHeight('96'),
-                    Textarea::make('about')->label('Tentang hotel')->rows(4)->maxLength(2000),
-                    TextInput::make('address')->label('Alamat')->maxLength(255)->columnSpanFull(),
-                ]),
-                Section::make('Kontak & Wi-Fi')->icon(Heroicon::OutlinedWifi)->description('Kartu Wi-Fi & resepsionis di layar Info Hotel.')->columns(2)->schema([
-                    TextInput::make('reception_phone')->label('Telepon resepsionis')->prefixIcon(Heroicon::OutlinedPhone)->tel()->maxLength(32),
-                    TextInput::make('reception_extension')->label('Ext. dari kamar')->maxLength(16),
-                    TextInput::make('wifi_ssid')->label('SSID Wi-Fi tamu')->prefixIcon(Heroicon::OutlinedWifi)->maxLength(64),
-                    TextInput::make('wifi_password')->label('Password Wi-Fi tamu')->prefixIcon(Heroicon::OutlinedLockClosed)->maxLength(64)
-                        ->helperText('Ditampilkan ke tamu sebagai QR di TV.'),
-                ]),
-                Section::make('Check-in / Check-out')->icon(Heroicon::OutlinedClock)->columns(2)->schema([
-                    TextInput::make('check_in_time')->label('Jam check-in')->required()->regex('/^\d{2}:\d{2}$/')->placeholder('14:00'),
-                    TextInput::make('check_out_time')->label('Jam check-out')->required()->regex('/^\d{2}:\d{2}$/')->placeholder('12:00'),
-                    Textarea::make('check_out_info')->label('Info check-out')->rows(3)->maxLength(1000)->columnSpanFull(),
-                ]),
-                Section::make('Layar TV')->icon(Heroicon::OutlinedMoon)->description('Berlaku untuk semua TV kamar.')->schema([
-                    Select::make('screensaver_minutes')->label('Screensaver TV muncul setelah')->required()
-                        ->options(HotelProfile::SCREENSAVER_OPTIONS)
-                        ->helperText('Lama remote tidak disentuh sebelum screensaver bawaan TV tampil. Saat tamu menekan remote, SangaTV Plus kembali ke Beranda.'),
-                    Select::make('tv_start_volume')->label('Volume saat TV dinyalakan')
-                        ->options(collect([10, 15, 20, 25, 30, 40, 50])->mapWithKeys(fn ($v) => [$v => "{$v}%"])->all())
-                        ->placeholder('Tidak diatur (ikuti TV)')
-                        ->helperText('Mencegah TV menyala terlalu keras setelah tamu sebelumnya.'),
-                    Select::make('tv_start_channel_id')->label('Channel pertama saat membuka TV')
-                        ->options(fn () => Channel::query()->where('is_active', true)->orderBy('number')->get()->mapWithKeys(fn ($c) => [$c->id => $c->number.' · '.$c->name])->all())
-                        ->placeholder('Channel terakhir yang ditonton')->searchable()
-                        ->helperText('Berlaku saat menu TV dibuka pertama kali setelah TV dinyalakan.'),
-                    Toggle::make('show_hdmi_inputs')->label('Tampilkan input HDMI di menu Aplikasi')
-                        ->helperText('Tamu bisa menyambung laptop/konsol ke TV.'),
-                ])->columns(2),
-                Section::make('Channel TV')->icon(Heroicon::OutlinedTv)->description('Jadwal acara, kunci channel dewasa, dan laporan mingguan.')->columns(2)->schema([
-                    Textarea::make('epg_urls')->label('Sumber jadwal acara (XMLTV)')->rows(3)->columnSpanFull()
-                        ->placeholder("https://www.open-epg.com/files/indonesia1.xml\nhttps://epg.pw/xmltv/epg_ID.xml.gz")
-                        ->helperText(fn () => 'Satu URL per baris (.xml / .xml.gz), urutan = prioritas. Diperbarui otomatis tiap 6 jam.'
-                            .(($h = HotelProfile::current())->epg_synced_at ? ' Terakhir '.$h->epg_synced_at->diffForHumans().': '.$h->epg_status : '')),
-                    TextInput::make('new_adult_pin')->label('PIN channel dewasa (4 digit)')->prefixIcon(Heroicon::OutlinedLockClosed)
-                        ->password()->revealable()
-                        ->helperText(fn () => HotelProfile::current()->adult_pin
-                            ? 'PIN aktif. Isi untuk mengganti; ketik "hapus" untuk menyembunyikan channel dewasa.'
-                            : 'Belum diatur: channel dewasa disembunyikan dari TV.')
-                        ->rule(fn () => fn (string $attribute, mixed $value, \Closure $fail) => blank($value) || $value === 'hapus' || preg_match('/^\d{4}$/', (string) $value) ? null : $fail('PIN harus 4 digit.')),
-                    Textarea::make('report_emails')->label('Email laporan uptime mingguan')->rows(2)
-                        ->placeholder('it@hotel.com, gm@hotel.com')
-                        ->helperText('Dikirim tiap Senin 07:00: uptime per channel dan channel paling banyak ditonton.'),
-                ]),
-                Section::make('Lokasi & cuaca')->icon(Heroicon::OutlinedMapPin)->description('Cuaca di Beranda TV dari prakiraan resmi BMKG (gratis, sumber "BMKG" selalu dicantumkan).')->columns(3)->schema([
-                    TextInput::make('bmkg_adm4')->label('Kode wilayah BMKG (desa/kelurahan)')->placeholder('mis. 32.05.13.2001')
-                        ->regex('/^\d{2}\.\d{2}\.\d{2}\.\d{4}$/')->columnSpanFull()
-                        ->helperText('Kode wilayah tingkat IV (Kemendagri) lokasi hotel. Cari nama desa/kelurahan di kodewilayah.id lalu salin kodenya. Kosongkan untuk menyembunyikan cuaca.'),
-                    Select::make('timezone')->label('Zona waktu')->required()
-                        ->options(['Asia/Jakarta' => 'WIB', 'Asia/Makassar' => 'WITA', 'Asia/Jayapura' => 'WIT']),
-                    TextInput::make('latitude')->numeric()->minValue(-90)->maxValue(90),
-                    TextInput::make('longitude')->numeric()->minValue(-180)->maxValue(180),
-                ]),
-                Section::make('PIN menu teknisi')->icon(Heroicon::OutlinedKey)->description('Membuka menu teknisi di TV (kombinasi tombol tersembunyi).')->schema([
-                    TextInput::make('new_pin')->label('PIN baru (6 digit)')->prefixIcon(Heroicon::OutlinedKey)
-                        ->password()->revealable()
-                        ->regex('/^\d{6}$/')
-                        ->notIn(['000000', '111111', '123456', '654321', '121212'])
-                        ->helperText('Kosongkan bila tidak diubah. TV menerima PIN baru saat sinkron berikutnya.'),
-                ]),
+                    ]),
+                    Tab::make('Identitas & Kontak')->icon(Heroicon::OutlinedBuildingOffice2)->schema([
+                        Section::make('Identitas')->icon(Heroicon::OutlinedBuildingOffice2)->description('Nama dan logo tampil di Beranda TV.')->columns(2)->schema([
+                            TextInput::make('name')->label('Nama hotel')->required()->maxLength(80),
+                            TextInput::make('tagline')->maxLength(120),
+                            FileUpload::make('logo_path')->label('Logo (PNG transparan)')->image()->disk('public')->directory('branding')->maxSize(512)
+                                // Fixed small preview height: fits the row, so nothing jumps when the preview loads.
+                                ->imagePreviewHeight('96'),
+                            Textarea::make('about')->label('Tentang hotel')->rows(4)->maxLength(2000),
+                            TextInput::make('address')->label('Alamat')->maxLength(255)->columnSpanFull(),
+                        ]),
+                        Section::make('Kontak & Wi-Fi')->icon(Heroicon::OutlinedWifi)->description('Kartu Wi-Fi & resepsionis di layar Info Hotel.')->columns(2)->schema([
+                            TextInput::make('reception_phone')->label('Telepon resepsionis')->prefixIcon(Heroicon::OutlinedPhone)->tel()->maxLength(32),
+                            TextInput::make('reception_extension')->label('Ext. dari kamar')->maxLength(16),
+                            TextInput::make('wifi_ssid')->label('SSID Wi-Fi tamu')->prefixIcon(Heroicon::OutlinedWifi)->maxLength(64),
+                            TextInput::make('wifi_password')->label('Password Wi-Fi tamu')->prefixIcon(Heroicon::OutlinedLockClosed)->maxLength(64)
+                                ->helperText('Ditampilkan ke tamu sebagai QR di TV.'),
+                        ]),
+                    ]),
+                    Tab::make('Check-in & Layar TV')->icon(Heroicon::OutlinedClock)->schema([
+                        Section::make('Check-in / Check-out')->icon(Heroicon::OutlinedClock)->columns(2)->schema([
+                            TextInput::make('check_in_time')->label('Jam check-in')->required()->regex('/^\d{2}:\d{2}$/')->placeholder('14:00'),
+                            TextInput::make('check_out_time')->label('Jam check-out')->required()->regex('/^\d{2}:\d{2}$/')->placeholder('12:00'),
+                            Textarea::make('check_out_info')->label('Info check-out')->rows(3)->maxLength(1000)->columnSpanFull(),
+                        ]),
+                        Section::make('Layar TV')->icon(Heroicon::OutlinedMoon)->description('Berlaku untuk semua TV kamar.')->schema([
+                            Select::make('screensaver_minutes')->label('Screensaver TV muncul setelah')->required()
+                                ->options(HotelProfile::SCREENSAVER_OPTIONS)
+                                ->helperText('Lama remote tidak disentuh sebelum screensaver bawaan TV tampil. Saat tamu menekan remote, SangaTV Plus kembali ke Beranda.'),
+                            Select::make('tv_start_volume')->label('Volume saat TV dinyalakan')
+                                ->options(collect([10, 15, 20, 25, 30, 40, 50])->mapWithKeys(fn ($v) => [$v => "{$v}%"])->all())
+                                ->placeholder('Tidak diatur (ikuti TV)')
+                                ->helperText('Mencegah TV menyala terlalu keras setelah tamu sebelumnya.'),
+                            Select::make('tv_start_channel_id')->label('Channel pertama saat membuka TV')
+                                ->options(fn () => Channel::query()->where('is_active', true)->orderBy('number')->get()->mapWithKeys(fn ($c) => [$c->id => $c->number.' · '.$c->name])->all())
+                                ->placeholder('Channel terakhir yang ditonton')->searchable()
+                                ->helperText('Berlaku saat menu TV dibuka pertama kali setelah TV dinyalakan.'),
+                            Toggle::make('show_hdmi_inputs')->label('Tampilkan input HDMI di menu Aplikasi')
+                                ->helperText('Tamu bisa menyambung laptop/konsol ke TV.'),
+                        ])->columns(2),
+                    ]),
+                    Tab::make('Channel TV')->icon(Heroicon::OutlinedTv)->schema([
+                        Section::make('Channel TV')->icon(Heroicon::OutlinedTv)->description('Jadwal acara, kunci channel dewasa, dan laporan mingguan.')->columns(2)->schema([
+                            Textarea::make('epg_urls')->label('Sumber jadwal acara (XMLTV)')->rows(3)->columnSpanFull()
+                                ->placeholder("https://www.open-epg.com/files/indonesia1.xml\nhttps://epg.pw/xmltv/epg_ID.xml.gz")
+                                ->helperText(fn () => 'Satu URL per baris (.xml / .xml.gz), urutan = prioritas. Diperbarui otomatis tiap 6 jam.'
+                                    .(($h = HotelProfile::current())->epg_synced_at ? ' Terakhir '.$h->epg_synced_at->diffForHumans().': '.$h->epg_status : '')),
+                            TextInput::make('new_adult_pin')->label('PIN channel dewasa (4 digit)')->prefixIcon(Heroicon::OutlinedLockClosed)
+                                ->password()->revealable()
+                                ->helperText(fn () => HotelProfile::current()->adult_pin
+                                    ? 'PIN aktif. Isi untuk mengganti; ketik "hapus" untuk menyembunyikan channel dewasa.'
+                                    : 'Belum diatur: channel dewasa disembunyikan dari TV.')
+                                ->rule(fn () => fn (string $attribute, mixed $value, \Closure $fail) => blank($value) || $value === 'hapus' || preg_match('/^\d{4}$/', (string) $value) ? null : $fail('PIN harus 4 digit.')),
+                            Textarea::make('report_emails')->label('Email laporan uptime mingguan')->rows(2)
+                                ->placeholder('it@hotel.com, gm@hotel.com')
+                                ->helperText('Dikirim tiap Senin 07:00: uptime per channel dan channel paling banyak ditonton.'),
+                        ]),
+                    ]),
+                    Tab::make('Lokasi & Cuaca')->icon(Heroicon::OutlinedMapPin)->schema([
+                        Section::make('Lokasi & cuaca')->icon(Heroicon::OutlinedMapPin)->description('Cuaca di Beranda TV dari prakiraan resmi BMKG (gratis, sumber "BMKG" selalu dicantumkan).')->columns(3)->schema([
+                            TextInput::make('bmkg_adm4')->label('Kode wilayah BMKG (desa/kelurahan)')->placeholder('mis. 32.05.13.2001')
+                                ->regex('/^\d{2}\.\d{2}\.\d{2}\.\d{4}$/')->columnSpanFull()
+                                ->helperText('Kode wilayah tingkat IV (Kemendagri) lokasi hotel. Cari nama desa/kelurahan di kodewilayah.id lalu salin kodenya. Kosongkan untuk menyembunyikan cuaca.'),
+                            Select::make('timezone')->label('Zona waktu')->required()
+                                ->options(['Asia/Jakarta' => 'WIB', 'Asia/Makassar' => 'WITA', 'Asia/Jayapura' => 'WIT']),
+                            TextInput::make('latitude')->numeric()->minValue(-90)->maxValue(90),
+                            TextInput::make('longitude')->numeric()->minValue(-180)->maxValue(180),
+                        ]),
+                    ]),
+                    Tab::make('PIN Teknisi')->icon(Heroicon::OutlinedKey)->schema([
+                        Section::make('PIN menu teknisi')->icon(Heroicon::OutlinedKey)->description('Membuka menu teknisi di TV (kombinasi tombol tersembunyi).')->schema([
+                            TextInput::make('new_pin')->label('PIN baru (6 digit)')->prefixIcon(Heroicon::OutlinedKey)
+                                ->password()->revealable()
+                                ->regex('/^\d{6}$/')
+                                ->notIn(['000000', '111111', '123456', '654321', '121212'])
+                                ->helperText('Kosongkan bila tidak diubah. TV menerima PIN baru saat sinkron berikutnya.'),
+                        ]),
+                    ]),
+                ])->columnSpanFull(),
             ]);
     }
 
