@@ -13,6 +13,7 @@ use App\Models\Device;
 use App\Support\Audit;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Actions\BulkAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -25,6 +26,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use UnitEnum;
 
@@ -113,7 +115,9 @@ class DeviceResource extends Resource
                     }),
                 IconColumn::make('kiosk_enabled')->label('Kiosk')->boolean()->trueIcon(Heroicon::OutlinedLockClosed)->falseIcon(Heroicon::OutlinedLockOpen),
                 IconColumn::make('device_owner')->label('Owner')->boolean()->toggleable(),
-                TextColumn::make('app_version')->label('Versi')->badge()->color('gray')->icon(Heroicon::OutlinedCodeBracket),
+                TextColumn::make('app_version')->label('Versi')->badge()->icon(Heroicon::OutlinedCodeBracket)
+                    ->color(fn (Device $r) => $r->availableRelease() ? 'warning' : 'success')
+                    ->description(fn (Device $r) => static::updateNote($r)),
                 TextColumn::make('last_seen_at')->label('Terakhir aktif')->since()->sortable()->icon(Heroicon::OutlinedClock)->color('gray'),
                 TextColumn::make('last_ip')->label('IP')->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -134,7 +138,28 @@ class DeviceResource extends Resource
                         };
                     }),
             ])
+            ->toolbarActions([
+                BulkAction::make('updateSelected')->label('Update TV terpilih')->icon(Heroicon::OutlinedArrowDownTray)->color('primary')
+                    ->visible(fn () => static::canViewAny())
+                    ->requiresConfirmation()->modalHeading('Update TV terpilih sekarang?')->modalDescription(static::updateWarning())
+                    ->deselectRecordsAfterCompletion()
+                    ->action(fn (Collection $records) => static::sendUpdates($records)),
+            ])
             ->recordActions([
+                Action::make('updateNow')->label('Update sekarang')->icon(Heroicon::OutlinedArrowDownTray)->color('warning')
+                    ->iconButton()
+                    ->tooltip(fn (Device $r) => match (true) {
+                        $r->hold_updates => 'Matikan "Tahan update" dulu',
+                        $r->updateQueued() => 'Perintah update sedang dikirim ke TV',
+                        default => 'Update ke versi '.$r->availableRelease()?->version_name.' sekarang',
+                    })
+                    ->visible(fn (Device $r) => $r->status === DeviceStatus::Active && static::canEdit($r) && $r->availableRelease())
+                    ->disabled(fn (Device $r) => $r->hold_updates || $r->updateQueued())
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (Device $r) => 'Update TV kamar '.($r->room?->number ?? '?').' ke versi '.$r->availableRelease()?->version_name.'?')
+                    ->modalDescription(static::updateWarning())
+                    ->modalSubmitActionLabel('Update sekarang')
+                    ->action(fn (Device $record) => static::sendUpdates(collect([$record]))),
                 Action::make('command')
                     ->label('Kirim perintah')
                     ->icon(Heroicon::OutlinedCommandLine)
@@ -189,6 +214,39 @@ class DeviceResource extends Resource
                 EditAction::make()->label('Pindah kamar')->icon(Heroicon::OutlinedArrowsRightLeft)->tooltip('Pindah kamar'),
                 DeleteAction::make()->before(fn (Device $record) => $record->tokens()->delete()),
             ]);
+    }
+
+    public static function updateWarning(): string
+    {
+        return 'TV yang menyala mengunduh versi baru dalam ±1 menit; TV yang mati menjalankannya saat menyala lagi. TV tanpa Device Owner bisa menampilkan dialog pasang: tekan Instal dengan remote.';
+    }
+
+    /** Line under the version: what is going on with the update of this TV. */
+    protected static function updateNote(Device $device): ?string
+    {
+        $release = $device->availableRelease();
+
+        return match (true) {
+            ! $release => 'Terbaru',
+            $device->hold_updates => "{$release->version_name} tersedia · ditahan",
+            $device->updateQueued() => "Mengirim update {$release->version_name}…",
+            default => "{$release->version_name} tersedia",
+        };
+    }
+
+    /** @param iterable<Device> $devices */
+    public static function sendUpdates(iterable $devices): void
+    {
+        $sent = 0;
+        $skipped = 0;
+        foreach ($devices as $device) {
+            $device->queueUpdate(Auth::id()) ? $sent++ : $skipped++;
+        }
+        Audit::log('device.update_queued', null, ['devices' => $sent, 'skipped' => $skipped]);
+
+        $note = $skipped ? "{$skipped} TV dilewati (sudah terbaru, ditahan, atau perintahnya masih dikirim)." : 'TV menjalankannya dalam ±1 menit.';
+        Notification::make()->title($sent ? "Perintah update dikirim ke {$sent} TV" : 'Tidak ada TV yang perlu diupdate')->body($note)
+            ->color($sent ? 'success' : 'warning')->icon($sent ? Heroicon::OutlinedCheckCircle : Heroicon::OutlinedInformationCircle)->send();
     }
 
     public static function getNavigationBadge(): ?string

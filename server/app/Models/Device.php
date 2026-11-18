@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\CommandStatus;
+use App\Enums\CommandType;
 use App\Enums\DeviceStatus;
 use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -47,6 +49,37 @@ class Device extends Model
     public function commands(): HasMany
     {
         return $this->hasMany(DeviceCommand::class);
+    }
+
+    /** Active release newer than what this TV runs (same app package; old TVs report none = staging). */
+    public function availableRelease(): ?AppRelease
+    {
+        return AppRelease::query()
+            ->where('package_name', $this->app_package ?: AppRelease::DEFAULT_PACKAGE)
+            ->where('is_active', true)
+            ->where('version_code', '>', (int) $this->app_version_code)
+            ->orderByDesc('version_code')
+            ->first();
+    }
+
+    /** An update command is still on its way to this TV. */
+    public function updateQueued(): bool
+    {
+        return $this->commands()->where('type', CommandType::CheckUpdate)
+            ->where(fn ($query) => $query->where('status', CommandStatus::Pending)
+                ->orWhere(fn ($query) => $query->where('status', CommandStatus::Delivered)->where('created_at', '>', now()->subMinutes(10))))
+            ->exists();
+    }
+
+    /** Ask this TV to install the new version now. False when there is nothing to do (held, up to date, already queued). */
+    public function queueUpdate(?int $userId = null): bool
+    {
+        if ($this->status !== DeviceStatus::Active || $this->hold_updates || ! $this->availableRelease() || $this->updateQueued()) {
+            return false;
+        }
+        $this->commands()->create(['type' => CommandType::CheckUpdate, 'status' => CommandStatus::Pending, 'created_by' => $userId]);
+
+        return true;
     }
 
     /**

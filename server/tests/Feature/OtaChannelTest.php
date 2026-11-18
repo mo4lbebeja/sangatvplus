@@ -3,9 +3,11 @@
 use App\Enums\CommandType;
 use App\Enums\UserRole;
 use App\Filament\Resources\AppReleases\Pages\ManageAppReleases;
+use App\Filament\Resources\Devices\Pages\ManageDevices;
 use App\Models\AppRelease;
 use App\Models\Device;
 use App\Models\User;
+use Filament\Actions\Testing\TestAction;
 use Livewire\Livewire;
 
 function release(string $pkg, int $code, bool $active = true): AppRelease
@@ -48,4 +50,34 @@ it('skips held TVs when pushing an update from the CMS', function () {
 
     expect($free->commands()->where('type', CommandType::CheckUpdate)->count())->toBe(1)
         ->and($held->commands()->count())->toBe(0);
+});
+
+it('updates one TV from the CMS without waiting, once, and never a held or current TV', function () {
+    $this->actingAs(User::factory()->create(['role' => UserRole::It]));
+    release('com.sangatv.plus', 14);
+    $old = Device::factory()->create(['app_package' => 'com.sangatv.plus', 'app_version_code' => 13]);
+    $held = Device::factory()->create(['app_package' => 'com.sangatv.plus', 'app_version_code' => 13, 'hold_updates' => true]);
+    $current = Device::factory()->create(['app_package' => 'com.sangatv.plus', 'app_version_code' => 14]);
+
+    Livewire::test(ManageDevices::class)
+        ->assertActionVisible(TestAction::make('updateNow')->table($old))
+        ->assertActionDisabled(TestAction::make('updateNow')->table($held))
+        ->assertActionHidden(TestAction::make('updateNow')->table($current))
+        ->callAction(TestAction::make('updateNow')->table($old));
+
+    expect($old->commands()->where('type', CommandType::CheckUpdate)->count())->toBe(1)
+        ->and($old->fresh()->queueUpdate())->toBeFalse() // already on its way
+        ->and($held->queueUpdate())->toBeFalse()
+        ->and($current->queueUpdate())->toBeFalse();
+});
+
+it('updates all outdated TVs of the right package from the TV list', function () {
+    $this->actingAs(User::factory()->create(['role' => UserRole::Admin]));
+    release('com.sangatv.plus.staging', 14);
+    $legacy = Device::factory()->create(['app_package' => null, 'app_version_code' => 9]); // old TVs report no package
+    $otherPackage = Device::factory()->create(['app_package' => 'com.sangatv.plus', 'app_version_code' => 9]);
+
+    Livewire::test(ManageDevices::class)->callAction('updateAll');
+
+    expect($legacy->commands()->count())->toBe(1)->and($otherPackage->commands()->count())->toBe(0);
 });
