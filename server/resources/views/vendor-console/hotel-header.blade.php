@@ -21,5 +21,5 @@
         <div><div class="vc-label">Sewa / bulan</div><div class="vc-value">{{ $rp($h->monthlyPrice()) }}</div><div class="vc-muted">Total dibayar {{ $rp($paid) }}</div></div></div>
     <div class="vc-card vc-stat"><span class="vc-stat-icon vc-tone-{{ $open > 0 ? 'rose' : 'sky' }}"><x-filament::icon icon="heroicon-o-document-text" /></span>
         <div><div class="vc-label">Piutang</div><div @class(['vc-value', 'text-danger-600' => $open > 0])>{{ $rp($open) }}</div>
-        <div class="vc-muted">Backup: {{ $s['backup'] ? \Illuminate\Support\Carbon::createFromTimestamp($s['backup'])->diffForHumans() : 'belum ada' }}</div></div></div>
+        <div class="vc-muted">{{ $open > 0 ? 'belum dibayar' : 'tidak ada tagihan terbuka' }}</div></div></div>
 </div>

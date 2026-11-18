@@ -365,3 +365,15 @@ html:has(body.fi-panel-vendor) { font-size: 14.5px; }
 .fi-panel-vendor .sg-prose h2 { margin: 1rem 0 .4rem; }
 .fi-panel-vendor .sg-prose h3 { margin: .8rem 0 .3rem; }
 .fi-panel-vendor .sg-prose p, .fi-panel-vendor .sg-prose ul, .fi-panel-vendor .sg-prose ol { margin: .35rem 0; }
+
+/* Audit fixes */
+.fi-panel-vendor .fi-page-content .fi-sc-form:has(input[type="password"]) { background: #fff; border: 1px solid var(--vc-line); border-radius: var(--vc-r); padding: .9rem 1rem; box-shadow: var(--vc-shadow); }
+.dark .fi-panel-vendor .fi-page-content .fi-sc-form:has(input[type="password"]) { background: #111a33; }
+.fi-panel-vendor .fi-wi-stats-overview-stat:has(.fi-wi-stats-overview-stat-chart) { padding-bottom: 1.5rem !important; }
+.fi-panel-vendor .fi-wi-stats-overview-stat-chart { height: 1.1rem !important; opacity: .55; }
+.fi-panel-vendor .vc-table td:last-child { white-space: nowrap; }
+@media (max-width: 640px) {
+    .fi-panel-vendor .vc-hero { background: linear-gradient(120deg, #312E81, #4338CA 55%, #6D28D9); }
+    .fi-panel-vendor .fi-header { align-items: flex-start !important; text-align: left; }
+    .fi-panel-vendor .fi-header > div:has(> .vc-head-icon) { justify-content: flex-start; width: 100%; }
+}

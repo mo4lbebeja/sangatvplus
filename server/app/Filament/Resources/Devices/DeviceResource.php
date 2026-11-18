@@ -69,12 +69,12 @@ class DeviceResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('room.number')->label('Kamar')->sortable()->searchable()->icon(Heroicon::OutlinedHomeModern)->iconColor('primary')->weight('bold'),
-                TextColumn::make('local_ip')->label('IP lokal')->searchable()->copyable()->copyMessage('IP disalin')->icon(Heroicon::OutlinedGlobeAlt)->placeholder('Menunggu update TV')->fontFamily('mono'),
+                TextColumn::make('local_ip')->label('IP lokal')->searchable()->copyable()->copyMessage('IP disalin')->icon(Heroicon::OutlinedGlobeAlt)->placeholder('—')->tooltip(fn (Device $r) => $r->local_ip ? null : 'Muncul setelah TV memakai versi 0.5.2 atau lebih baru')->fontFamily('mono'),
                 TextColumn::make('model')->label('Model')->searchable()->toggleable()->icon(Heroicon::OutlinedTv),
                 TextColumn::make('android_version')->label('Android')->placeholder('—')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('device_uid')->label('ID perangkat')->limit(14)->copyable()->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('status')->badge(),
-                TextColumn::make('power')->label('Status')->badge()
+                TextColumn::make('status')->label('Akses')->badge(),
+                TextColumn::make('power')->label('Layar')->badge()
                     ->state(fn (Device $r) => $r->powerState())
                     ->formatStateUsing(fn (string $state) => ['on' => 'Menyala', 'standby' => 'Standby', 'off' => 'Mati'][$state])
                     ->color(fn (string $state) => $state === 'on' ? 'success' : 'danger')
@@ -93,7 +93,7 @@ class DeviceResource extends Resource
                     ->formatStateUsing(fn (string $state) => $state === 'released' ? 'Dilepas' : 'Layar hotel')
                     ->color(fn (string $state) => $state === 'released' ? 'warning' : 'gray')
                     ->tooltip(fn (Device $r) => $r->service_released ? 'TV sudah kembali ke layar utama bawaan (layanan dilepas / tidak terhubung)' : 'SangaTV Plus menjadi layar utama')
-                    ->toggleable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 ToggleColumn::make('hold_updates')->label('Tahan update')
                     ->tooltip('Aktifkan bila tidak ada orang di dekat TV: TV tidak menerima update (dialog pasang tidak muncul) sampai dimatikan lagi.')
                     ->toggleable(),
@@ -114,10 +114,10 @@ class DeviceResource extends Resource
                         'no' => 'Belum diatur: jalankan skrip siapkan-tv',
                         default => 'Belum dilaporkan TV',
                     }),
-                IconColumn::make('kiosk_enabled')->label('Kiosk')->boolean()->trueIcon(Heroicon::OutlinedLockClosed)->falseIcon(Heroicon::OutlinedLockOpen),
-                IconColumn::make('device_owner')->label('Owner')->boolean()->toggleable(),
+                IconColumn::make('kiosk_enabled')->label('Kiosk')->boolean()->trueIcon(Heroicon::OutlinedLockClosed)->falseIcon(Heroicon::OutlinedLockOpen)->toggleable(isToggledHiddenByDefault: true),
+                IconColumn::make('device_owner')->label('Owner')->boolean()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('app_version')->label('Versi')->badge()->icon(Heroicon::OutlinedCodeBracket)
-                    ->color(fn (Device $r) => $r->availableRelease() ? 'warning' : 'success')
+                    ->color(fn (Device $r) => $r->status !== DeviceStatus::Active ? 'gray' : ($r->availableRelease() ? 'warning' : 'success'))
                     ->description(fn (Device $r) => static::updateNote($r)),
                 TextColumn::make('last_seen_at')->label('Terakhir aktif')->since()->sortable()->icon(Heroicon::OutlinedClock)->color('gray'),
                 TextColumn::make('last_ip')->label('IP publik')->toggleable(isToggledHiddenByDefault: true),
@@ -225,6 +225,9 @@ class DeviceResource extends Resource
     /** Line under the version: what is going on with the update of this TV. */
     protected static function updateNote(Device $device): ?string
     {
+        if ($device->status !== DeviceStatus::Active) {
+            return null;
+        }
         $release = $device->availableRelease();
 
         return match (true) {

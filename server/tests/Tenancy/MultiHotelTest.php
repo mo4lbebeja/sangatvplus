@@ -598,3 +598,10 @@ it('renders every business console page', function () {
         $this->get($url)->assertOk();
     }
 });
+
+it('exports console lists to CSV with their related data', function () {
+    billable($this->alpha);
+    vendorLogin();
+
+    Livewire\Livewire::test(ManageHotels::class)->callAction('csv')->assertFileDownloaded();
+});

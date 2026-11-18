@@ -17,7 +17,7 @@ class CsvExport
                 $out = fopen('php://output', 'w');
                 fwrite($out, "\xEF\xBB\xBF");
                 fputcsv($out, array_keys($columns), ';');
-                foreach ($query()->cursor() as $record) {
+                foreach ($query()->lazy(200) as $record) { // lazy(), not cursor(): cursor ignores eager loads
                     fputcsv($out, array_map(fn ($c) => is_string($c) ? data_get($record, $c) : $c($record), array_values($columns)), ';');
                 }
                 fclose($out);

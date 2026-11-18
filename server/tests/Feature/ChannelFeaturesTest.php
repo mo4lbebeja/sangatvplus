@@ -240,6 +240,17 @@ it('creates a daily announcement in the CMS', function () {
     expect(substr($a->daily_from, 0, 5))->toBe('17:00')->and(substr($a->daily_until, 0, 5))->toBe('19:00')->and($a->days)->toBeNull();
 });
 
+it('keeps every day ticked when editing a daily announcement', function () {
+    $this->actingAs(User::factory()->create(['role' => UserRole::FrontOffice]));
+    $a = Announcement::query()->create(['title' => 'Sarapan', 'message' => 'Buka', 'style' => 'ticker', 'level' => 'info', 'daily_from' => '06:00', 'daily_until' => '10:00']);
+
+    Livewire::test(ManageAnnouncements::class)
+        ->callAction(TestAction::make('edit')->table($a), data: ['title' => 'Sarapan pagi'])
+        ->assertHasNoActionErrors();
+
+    expect($a->fresh()->title)->toBe('Sarapan pagi')->and($a->fresh()->days)->toBeNull()->and(substr($a->fresh()->daily_from, 0, 5))->toBe('06:00');
+});
+
 it('saves EPG sources, adult PIN and report e-mails from the hotel profile', function () {
     $this->actingAs(User::factory()->create(['role' => UserRole::Admin]));
 

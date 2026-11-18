@@ -47,6 +47,7 @@ class LoginLogResource extends Resource
     {
         return $table
             ->modifyQueryUsing(fn ($query) => $query->with('hotel'))
+            ->emptyStateHeading('Belum ada login tercatat')->emptyStateDescription('Login Console dan CMS semua hotel akan muncul di sini.')
             ->columns([
                 TextColumn::make('created_at')->label('Waktu')->dateTime('d M Y H:i', 'Asia/Jakarta')->sortable()->description(fn (LoginLog $l) => $l->created_at->diffForHumans()),
                 IconColumn::make('success')->label('Berhasil')->boolean(),

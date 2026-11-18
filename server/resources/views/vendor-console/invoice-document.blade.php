@@ -59,9 +59,9 @@
         @foreach ($invoice->items as $item)
             <tr>
                 <td style="padding:12px;border-bottom:1px solid #E2E8F0">{{ $item['description'] }}</td>
-                <td style="padding:12px;border-bottom:1px solid #E2E8F0;text-align:center">{{ $item['qty'] }} {{ $item['unit'] ?? '' }}</td>
-                <td style="padding:12px;border-bottom:1px solid #E2E8F0;text-align:right">{{ $rp($item['price']) }}</td>
-                <td style="padding:12px;border-bottom:1px solid #E2E8F0;text-align:right;font-weight:600">{{ $rp($item['amount']) }}</td>
+                <td style="padding:12px;border-bottom:1px solid #E2E8F0;text-align:center;white-space:nowrap">{{ $item['qty'] }} {{ $item['unit'] ?? '' }}</td>
+                <td style="padding:12px;border-bottom:1px solid #E2E8F0;text-align:right;white-space:nowrap">{{ $rp($item['price']) }}</td>
+                <td style="padding:12px;border-bottom:1px solid #E2E8F0;text-align:right;font-weight:600;white-space:nowrap">{{ $rp($item['amount']) }}</td>
             </tr>
         @endforeach
         </tbody>

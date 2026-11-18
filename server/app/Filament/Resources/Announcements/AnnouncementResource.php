@@ -109,6 +109,7 @@ class AnnouncementResource extends Resource
                         ->dehydrateStateUsing(fn ($state, Get $get) => $get('daily') ? $state : null),
                     CheckboxList::make('days')->label('Hari')->options(Announcement::DAYS)->columns(7)->gridDirection('row')->columnSpanFull()
                         ->default(array_keys(Announcement::DAYS))->helperText('Semua dicentang = setiap hari.')
+                        ->afterStateHydrated(fn (CheckboxList $component, $state) => $component->state(filled($state) ? $state : array_keys(Announcement::DAYS)))
                         ->visible(fn (Get $get) => (bool) $get('daily'))->required(fn (Get $get) => (bool) $get('daily'))
                         ->dehydrateStateUsing(fn ($state, Get $get) => $get('daily') && count((array) $state) < 7 ? array_map('intval', (array) $state) : null),
                 ]),
